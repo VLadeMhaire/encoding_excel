@@ -3,1297 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAT Encoder - Online Data Viewer</title>
+    <title>VAT Encoding Data Repository</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f0f0;
+            line-height: 1.6;
             color: #333;
+            background-color: #f5f5f5;
         }
-
-        .header {
-            background: #2c3e50;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #333;
             color: white;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
         }
-
-        .header h1 {
-            font-size: 1.8rem;
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 2rem;
             margin-bottom: 0.5rem;
         }
-
-        .header-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            margin-top: 1rem;
+        
+        .subtitle {
+            color: #aaa;
+            font-size: 1rem;
         }
-
-        .search-box {
-            padding: 0.5rem 1rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            width: 300px;
-            font-size: 0.9rem;
-        }
-
-        .date-filter {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .export-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .export-btn:hover {
-            background: #219653;
-        }
-
-        .container {
-            padding: 1.5rem;
-            max-width: 100%;
-            overflow-x: auto;
-        }
-
-        .sheet-tabs {
-            display: flex;
-            background: #34495e;
-            overflow-x: auto;
-            scrollbar-width: thin;
-        }
-
-        .sheet-tab {
-            padding: 1rem 1.5rem;
-            background: #34495e;
-            color: white;
-            border: none;
-            border-right: 1px solid #2c3e50;
-            cursor: pointer;
-            white-space: nowrap;
-            font-size: 0.9rem;
-        }
-
-        .sheet-tab.active {
-            background: #1abc9c;
-            font-weight: bold;
-        }
-
-        .sheet-tab:hover {
-            background: #2c3e50;
-        }
-
-        .excel-grid {
-            background: white;
-            border: 1px solid #ddd;
-            overflow: auto;
-            height: calc(100vh - 200px);
-            position: relative;
-        }
-
-        .grid-header {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: #f8f9fa;
-            display: grid;
-            grid-template-columns: 60px repeat(auto-fit, minmax(150px, 1fr));
-            border-bottom: 2px solid #dee2e6;
-        }
-
-        .header-cell {
-            padding: 0.75rem;
-            border-right: 1px solid #dee2e6;
-            font-weight: bold;
-            color: #495057;
-            background: #f8f9fa;
-            text-align: left;
-            position: sticky;
-            top: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .grid-body {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .grid-row {
-            display: grid;
-            grid-template-columns: 60px repeat(auto-fit, minmax(150px, 1fr));
-            border-bottom: 1px solid #dee2e6;
-            min-height: 45px;
-            align-items: stretch;
-        }
-
-        .grid-row:hover {
-            background: #f8f9fa;
-        }
-
-        .row-number {
-            background: #f8f9fa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #6c757d;
-            border-right: 1px solid #dee2e6;
-            position: sticky;
-            left: 0;
-            z-index: 5;
-        }
-
-        .grid-cell {
-            padding: 0.75rem;
-            border-right: 1px solid #dee2e6;
-            display: flex;
-            align-items: center;
-            min-width: 150px;
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .grid-cell.editable {
-            background: #fff3cd;
-        }
-
-        .grid-cell.calculated {
-            background: #d1ecf1;
-            font-weight: bold;
-        }
-
-        .grid-cell.currency {
-            text-align: right;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-        }
-
-        .grid-cell.date {
-            font-family: 'Courier New', monospace;
-            color: #0066cc;
-        }
-
-        .grid-cell.center {
-            text-align: center;
-        }
-
+        
         .data-section {
+            background-color: white;
             margin-bottom: 2rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-
+        
         .section-header {
-            background: #3498db;
+            background-color: #444;
             color: white;
             padding: 1rem;
             font-size: 1.2rem;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-weight: 600;
         }
-
-        .section-count {
-            background: white;
-            color: #3498db;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-        }
-
-        .form-preview {
-            background: #f8f9fa;
+        
+        .section-content {
             padding: 1rem;
-            margin: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            display: none;
         }
-
-        .form-preview.active {
-            display: block;
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
-
-        .totals-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #2c3e50;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-            z-index: 100;
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
         }
-
-        .total-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
         }
-
-        .total-value {
-            font-weight: bold;
-            color: #1abc9c;
-            font-size: 1.1rem;
+        
+        tr:hover {
+            background-color: #f8f9fa;
         }
-
+        
         .no-data {
             text-align: center;
-            padding: 3rem;
-            color: #6c757d;
+            padding: 2rem;
+            color: #666;
             font-style: italic;
         }
-
-        .data-controls {
-            display: flex;
-            gap: 1rem;
-            margin: 1rem 0;
-            padding: 1rem;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
         }
-
-        .control-btn {
+        
+        .refresh-btn {
+            background-color: #0066cc;
+            color: white;
+            border: none;
             padding: 0.5rem 1rem;
-            border: 1px solid #ddd;
-            background: white;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
-
-        .control-btn:hover {
-            background: #f8f9fa;
-        }
-
-        .control-btn.delete {
-            color: #e74c3c;
-            border-color: #e74c3c;
-        }
-
-        .control-btn.delete:hover {
-            background: #fadbd8;
-        }
-
-        .filter-tags {
-            display: flex;
-            gap: 0.5rem;
-            margin: 1rem 0;
-            flex-wrap: wrap;
-        }
-
-        .filter-tag {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .filter-tag .remove {
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        @media print {
-            .header-controls,
-            .sheet-tabs,
-            .control-btn,
-            .filter-tags,
-            .totals-bar {
-                display: none !important;
-            }
-            
-            .excel-grid {
-                height: auto;
-                overflow: visible;
-            }
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        
+        .refresh-btn:hover {
+            background-color: #0055aa;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>📊 VAT Encoder - Online Data Viewer</h1>
-        <p>Real-time data display from all VAT forms (Excel-like interface)</p>
-        
-        <div class="header-controls">
-            <input type="text" class="search-box" placeholder="🔍 Search across all data..." id="globalSearch">
-            <input type="date" class="date-filter" id="dateFrom">
-            <input type="date" class="date-filter" id="dateTo">
-            <select class="date-filter" id="formTypeFilter">
-                <option value="">All Forms</option>
-                <option value="vatable_sales">Vatable Sales</option>
-                <option value="non_vat_sales">Non-VAT Sales</option>
-                <option value="vatable_purchases">Vatable Purchases</option>
-                <option value="non_vat_purchases">Non-VAT Purchases</option>
-                <option value="vatable_expenses">Vatable Expenses</option>
-                <option value="non_vat_expenses">Non-VAT Expenses</option>
-                <option value="capex">CAPEX</option>
-                <option value="taxes_licenses">Taxes & Licenses</option>
-                <option value="purchase_returns">Purchase Returns</option>
-            </select>
-            <button class="export-btn" onclick="exportToCSV()">📥 Export CSV</button>
-            <button class="export-btn" onclick="exportToExcel()">📊 Export Excel</button>
-            <button class="export-btn" onclick="printView()">🖨️ Print</button>
+    <header>
+        <div class="header-content">
+            <div>
+                <h1>VAT Encoding Data Repository</h1>
+                <p class="subtitle">Automatically synced data from PHP Desktop Encoder</p>
+            </div>
+            <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
         </div>
-    </div>
-
-    <div class="sheet-tabs" id="sheetTabs">
-        <!-- Tabs will be generated dynamically -->
-    </div>
-
+    </header>
+    
     <div class="container">
-        <div class="filter-tags" id="activeFilters"></div>
-        
-        <div class="data-controls">
-            <button class="control-btn" onclick="refreshData()">🔄 Refresh Data</button>
-            <button class="control-btn" onclick="clearFilters()">🗑️ Clear Filters</button>
-            <button class="control-btn delete" onclick="deleteSelected()">🗑️ Delete Selected</button>
-            <div style="flex-grow: 1;"></div>
-            <span id="totalRecords">0 records</span>
-        </div>
-
-        <div class="excel-grid" id="excelGrid">
-            <!-- Data will be loaded here -->
-            <div class="no-data" id="noDataMessage">
-                📁 No data available. Start adding data from the VAT Encoder app.
+        <div class="data-section">
+            <div class="section-header">Vatable Sales</div>
+            <div class="section-content" id="vatable-sales">
+                <div class="no-data">Loading data...</div>
             </div>
         </div>
+        
+        <div class="data-section">
+            <div class="section-header">Non-VAT Sales</div>
+            <div class="section-content" id="non-vat-sales">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="section-header">Vatable Purchases</div>
+            <div class="section-content" id="vatable-purchases">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="section-header">Non-VAT Purchases</div>
+            <div class="section-content" id="non-vat-purchases">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="section-header">Vatable Expenses</div>
+            <div class="section-content" id="vatable-expenses">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="section-header">Non-VAT Expenses</div>
+            <div class="section-content" id="non-vat-expenses">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="section-header">Capex</div>
+            <div class="section-content" id="capex">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="section-header">Taxes & Licenses</div>
+            <div class="section-content" id="taxes-licenses">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="section-header">Purchase Returns</div>
+            <div class="section-content" id="purchase-returns">
+                <div class="no-data">Loading data...</div>
+            </div>
+        </div>
+        
+        <div class="last-updated" id="last-updated">
+            Last updated: Loading...
+        </div>
     </div>
-
-    <div class="totals-bar">
-        <div class="total-item">
-            <span>Total Records:</span>
-            <span class="total-value" id="totalRecordsCount">0</span>
-        </div>
-        <div class="total-item">
-            <span>Total Amount:</span>
-            <span class="total-value" id="totalAmount">₱0.00</span>
-        </div>
-        <div class="total-item">
-            <span>Total VAT:</span>
-            <span class="total-value" id="totalVAT">₱0.00</span>
-        </div>
-        <div class="total-item">
-            <span>Total Withholding:</span>
-            <span class="total-value" id="totalWithholding">₱0.00</span>
-        </div>
-        <div class="total-item">
-            <span>Last Updated:</span>
-            <span class="total-value" id="lastUpdated">Never</span>
-        </div>
-    </div>
-
+    
     <script>
-        // Data storage and configuration
-        const API_BASE_URL = 'http://localhost/vat-encoder'; // Change to your server URL
-        const DATA_FILE = 'data/submissions.json';
-        let allData = [];
-        let filteredData = [];
-        let currentView = 'all';
-        let columnDefinitions = {};
-        let selectedRows = new Set();
-
-        // Column definitions for each form type
-        const formColumns = {
-            vatable_sales: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'invoice_type', header: 'Invoice Type', type: 'text', width: 120 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'particulars', header: 'Customer Name', type: 'text', width: 200 },
-                { field: 'address', header: 'Address', type: 'text', width: 200 },
-                { field: 'tin', header: 'TIN', type: 'text', width: 150 },
-                { field: 'gross_sales', header: 'Gross Sales', type: 'currency', width: 150 },
-                { field: 'exempt_sales', header: 'Exempt Sales', type: 'currency', width: 150 },
-                { field: 'sales_type', header: 'Sales Type', type: 'text', width: 120 },
-                { field: 'net_sales', header: 'Net Sales', type: 'currency', width: 150, calculated: true },
-                { field: 'output_tax', header: 'Output Tax', type: 'currency', width: 150, calculated: true },
-                { field: 'withholding_tax_rate', header: 'WHT Rate', type: 'percentage', width: 100 },
-                { field: 'withholding_amount', header: 'WHT Amount', type: 'currency', width: 150, calculated: true },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            non_vat_sales: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'invoice_type', header: 'Invoice Type', type: 'text', width: 120 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'particulars', header: 'Customer Name', type: 'text', width: 200 },
-                { field: 'address', header: 'Address', type: 'text', width: 200 },
-                { field: 'tin', header: 'TIN', type: 'text', width: 150 },
-                { field: 'gross_amount', header: 'Gross Amount', type: 'currency', width: 150 },
-                { field: 'sales_type', header: 'Sales Type', type: 'text', width: 120 },
-                { field: 'withholding_tax_rate', header: 'WHT Rate', type: 'percentage', width: 100 },
-                { field: 'withholding_amount', header: 'WHT Amount', type: 'currency', width: 150, calculated: true },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            vatable_purchases: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'invoice_type', header: 'Invoice Type', type: 'text', width: 150 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'particulars', header: 'Supplier Name', type: 'text', width: 200 },
-                { field: 'address', header: 'Address', type: 'text', width: 200 },
-                { field: 'tin', header: 'TIN', type: 'text', width: 150 },
-                { field: 'gross_purchases', header: 'Gross Purchases', type: 'currency', width: 150 },
-                { field: 'net_purchases', header: 'Net Purchases', type: 'currency', width: 150, calculated: true },
-                { field: 'input_tax', header: 'Input Tax', type: 'currency', width: 150, calculated: true },
-                { field: 'withholding_tax_rate', header: 'WHT Rate', type: 'percentage', width: 100 },
-                { field: 'withholding_amount', header: 'WHT Amount', type: 'currency', width: 150, calculated: true },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            non_vat_purchases: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'invoice_type', header: 'Invoice Type', type: 'text', width: 150 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'particulars', header: 'Supplier Name', type: 'text', width: 200 },
-                { field: 'address', header: 'Address', type: 'text', width: 200 },
-                { field: 'tin', header: 'TIN', type: 'text', width: 150 },
-                { field: 'non_vatable_gross_purchases', header: 'Gross Purchases', type: 'currency', width: 150 },
-                { field: 'withholding_tax_rate', header: 'WHT Rate', type: 'percentage', width: 100 },
-                { field: 'withholding_amount', header: 'WHT Amount', type: 'currency', width: 150, calculated: true },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            vatable_expenses: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'invoice_type', header: 'Invoice Type', type: 'text', width: 150 },
-                { field: 'transaction_type', header: 'Transaction Type', type: 'text', width: 150 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'particulars', header: 'Supplier Name', type: 'text', width: 200 },
-                { field: 'address', header: 'Address', type: 'text', width: 200 },
-                { field: 'tin', header: 'TIN', type: 'text', width: 150 },
-                { field: 'gross_amount', header: 'Gross Amount', type: 'currency', width: 150 },
-                { field: 'nature_of_expense', header: 'Nature of Expense', type: 'text', width: 250 },
-                { field: 'net_expenses', header: 'Net Expenses', type: 'currency', width: 150, calculated: true },
-                { field: 'input_tax', header: 'Input Tax', type: 'currency', width: 150, calculated: true },
-                { field: 'withholding_tax_rate', header: 'WHT Rate', type: 'percentage', width: 100 },
-                { field: 'withholding_amount', header: 'WHT Amount', type: 'currency', width: 150, calculated: true },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            non_vat_expenses: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'invoice_type', header: 'Invoice Type', type: 'text', width: 150 },
-                { field: 'transaction_type', header: 'Transaction Type', type: 'text', width: 150 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'particulars', header: 'Supplier Name', type: 'text', width: 200 },
-                { field: 'address', header: 'Address', type: 'text', width: 200 },
-                { field: 'tin', header: 'TIN', type: 'text', width: 150 },
-                { field: 'gross_amount', header: 'Gross Amount', type: 'currency', width: 150 },
-                { field: 'nature_of_expense', header: 'Nature of Expense', type: 'text', width: 250 },
-                { field: 'withholding_tax_rate', header: 'WHT Rate', type: 'percentage', width: 100 },
-                { field: 'withholding_amount', header: 'WHT Amount', type: 'currency', width: 150, calculated: true },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            capex: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'invoice_type', header: 'Invoice Type', type: 'text', width: 150 },
-                { field: 'transaction_type', header: 'Transaction Type', type: 'text', width: 150 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'particulars', header: 'Supplier Name', type: 'text', width: 200 },
-                { field: 'asset_description', header: 'Asset Description', type: 'text', width: 250 },
-                { field: 'address', header: 'Address', type: 'text', width: 200 },
-                { field: 'gross_purchase_1', header: 'Non-VAT Purchase', type: 'currency', width: 150 },
-                { field: 'gross_purchase_2', header: 'Vatable Purchase', type: 'currency', width: 150 },
-                { field: 'withholding_tax', header: 'Withholding Tax', type: 'currency', width: 150 },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            taxes_licenses: [
-                { field: 'date', header: 'Date', type: 'date', width: 120 },
-                { field: 'reference_number', header: 'Reference No.', type: 'text', width: 150 },
-                { field: 'tax_type', header: 'Tax Type', type: 'text', width: 150 },
-                { field: 'mode_of_payment', header: 'Payment Mode', type: 'text', width: 120 },
-                { field: 'government_agency', header: 'Government Agency', type: 'text', width: 200 },
-                { field: 'amount', header: 'Amount', type: 'currency', width: 150 },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ],
-            purchase_returns: [
-                { field: 'return_date', header: 'Return Date', type: 'date', width: 120 },
-                { field: 'return_number', header: 'Return No.', type: 'text', width: 150 },
-                { field: 'invoice_number', header: 'Invoice No.', type: 'text', width: 150 },
-                { field: 'mode_of_return', header: 'Mode of Return', type: 'text', width: 150 },
-                { field: 'gross_purchase_returns', header: 'Gross Return', type: 'currency', width: 150 },
-                { field: 'net_purchase_return', header: 'Net Return', type: 'currency', width: 150, calculated: true },
-                { field: 'input_tax_return', header: 'Input Tax Return', type: 'currency', width: 150, calculated: true },
-                { field: 'remarks', header: 'Remarks', type: 'text', width: 250 }
-            ]
-        };
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTabs();
-            loadData();
-            setupEventListeners();
-            startAutoRefresh();
+    // Mock data - In production, this would load from a real API
+    const mockData = {
+        "vatable_sales": [
+            {
+                "date": "2024-01-15",
+                "invoice_number": "INV-001",
+                "particulars": "ABC Corporation",
+                "tin_number": "123-456-789-000",
+                "gross_sales": 11200.00,
+                "net_sales": 10000.00,
+                "output_tax": 1200.00,
+                "withholding_tax_rate": 1,
+                "withholding_amount": 100.00
+            }
+        ],
+        "non_vat_sales": [
+            {
+                "date": "2024-01-16",
+                "invoice_number": "INV-002",
+                "particulars": "XYZ Enterprises",
+                "tin_number": "987-654-321-000",
+                "gross_sales": 5000.00,
+                "withholding_tax_rate": 2,
+                "withholding_amount": 100.00
+            }
+        ],
+        "vatable_purchases": [],
+        "non_vat_purchases": [],
+        "vatable_expenses": [],
+        "non_vat_expenses": [],
+        "capex": [],
+        "taxes_licenses": [],
+        "purchase_returns": []
+    };
+    
+    function formatCurrency(amount) {
+        return '₱' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+    
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
-
-        function initializeTabs() {
-            const tabsContainer = document.getElementById('sheetTabs');
-            const tabs = [
-                { id: 'all', label: '📊 All Data', type: 'all' },
-                { id: 'vatable_sales', label: '💰 Vatable Sales', type: 'vatable_sales' },
-                { id: 'non_vat_sales', label: '💵 Non-VAT Sales', type: 'non_vat_sales' },
-                { id: 'vatable_purchases', label: '🛒 Vatable Purchases', type: 'vatable_purchases' },
-                { id: 'non_vat_purchases', label: '📦 Non-VAT Purchases', type: 'non_vat_purchases' },
-                { id: 'vatable_expenses', label: '💼 Vatable Expenses', type: 'vatable_expenses' },
-                { id: 'non_vat_expenses', label: '📋 Non-VAT Expenses', type: 'non_vat_expenses' },
-                { id: 'capex', label: '🏗️ CAPEX', type: 'capex' },
-                { id: 'taxes_licenses', label: '🏛️ Taxes & Licenses', type: 'taxes_licenses' },
-                { id: 'purchase_returns', label: '↩️ Purchase Returns', type: 'purchase_returns' }
-            ];
-
-            tabs.forEach(tab => {
-                const button = document.createElement('button');
-                button.className = 'sheet-tab';
-                button.id = `tab-${tab.id}`;
-                button.textContent = tab.label;
-                button.onclick = () => switchView(tab.type);
-                tabsContainer.appendChild(button);
+    }
+    
+    function formatTIN(tin) {
+        if (tin && tin.length === 12) {
+            return tin.substring(0, 3) + '-' + tin.substring(3, 6) + '-' +
+                   tin.substring(6, 9) + '-' + tin.substring(9, 12);
+        }
+        return tin || 'N/A';
+    }
+    
+    function renderTable(data, containerId) {
+        const container = document.getElementById(containerId);
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="no-data">No data available</div>';
+            return;
+        }
+        
+        const headers = Object.keys(data[0]);
+        let html = '<table>';
+        
+        // Table header
+        html += '<thead><tr>';
+        headers.forEach(header => {
+            const displayName = header.replace(/_/g, ' ').toUpperCase();
+            html += `<th>${displayName}</th>`;
+        });
+        html += '</tr></thead>';
+        
+        // Table body
+        html += '<tbody>';
+        data.forEach(item => {
+            html += '<tr>';
+            headers.forEach(header => {
+                let value = item[header];
+                
+                // Format based on header
+                if (header.includes('date')) {
+                    value = formatDate(value);
+                } else if (header.includes('tin')) {
+                    value = formatTIN(value);
+                } else if (typeof value === 'number' && 
+                          (header.includes('amount') || header.includes('sales') || 
+                           header.includes('purchases') || header.includes('expenses') || 
+                           header.includes('tax'))) {
+                    value = formatCurrency(value);
+                } else if (header.includes('rate') && typeof value === 'number') {
+                    value = value + '%';
+                }
+                
+                html += `<td>${value || 'N/A'}</td>`;
             });
-
-            // Activate first tab
-            document.getElementById('tab-all').classList.add('active');
-        }
-
-        async function loadData() {
-            try {
-                // In a real application, this would fetch from your PHP API
-                // For now, we'll use localStorage or simulate data
-                
-                // Check if we have sample data in localStorage
-                const savedData = localStorage.getItem('vatEncoderData');
-                
-                if (savedData) {
-                    allData = JSON.parse(savedData);
-                } else {
-                    // Generate sample data for demonstration
-                    allData = generateSampleData();
-                    localStorage.setItem('vatEncoderData', JSON.stringify(allData));
-                }
-                
-                applyFilters();
-                updateDisplay();
-                
-            } catch (error) {
-                console.error('Error loading data:', error);
-                showNotification('Error loading data. Using sample data instead.', 'error');
-                
-                // Fallback to sample data
-                allData = generateSampleData();
-                applyFilters();
-                updateDisplay();
-            }
-        }
-
-        function generateSampleData() {
-            const sampleData = [];
-            const formTypes = Object.keys(formColumns);
-            const startDate = new Date(2024, 0, 1);
-            
-            for (let i = 0; i < 50; i++) {
-                const formType = formTypes[Math.floor(Math.random() * formTypes.length)];
-                const date = new Date(startDate);
-                date.setDate(date.getDate() + Math.floor(Math.random() * 365));
-                
-                const baseData = {
-                    id: `sample-${i}`,
-                    type: formType,
-                    user_id: 'demo-user',
-                    timestamp: date.toISOString(),
-                    data: {}
-                };
-                
-                // Generate form-specific data
-                const columns = formColumns[formType];
-                columns.forEach(col => {
-                    if (col.field !== 'id' && col.field !== 'type') {
-                        baseData.data[col.field] = generateSampleValue(col);
-                    }
-                });
-                
-                // Add calculated fields if missing
-                if (formType.includes('vatable') && !baseData.data.net_sales) {
-                    const gross = parseFloat(baseData.data.gross_sales || baseData.data.gross_amount || 0);
-                    baseData.data.net_sales = (gross / 1.12).toFixed(2);
-                    baseData.data.output_tax = (gross / 1.12 * 0.12).toFixed(2);
-                }
-                
-                sampleData.push(baseData);
-            }
-            
-            return sampleData;
-        }
-
-        function generateSampleValue(column) {
-            switch(column.type) {
-                case 'date':
-                    const date = new Date();
-                    date.setDate(date.getDate() - Math.floor(Math.random() * 90));
-                    return date.toISOString().split('T')[0];
-                    
-                case 'currency':
-                    return (Math.random() * 100000).toFixed(2);
-                    
-                case 'percentage':
-                    const rates = ['0%', '1%', '2%', '5%'];
-                    return rates[Math.floor(Math.random() * rates.length)];
-                    
-                case 'text':
-                    if (column.field.includes('name')) {
-                        const names = ['ABC Corporation', 'XYZ Suppliers', 'John Doe Trading', 'Global Enterprises', 'Local Merchants'];
-                        return names[Math.floor(Math.random() * names.length)];
-                    } else if (column.field.includes('type')) {
-                        const types = ['Cash', 'Charge', 'Service', 'SI', 'OR', 'DR'];
-                        return types[Math.floor(Math.random() * types.length)];
-                    } else if (column.field === 'tin') {
-                        return '123-456-789-000';
-                    }
-                    return 'Sample Data';
-                    
-                default:
-                    return 'N/A';
-            }
-        }
-
-        function switchView(viewType) {
-            currentView = viewType;
-            
-            // Update active tab
-            document.querySelectorAll('.sheet-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.getElementById(`tab-${viewType}`).classList.add('active');
-            
-            applyFilters();
-            updateDisplay();
-        }
-
-        function applyFilters() {
-            let filtered = allData;
-            
-            // Filter by view type
-            if (currentView !== 'all') {
-                filtered = filtered.filter(item => item.type === currentView);
-            }
-            
-            // Filter by date range
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-            
-            if (dateFrom) {
-                filtered = filtered.filter(item => {
-                    const itemDate = new Date(item.data.date || item.timestamp);
-                    const fromDate = new Date(dateFrom);
-                    return itemDate >= fromDate;
-                });
-            }
-            
-            if (dateTo) {
-                filtered = filtered.filter(item => {
-                    const itemDate = new Date(item.data.date || item.timestamp);
-                    const toDate = new Date(dateTo);
-                    toDate.setHours(23, 59, 59, 999);
-                    return itemDate <= toDate;
-                });
-            }
-            
-            // Filter by form type (from dropdown)
-            const formFilter = document.getElementById('formTypeFilter').value;
-            if (formFilter) {
-                filtered = filtered.filter(item => item.type === formFilter);
-            }
-            
-            // Filter by search text
-            const searchText = document.getElementById('globalSearch').value.toLowerCase();
-            if (searchText) {
-                filtered = filtered.filter(item => {
-                    return Object.values(item.data).some(value => 
-                        String(value).toLowerCase().includes(searchText)
-                    ) || item.type.toLowerCase().includes(searchText);
-                });
-            }
-            
-            filteredData = filtered;
-            updateFilterTags();
-        }
-
-        function updateDisplay() {
-            const grid = document.getElementById('excelGrid');
-            const noDataMessage = document.getElementById('noDataMessage');
-            
-            if (filteredData.length === 0) {
-                noDataMessage.style.display = 'block';
-                grid.innerHTML = '';
-                grid.appendChild(noDataMessage);
-                updateTotals();
-                return;
-            }
-            
-            noDataMessage.style.display = 'none';
-            
-            // Get appropriate columns for current view
-            let columns = [];
-            if (currentView === 'all') {
-                // For "All Data" view, show common columns
-                columns = [
-                    { field: 'type', header: 'Form Type', type: 'text', width: 150 },
-                    { field: 'date', header: 'Date', type: 'date', width: 120 },
-                    { field: 'invoice_number', header: 'Reference No.', type: 'text', width: 150 },
-                    { field: 'particulars', header: 'Name', type: 'text', width: 200 },
-                    { field: 'tin', header: 'TIN', type: 'text', width: 150 },
-                    { field: 'amount', header: 'Amount', type: 'currency', width: 150 },
-                    { field: 'vat', header: 'VAT', type: 'currency', width: 150 },
-                    { field: 'withholding_amount', header: 'WHT', type: 'currency', width: 150 },
-                    { field: 'remarks', header: 'Remarks', type: 'text', width: 200 }
-                ];
-            } else {
-                columns = formColumns[currentView];
-            }
-            
-            // Build the grid
-            grid.innerHTML = '';
-            
-            // Create header
-            const header = document.createElement('div');
-            header.className = 'grid-header';
-            
-            // Add row number column
-            const rowNumHeader = document.createElement('div');
-            rowNumHeader.className = 'header-cell';
-            rowNumHeader.textContent = '#';
-            rowNumHeader.style.width = '60px';
-            header.appendChild(rowNumHeader);
-            
-            // Add data columns
-            columns.forEach(col => {
-                const headerCell = document.createElement('div');
-                headerCell.className = 'header-cell';
-                headerCell.textContent = col.header;
-                headerCell.style.width = `${col.width}px`;
-                headerCell.style.minWidth = `${col.width}px`;
-                headerCell.title = col.header;
-                header.appendChild(headerCell);
-            });
-            
-            grid.appendChild(header);
-            
-            // Create body
-            const body = document.createElement('div');
-            body.className = 'grid-body';
-            
-            filteredData.forEach((item, index) => {
-                const row = document.createElement('div');
-                row.className = 'grid-row';
-                row.dataset.id = item.id;
-                
-                // Row selection checkbox
-                row.onclick = (e) => {
-                    if (e.target.type !== 'checkbox') {
-                        toggleRowSelection(item.id);
-                    }
-                };
-                
-                // Row number cell
-                const rowNumCell = document.createElement('div');
-                rowNumCell.className = 'row-number';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = selectedRows.has(item.id);
-                checkbox.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleRowSelection(item.id);
-                };
-                
-                rowNumCell.appendChild(checkbox);
-                rowNumCell.appendChild(document.createTextNode(` ${index + 1}`));
-                row.appendChild(rowNumCell);
-                
-                // Data cells
-                columns.forEach(col => {
-                    const cell = document.createElement('div');
-                    cell.className = 'grid-cell';
-                    
-                    let value = '';
-                    if (currentView === 'all') {
-                        // For "All Data" view, extract appropriate value
-                        value = extractValueForAllView(item, col.field);
-                    } else {
-                        value = item.data[col.field] || '';
-                    }
-                    
-                    // Format the value based on type
-                    cell.textContent = formatValue(value, col.type);
-                    cell.className = `grid-cell ${col.type} ${col.calculated ? 'calculated' : ''}`;
-                    cell.style.width = `${col.width}px`;
-                    cell.style.minWidth = `${col.width}px`;
-                    cell.title = value;
-                    
-                    row.appendChild(cell);
-                });
-                
-                body.appendChild(row);
-            });
-            
-            grid.appendChild(body);
-            updateTotals();
-        }
-
-        function extractValueForAllView(item, field) {
-            switch(field) {
-                case 'type':
-                    return formatFormType(item.type);
-                case 'date':
-                    return item.data.date || item.timestamp.split('T')[0];
-                case 'invoice_number':
-                    return item.data.invoice_number || item.data.reference_number || 'N/A';
-                case 'particulars':
-                    return item.data.particulars || 'N/A';
-                case 'tin':
-                    return item.data.tin ? formatTIN(item.data.tin) : 'N/A';
-                case 'amount':
-                    return item.data.gross_sales || item.data.gross_amount || item.data.amount || '0.00';
-                case 'vat':
-                    return item.data.output_tax || item.data.input_tax || '0.00';
-                case 'withholding_amount':
-                    return item.data.withholding_amount || '0.00';
-                case 'remarks':
-                    return item.data.remarks || '';
-                default:
-                    return '';
-            }
-        }
-
-        function formatValue(value, type) {
-            if (value === null || value === undefined) return '';
-            
-            switch(type) {
-                case 'currency':
-                    return `₱${parseFloat(value).toLocaleString('en-PH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}`;
-                    
-                case 'date':
-                    if (!value) return '';
-                    const date = new Date(value);
-                    return date.toLocaleDateString('en-PH');
-                    
-                case 'percentage':
-                    return value;
-                    
-                case 'text':
-                    return String(value);
-                    
-                default:
-                    return String(value);
-            }
-        }
-
-        function formatFormType(type) {
-            const formNames = {
-                'vatable_sales': 'Vatable Sales',
-                'non_vat_sales': 'Non-VAT Sales',
-                'vatable_purchases': 'Vatable Purchases',
-                'non_vat_purchases': 'Non-VAT Purchases',
-                'vatable_expenses': 'Vatable Expenses',
-                'non_vat_expenses': 'Non-VAT Expenses',
-                'capex': 'CAPEX',
-                'taxes_licenses': 'Taxes & Licenses',
-                'purchase_returns': 'Purchase Returns'
-            };
-            return formNames[type] || type;
-        }
-
-        function formatTIN(tin) {
-            if (!tin) return '';
-            const cleaned = tin.replace(/\D/g, '');
-            if (cleaned.length === 12) {
-                return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{3})/, '$1-$2-$3-$4');
-            }
-            return tin;
-        }
-
-        function updateTotals() {
-            const totalRecords = filteredData.length;
-            const totalAmount = filteredData.reduce((sum, item) => {
-                const amount = parseFloat(item.data.gross_sales || item.data.gross_amount || item.data.amount || 0);
-                return sum + amount;
-            }, 0);
-            
-            const totalVAT = filteredData.reduce((sum, item) => {
-                const vat = parseFloat(item.data.output_tax || item.data.input_tax || 0);
-                return sum + vat;
-            }, 0);
-            
-            const totalWithholding = filteredData.reduce((sum, item) => {
-                const wht = parseFloat(item.data.withholding_amount || 0);
-                return sum + wht;
-            }, 0);
-            
-            document.getElementById('totalRecordsCount').textContent = totalRecords.toLocaleString();
-            document.getElementById('totalAmount').textContent = `₱${totalAmount.toLocaleString('en-PH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
-            document.getElementById('totalVAT').textContent = `₱${totalVAT.toLocaleString('en-PH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
-            document.getElementById('totalWithholding').textContent = `₱${totalWithholding.toLocaleString('en-PH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
-            document.getElementById('totalRecords').textContent = `${totalRecords} records`;
-            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
-        }
-
-        function updateFilterTags() {
-            const filterTags = document.getElementById('activeFilters');
-            filterTags.innerHTML = '';
-            
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-            const formFilter = document.getElementById('formTypeFilter').value;
-            const searchText = document.getElementById('globalSearch').value;
-            
-            if (currentView !== 'all') {
-                addFilterTag(`View: ${formatFormType(currentView)}`, () => {
-                    switchView('all');
-                });
-            }
-            
-            if (dateFrom) {
-                addFilterTag(`From: ${dateFrom}`, () => {
-                    document.getElementById('dateFrom').value = '';
-                    applyFilters();
-                    updateDisplay();
-                });
-            }
-            
-            if (dateTo) {
-                addFilterTag(`To: ${dateTo}`, () => {
-                    document.getElementById('dateTo').value = '';
-                    applyFilters();
-                    updateDisplay();
-                });
-            }
-            
-            if (formFilter) {
-                addFilterTag(`Form: ${formatFormType(formFilter)}`, () => {
-                    document.getElementById('formTypeFilter').value = '';
-                    applyFilters();
-                    updateDisplay();
-                });
-            }
-            
-            if (searchText) {
-                addFilterTag(`Search: "${searchText}"`, () => {
-                    document.getElementById('globalSearch').value = '';
-                    applyFilters();
-                    updateDisplay();
-                });
-            }
-        }
-
-        function addFilterTag(label, removeCallback) {
-            const tag = document.createElement('div');
-            tag.className = 'filter-tag';
-            tag.innerHTML = `${label} <span class="remove" onclick="${removeCallback}">×</span>`;
-            
-            // Fix the onclick handler
-            const removeSpan = tag.querySelector('.remove');
-            removeSpan.onclick = removeCallback;
-            
-            document.getElementById('activeFilters').appendChild(tag);
-        }
-
-        function setupEventListeners() {
-            // Search input
-            document.getElementById('globalSearch').addEventListener('input', debounce(() => {
-                applyFilters();
-                updateDisplay();
-            }, 300));
-            
-            // Date filters
-            document.getElementById('dateFrom').addEventListener('change', () => {
-                applyFilters();
-                updateDisplay();
-            });
-            
-            document.getElementById('dateTo').addEventListener('change', () => {
-                applyFilters();
-                updateDisplay();
-            });
-            
-            // Form type filter
-            document.getElementById('formTypeFilter').addEventListener('change', () => {
-                applyFilters();
-                updateDisplay();
-            });
-        }
-
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        function toggleRowSelection(rowId) {
-            if (selectedRows.has(rowId)) {
-                selectedRows.delete(rowId);
-            } else {
-                selectedRows.add(rowId);
-            }
-            
-            // Update checkbox state
-            const row = document.querySelector(`.grid-row[data-id="${rowId}"]`);
-            if (row) {
-                const checkbox = row.querySelector('input[type="checkbox"]');
-                if (checkbox) {
-                    checkbox.checked = selectedRows.has(rowId);
-                }
-            }
-        }
-
-        function deleteSelected() {
-            if (selectedRows.size === 0) {
-                showNotification('Please select rows to delete', 'warning');
-                return;
-            }
-            
-            if (confirm(`Are you sure you want to delete ${selectedRows.size} record(s)?`)) {
-                // In a real application, this would call your API to delete records
-                allData = allData.filter(item => !selectedRows.has(item.id));
-                selectedRows.clear();
-                
-                // Save to localStorage
-                localStorage.setItem('vatEncoderData', JSON.stringify(allData));
-                
-                applyFilters();
-                updateDisplay();
-                showNotification(`${selectedRows.size} record(s) deleted successfully`, 'success');
-            }
-        }
-
-        function refreshData() {
-            // In a real application, this would fetch fresh data from the server
-            loadData();
-            showNotification('Data refreshed successfully', 'success');
-        }
-
-        function clearFilters() {
-            document.getElementById('dateFrom').value = '';
-            document.getElementById('dateTo').value = '';
-            document.getElementById('formTypeFilter').value = '';
-            document.getElementById('globalSearch').value = '';
-            
-            applyFilters();
-            updateDisplay();
-            showNotification('All filters cleared', 'info');
-        }
-
-        function exportToCSV() {
-            if (filteredData.length === 0) {
-                showNotification('No data to export', 'warning');
-                return;
-            }
-            
-            let csvContent = '';
-            
-            // Get headers
-            let headers = [];
-            if (currentView === 'all') {
-                headers = ['Form Type', 'Date', 'Reference No.', 'Name', 'TIN', 'Amount', 'VAT', 'WHT', 'Remarks'];
-            } else {
-                headers = formColumns[currentView].map(col => col.header);
-            }
-            
-            csvContent += headers.join(',') + '\n';
-            
-            // Add rows
-            filteredData.forEach(item => {
-                let row = [];
-                
-                if (currentView === 'all') {
-                    row = [
-                        formatFormType(item.type),
-                        item.data.date || item.timestamp.split('T')[0],
-                        item.data.invoice_number || item.data.reference_number || '',
-                        item.data.particulars || '',
-                        item.data.tin ? formatTIN(item.data.tin) : '',
-                        item.data.gross_sales || item.data.gross_amount || item.data.amount || '',
-                        item.data.output_tax || item.data.input_tax || '',
-                        item.data.withholding_amount || '',
-                        item.data.remarks || ''
-                    ];
-                } else {
-                    formColumns[currentView].forEach(col => {
-                        row.push(item.data[col.field] || '');
-                    });
-                }
-                
-                // Escape commas and quotes
-                row = row.map(field => {
-                    const str = String(field);
-                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-                        return `"${str.replace(/"/g, '""')}"`;
-                    }
-                    return str;
-                });
-                
-                csvContent += row.join(',') + '\n';
-            });
-            
-            // Download file
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `vat_data_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showNotification('CSV file exported successfully', 'success');
-        }
-
-        function exportToExcel() {
-            // For simplicity, we'll use CSV export
-            // In a real application, you might use a library like SheetJS
-            exportToCSV();
-        }
-
-        function printView() {
-            window.print();
-        }
-
-        function startAutoRefresh() {
-            // Auto-refresh every 30 seconds
-            setInterval(() => {
-                // In a real application, check for new data
-                const shouldRefresh = localStorage.getItem('vatAutoRefresh') === 'true';
-                if (shouldRefresh) {
-                    refreshData();
-                }
-            }, 30000);
-        }
-
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
-                color: white;
-                border-radius: 4px;
-                z-index: 1000;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-
-        // Add CSS animations for notifications
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(style);
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        
+        container.innerHTML = html;
+    }
+    
+    function loadData() {
+        // In a real implementation, this would fetch from an API
+        // For now, we'll use mock data
+        const data = mockData;
+        
+        // Render each section
+        renderTable(data.vatable_sales, 'vatable-sales');
+        renderTable(data.non_vat_sales, 'non-vat-sales');
+        renderTable(data.vatable_purchases, 'vatable-purchases');
+        renderTable(data.non_vat_purchases, 'non-vat-purchases');
+        renderTable(data.vatable_expenses, 'vatable-expenses');
+        renderTable(data.non_vat_expenses, 'non-vat-expenses');
+        renderTable(data.capex, 'capex');
+        renderTable(data.taxes_licenses, 'taxes-licenses');
+        renderTable(data.purchase_returns, 'purchase-returns');
+        
+        // Update last updated timestamp
+        document.getElementById('last-updated').textContent = 
+            'Last updated: ' + new Date().toLocaleString();
+    }
+    
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', loadData);
+    
+    // Auto-refresh every 5 minutes
+    setInterval(loadData, 300000);
     </script>
 </body>
 </html>
