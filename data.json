@@ -1,0 +1,71 @@
+[
+    {
+        "id": "69592aab2b7e8",
+        "user_id": "695924c817a55",
+        "form_type": "vatable_sales",
+        "data": {
+            "date": "2026-01-03",
+            "invoice_number": "1234",
+            "invoice_type": "Billing",
+            "mode_of_payment": "Cash",
+            "particulars": "ABC Customer",
+            "address": "ABC HAUS",
+            "tin_number": "123-456-789-000",
+            "gross_sales": 1234567.89,
+            "exempt_sales": 12345.67,
+            "sales_type": "Private",
+            "net_sales": 1102292.7589285711,
+            "output_tax": 132275.13107142854,
+            "withholding_tax_rate": 1,
+            "withholding_amount": 11022.927589285711,
+            "remarks": "MeRemarks"
+        },
+        "timestamp": "2026-01-03 14:41:47"
+    },
+    {
+        "id": "69592fae14022",
+        "user_id": "695924c817a55",
+        "form_type": "vatable_purchases",
+        "data": {
+            "date": "2026-01-03",
+            "invoice_number": "1234",
+            "invoice_type": "OR",
+            "invoice_type_other": "",
+            "mode_of_payment": "Cash",
+            "particulars": "DEF Customer",
+            "address": "DEF HAUS",
+            "tin_number": "121-212-121-212",
+            "gross_purchases": 746564.87,
+            "net_purchases": 666575.7767857142,
+            "input_tax": 79989.0932142857,
+            "withholding_tax_rate": 2,
+            "withholding_amount": 13331.515535714285,
+            "remarks": "MeRemarks"
+        },
+        "timestamp": "2026-01-03 15:03:10"
+    },
+    {
+        "id": "6959300f08b23",
+        "user_id": "695924c817a55",
+        "form_type": "vatable_expenses",
+        "data": {
+            "date": "2026-01-03",
+            "invoice_number": "1234",
+            "invoice_type": "SI",
+            "invoice_type_other": "",
+            "transaction_type": "Services",
+            "mode_of_payment": "Charge",
+            "particulars": "GHI Customer",
+            "address": "GHI HAUS",
+            "tin_number": "123-456-789-001",
+            "gross_amount": 123456.78,
+            "nature_of_expense": "REPAIRS AND MAINTENANCE-MATERIALS",
+            "net_expenses": 110229.26785714284,
+            "input_tax": 13227.51214285714,
+            "withholding_tax_rate": 2,
+            "withholding_amount": 2204.585357142857,
+            "remarks": "MeRemarks"
+        },
+        "timestamp": "2026-01-03 15:04:47"
+    }
+]
