@@ -68,6 +68,7 @@
         
         .section-content {
             padding: 1rem;
+            overflow-x: auto;
         }
         
         table {
@@ -120,6 +121,20 @@
         .refresh-btn:hover {
             background-color: #0055aa;
         }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
     </style>
 </head>
 <body>
@@ -128,138 +143,131 @@
             <div>
                 <h1>VAT Encoding Data Repository</h1>
                 <p class="subtitle">Automatically synced data from PHP Desktop Encoder</p>
+                <p class="subtitle">Repository: <a href="https://github.com/vlademhaire/encoding_excel" style="color: #aaa;">github.com/vlademhaire/encoding_excel</a></p>
             </div>
             <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
         </div>
     </header>
     
     <div class="container">
-        <div class="data-section">
-            <div class="section-header">Vatable Sales</div>
-            <div class="section-content" id="vatable-sales">
-                <div class="no-data">Loading data...</div>
-            </div>
-        </div>
+        <div class="loading" id="loading">Loading data from GitHub repository...</div>
+        <div id="error-container" style="display: none;"></div>
         
-        <div class="data-section">
-            <div class="section-header">Non-VAT Sales</div>
-            <div class="section-content" id="non-vat-sales">
-                <div class="no-data">Loading data...</div>
+        <div id="data-container" style="display: none;">
+            <div class="data-section">
+                <div class="section-header">Vatable Sales</div>
+                <div class="section-content" id="vatable-sales">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="data-section">
-            <div class="section-header">Vatable Purchases</div>
-            <div class="section-content" id="vatable-purchases">
-                <div class="no-data">Loading data...</div>
+            
+            <div class="data-section">
+                <div class="section-header">Non-VAT Sales</div>
+                <div class="section-content" id="non-vat-sales">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="data-section">
-            <div class="section-header">Non-VAT Purchases</div>
-            <div class="section-content" id="non-vat-purchases">
-                <div class="no-data">Loading data...</div>
+            
+            <div class="data-section">
+                <div class="section-header">Vatable Purchases</div>
+                <div class="section-content" id="vatable-purchases">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="data-section">
-            <div class="section-header">Vatable Expenses</div>
-            <div class="section-content" id="vatable-expenses">
-                <div class="no-data">Loading data...</div>
+            
+            <div class="data-section">
+                <div class="section-header">Non-VAT Purchases</div>
+                <div class="section-content" id="non-vat-purchases">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="data-section">
-            <div class="section-header">Non-VAT Expenses</div>
-            <div class="section-content" id="non-vat-expenses">
-                <div class="no-data">Loading data...</div>
+            
+            <div class="data-section">
+                <div class="section-header">Vatable Expenses</div>
+                <div class="section-content" id="vatable-expenses">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="data-section">
-            <div class="section-header">Capex</div>
-            <div class="section-content" id="capex">
-                <div class="no-data">Loading data...</div>
+            
+            <div class="data-section">
+                <div class="section-header">Non-VAT Expenses</div>
+                <div class="section-content" id="non-vat-expenses">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="data-section">
-            <div class="section-header">Taxes & Licenses</div>
-            <div class="section-content" id="taxes-licenses">
-                <div class="no-data">Loading data...</div>
+            
+            <div class="data-section">
+                <div class="section-header">Capex</div>
+                <div class="section-content" id="capex">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="data-section">
-            <div class="section-header">Purchase Returns</div>
-            <div class="section-content" id="purchase-returns">
-                <div class="no-data">Loading data...</div>
+            
+            <div class="data-section">
+                <div class="section-header">Taxes & Licenses</div>
+                <div class="section-content" id="taxes-licenses">
+                    <div class="no-data">No data available</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="last-updated" id="last-updated">
-            Last updated: Loading...
+            
+            <div class="data-section">
+                <div class="section-header">Purchase Returns</div>
+                <div class="section-content" id="purchase-returns">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="last-updated" id="last-updated">
+                Last updated: Loading...
+            </div>
         </div>
     </div>
     
     <script>
-    // Mock data - In production, this would load from a real API
-    const mockData = {
-        "vatable_sales": [
-            {
-                "date": "2024-01-15",
-                "invoice_number": "INV-001",
-                "particulars": "ABC Corporation",
-                "tin_number": "123-456-789-000",
-                "gross_sales": 11200.00,
-                "net_sales": 10000.00,
-                "output_tax": 1200.00,
-                "withholding_tax_rate": 1,
-                "withholding_amount": 100.00
-            }
-        ],
-        "non_vat_sales": [
-            {
-                "date": "2024-01-16",
-                "invoice_number": "INV-002",
-                "particulars": "XYZ Enterprises",
-                "tin_number": "987-654-321-000",
-                "gross_sales": 5000.00,
-                "withholding_tax_rate": 2,
-                "withholding_amount": 100.00
-            }
-        ],
-        "vatable_purchases": [],
-        "non_vat_purchases": [],
-        "vatable_expenses": [],
-        "non_vat_expenses": [],
-        "capex": [],
-        "taxes_licenses": [],
-        "purchase_returns": []
-    };
+    // GitHub repository details
+    const REPO_OWNER = 'vlademhaire';
+    const REPO_NAME = 'encoding_excel';
+    const DATA_FILE = 'data.json';
+    
+    // GitHub Pages URL for the data file
+    const DATA_URL = `https://${REPO_OWNER}.github.io/${REPO_NAME}/${DATA_FILE}`;
+    // Alternative: Raw GitHub URL (works better for JSON)
+    const RAW_DATA_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${DATA_FILE}`;
     
     function formatCurrency(amount) {
+        if (typeof amount !== 'number') {
+            amount = parseFloat(amount) || 0;
+        }
         return '₱' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     }
     
     function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch (e) {
+            return dateString;
+        }
     }
     
     function formatTIN(tin) {
-        if (tin && tin.length === 12) {
+        if (!tin) return 'N/A';
+        if (tin.length === 12) {
             return tin.substring(0, 3) + '-' + tin.substring(3, 6) + '-' +
                    tin.substring(6, 9) + '-' + tin.substring(9, 12);
         }
-        return tin || 'N/A';
+        if (tin.length === 14 && tin.includes('-')) {
+            return tin; // Already formatted
+        }
+        return tin;
     }
     
-    function renderTable(data, containerId) {
+    function renderTable(data, containerId, formType) {
         const container = document.getElementById(containerId);
         
         if (!data || data.length === 0) {
@@ -267,7 +275,21 @@
             return;
         }
         
-        const headers = Object.keys(data[0]);
+        // Filter by form type
+        const filteredData = data.filter(entry => 
+            entry.form_type === formType || 
+            entry.form_type === formType.replace('-', '_')
+        );
+        
+        if (filteredData.length === 0) {
+            container.innerHTML = '<div class="no-data">No data available</div>';
+            return;
+        }
+        
+        // Get headers from first data item
+        const firstItem = filteredData[0].data || {};
+        const headers = Object.keys(firstItem);
+        
         let html = '<table>';
         
         // Table header
@@ -280,26 +302,32 @@
         
         // Table body
         html += '<tbody>';
-        data.forEach(item => {
+        filteredData.forEach(item => {
+            const itemData = item.data || {};
             html += '<tr>';
             headers.forEach(header => {
-                let value = item[header];
+                let value = itemData[header];
                 
                 // Format based on header
                 if (header.includes('date')) {
                     value = formatDate(value);
                 } else if (header.includes('tin')) {
                     value = formatTIN(value);
-                } else if (typeof value === 'number' && 
-                          (header.includes('amount') || header.includes('sales') || 
-                           header.includes('purchases') || header.includes('expenses') || 
-                           header.includes('tax'))) {
-                    value = formatCurrency(value);
-                } else if (header.includes('rate') && typeof value === 'number') {
-                    value = value + '%';
+                } else if (typeof value === 'number' || 
+                          (typeof value === 'string' && !isNaN(value) && value.trim() !== '')) {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue) && 
+                        (header.includes('amount') || header.includes('sales') || 
+                         header.includes('purchases') || header.includes('expenses') || 
+                         header.includes('tax') || header.includes('gross') || 
+                         header.includes('net'))) {
+                        value = formatCurrency(numValue);
+                    } else if (header.includes('rate') && !isNaN(numValue)) {
+                        value = numValue + '%';
+                    }
                 }
                 
-                html += `<td>${value || 'N/A'}</td>`;
+                html += `<td>${value !== undefined && value !== null ? value : 'N/A'}</td>`;
             });
             html += '</tr>';
         });
@@ -308,25 +336,68 @@
         container.innerHTML = html;
     }
     
-    function loadData() {
-        // In a real implementation, this would fetch from an API
-        // For now, we'll use mock data
-        const data = mockData;
+    async function loadData() {
+        const loadingEl = document.getElementById('loading');
+        const errorContainer = document.getElementById('error-container');
+        const dataContainer = document.getElementById('data-container');
         
-        // Render each section
-        renderTable(data.vatable_sales, 'vatable-sales');
-        renderTable(data.non_vat_sales, 'non-vat-sales');
-        renderTable(data.vatable_purchases, 'vatable-purchases');
-        renderTable(data.non_vat_purchases, 'non-vat-purchases');
-        renderTable(data.vatable_expenses, 'vatable-expenses');
-        renderTable(data.non_vat_expenses, 'non-vat-expenses');
-        renderTable(data.capex, 'capex');
-        renderTable(data.taxes_licenses, 'taxes-licenses');
-        renderTable(data.purchase_returns, 'purchase-returns');
+        loadingEl.style.display = 'block';
+        errorContainer.style.display = 'none';
+        dataContainer.style.display = 'none';
+        errorContainer.innerHTML = '';
         
-        // Update last updated timestamp
-        document.getElementById('last-updated').textContent = 
-            'Last updated: ' + new Date().toLocaleString();
+        try {
+            // Try raw.githubcontent first (more reliable for JSON)
+            const response = await fetch(RAW_DATA_URL, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Hide loading, show data
+            loadingEl.style.display = 'none';
+            dataContainer.style.display = 'block';
+            
+            // Render each section
+            renderTable(data, 'vatable-sales', 'vatable_sales');
+            renderTable(data, 'non-vat-sales', 'non_vat_sales');
+            renderTable(data, 'vatable-purchases', 'vatable_purchases');
+            renderTable(data, 'non-vat-purchases', 'non_vat_purchases');
+            renderTable(data, 'vatable-expenses', 'vatable_expenses');
+            renderTable(data, 'non-vat-expenses', 'non_vat_expenses');
+            renderTable(data, 'capex', 'capex');
+            renderTable(data, 'taxes-licenses', 'taxes_licenses');
+            renderTable(data, 'purchase-returns', 'purchase_returns');
+            
+            // Update last updated timestamp
+            document.getElementById('last-updated').textContent = 
+                'Last updated: ' + new Date().toLocaleString() + 
+                ` | Total entries: ${data.length}`;
+            
+        } catch (error) {
+            console.error('Error loading data:', error);
+            loadingEl.style.display = 'none';
+            errorContainer.style.display = 'block';
+            errorContainer.innerHTML = `
+                <div class="error">
+                    <h3>Error Loading Data</h3>
+                    <p>${error.message}</p>
+                    <p>Please ensure:</p>
+                    <ol>
+                        <li><code>data.json</code> exists in your GitHub repository</li>
+                        <li>GitHub Pages is enabled for your repository</li>
+                        <li>The file is accessible at: <a href="${RAW_DATA_URL}" target="_blank">${RAW_DATA_URL}</a></li>
+                    </ol>
+                    <p><button onclick="loadData()" class="refresh-btn">Try Again</button></p>
+                </div>
+            `;
+        }
     }
     
     // Load data on page load
