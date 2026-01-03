@@ -1,0 +1,26 @@
+[
+    {
+        "id": "69592aab2b7e8",
+        "user_id": "695924c817a55",
+        "form_type": "vatable_sales",
+        "data": {
+            "date": "2026-01-03",
+            "invoice_number": "1234",
+            "invoice_type": "Billing",
+            "mode_of_payment": "Cash",
+            "particulars": "ABC Customer",
+            "address": "ABC HAUS",
+            "tin_number": "123-456-789-000",
+            "gross_sales": 1234567.89,
+            "exempt_sales": 12345.67,
+            "sales_type": "Private",
+            "net_sales": 1102292.7589285711,
+            "output_tax": 132275.13107142854,
+            "withholding_tax_rate": 1,
+            "withholding_amount": 11022.927589285711,
+            "remarks": "MeRemarks"
+        },
+        "timestamp": "2026-01-03 14:41:47",
+        "month_year": "2026-01"
+    }
+]
