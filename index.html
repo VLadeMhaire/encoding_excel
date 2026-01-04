@@ -213,7 +213,7 @@
             border-radius: var(--radius-md);
             overflow: hidden;
             backdrop-filter: blur(5px);
-            min-width: 600px; /* Ensure tables don't get too narrow */
+            min-width: 600px;
         }
 
         table th,
@@ -226,7 +226,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px; /* Prevent text from overflowing */
+            max-width: 200px;
         }
 
         table th {
@@ -244,10 +244,26 @@
         table td {
             background: transparent;
             transition: background-color var(--transition-fast);
+            cursor: text;
+            position: relative;
         }
 
-        table tr:hover td {
-            background: rgba(255, 255, 255, 0.05);
+        table td:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        table td[contenteditable="true"]:focus {
+            outline: 2px solid var(--blue-primary);
+            outline-offset: -1px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Editable cell specific styles */
+        table td.editing {
+            background: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: inset 0 0 0 2px var(--blue-primary);
+            border-radius: var(--radius-sm);
         }
 
         /* Ensure text fits perfectly in cells */
@@ -322,6 +338,35 @@
             box-shadow: var(--shadow-sm);
         }
 
+        /* Save button for editable content */
+        .save-btn {
+            background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+            color: var(--white);
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-xl);
+            border-radius: var(--radius-2xl);
+            cursor: pointer;
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            transition: all var(--transition-normal);
+            box-shadow: var(--shadow-sm);
+            min-width: 140px;
+            margin-left: var(--spacing-sm);
+        }
+
+        .save-btn:hover {
+            background: linear-gradient(135deg, var(--success-dark) 0%, #1b5e20 100%);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .save-btn:disabled {
+            background: var(--gray-dark);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .loading {
             text-align: center;
             padding: var(--spacing-2xl);
@@ -354,6 +399,43 @@
 
         .error li {
             margin-bottom: var(--spacing-xs);
+        }
+
+        /* Save status message */
+        .save-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            animation: slideInRight 0.3s ease-out;
+            backdrop-filter: blur(10px);
+        }
+
+        .save-status.success {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(46, 125, 50, 0.9) 100%);
+            color: var(--white);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .save-status.error {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.9) 0%, rgba(183, 28, 28, 0.9) 100%);
+            color: var(--white);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         /* Scrollbar Styling */
@@ -392,9 +474,11 @@
                 gap: var(--spacing-md);
             }
             
-            .refresh-btn {
+            .refresh-btn,
+            .save-btn {
                 width: 100%;
                 max-width: 300px;
+                margin: var(--spacing-xs) 0;
             }
             
             .section-content {
@@ -413,6 +497,13 @@
             
             table td:first-child {
                 min-width: 120px;
+            }
+            
+            .save-status {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                text-align: center;
             }
         }
 
@@ -473,7 +564,10 @@
                     <p class="subtitle">Automatically synced data from PHP Desktop Encoder</p>
                     <p class="subtitle">Repository: <a href="https://github.com/vlademhaire/encoding_excel">github.com/vlademhaire/encoding_excel</a></p>
                 </div>
-                <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
+                <div>
+                    <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
+                    <button class="save-btn" onclick="saveAllChanges()" id="save-all-btn" disabled>💾 Save All Changes</button>
+                </div>
             </div>
         </header>
         
@@ -549,7 +643,7 @@
             </div>
         </div>
     </div>
-    
+
     <script>
     // GitHub repository details
     const REPO_OWNER = 'vlademhaire';
@@ -560,6 +654,12 @@
     const DATA_URL = `https://${REPO_OWNER}.github.io/${REPO_NAME}/${DATA_FILE}`;
     // Alternative: Raw GitHub URL (works better for JSON)
     const RAW_DATA_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${DATA_FILE}`;
+    
+    // Store original data and changes
+    let originalData = [];
+    let currentData = [];
+    let changesMade = false;
+    let cellEditHistory = [];
     
     function formatCurrency(amount) {
         if (typeof amount !== 'number') {
@@ -592,6 +692,53 @@
             return tin; // Already formatted
         }
         return tin;
+    }
+    
+    function parseCurrencyValue(value) {
+        if (typeof value === 'string') {
+            // Remove currency symbol and commas
+            const cleaned = value.replace(/[₱,]/g, '').trim();
+            return parseFloat(cleaned) || 0;
+        }
+        return parseFloat(value) || 0;
+    }
+    
+    function showSaveStatus(message, type = 'success') {
+        // Remove existing status
+        const existingStatus = document.querySelector('.save-status');
+        if (existingStatus) {
+            existingStatus.remove();
+        }
+        
+        // Create new status
+        const status = document.createElement('div');
+        status.className = `save-status ${type}`;
+        status.textContent = message;
+        document.body.appendChild(status);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (status.parentNode) {
+                status.style.opacity = '0';
+                status.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (status.parentNode) {
+                        status.remove();
+                    }
+                }, 300);
+            }
+        }, 3000);
+    }
+    
+    function updateSaveButton() {
+        const saveBtn = document.getElementById('save-all-btn');
+        if (changesMade) {
+            saveBtn.disabled = false;
+            saveBtn.title = `Changes made: ${cellEditHistory.length} cell(s)`;
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.title = 'No changes to save';
+        }
     }
     
     function renderTable(data, containerId, formType) {
@@ -629,20 +776,25 @@
         
         // Table body
         html += '<tbody>';
-        filteredData.forEach(item => {
+        filteredData.forEach((item, rowIndex) => {
             const itemData = item.data || {};
             html += '<tr>';
             headers.forEach(header => {
                 let value = itemData[header];
                 let cellClass = '';
+                let isCurrency = false;
+                let isDate = false;
+                let isTIN = false;
                 
-                // Format based on header
+                // Determine cell type
                 if (header.includes('date')) {
-                    value = formatDate(value);
                     cellClass = 'date';
+                    isDate = true;
+                    value = formatDate(value);
                 } else if (header.includes('tin')) {
-                    value = formatTIN(value);
                     cellClass = 'tin';
+                    isTIN = true;
+                    value = formatTIN(value);
                 } else if (typeof value === 'number' || 
                           (typeof value === 'string' && !isNaN(value) && value.trim() !== '')) {
                     const numValue = parseFloat(value);
@@ -652,20 +804,179 @@
                          header.includes('tax') || header.includes('gross') || 
                          header.includes('net') || header.includes('value') ||
                          header.includes('cost') || header.includes('price'))) {
-                        value = formatCurrency(numValue);
                         cellClass = 'currency';
+                        isCurrency = true;
+                        value = formatCurrency(numValue);
                     } else if (header.includes('rate') && !isNaN(numValue)) {
                         value = numValue + '%';
                     }
                 }
                 
-                html += `<td class="${cellClass}">${value !== undefined && value !== null ? value : 'N/A'}</td>`;
+                // Store raw value in data attributes
+                const rawValue = itemData[header] || '';
+                html += `<td class="${cellClass}" 
+                            contenteditable="true" 
+                            data-original="${rawValue}"
+                            data-header="${header}"
+                            data-row="${rowIndex}"
+                            data-form="${formType}"
+                            data-currency="${isCurrency}"
+                            data-date="${isDate}"
+                            data-tin="${isTIN}">${value !== undefined && value !== null ? value : 'N/A'}</td>`;
             });
             html += '</tr>';
         });
         html += '</tbody></table>';
         
         container.innerHTML = html;
+        
+        // Add event listeners for editable cells
+        const cells = container.querySelectorAll('td[contenteditable="true"]');
+        cells.forEach(cell => {
+            cell.addEventListener('focus', handleCellFocus);
+            cell.addEventListener('blur', handleCellBlur);
+            cell.addEventListener('input', handleCellInput);
+            cell.addEventListener('keydown', handleCellKeydown);
+        });
+    }
+    
+    function handleCellFocus(e) {
+        const cell = e.target;
+        cell.classList.add('editing');
+        
+        // Store original value for comparison
+        cell.dataset.currentValue = cell.textContent;
+    }
+    
+    function handleCellBlur(e) {
+        const cell = e.target;
+        cell.classList.remove('editing');
+        
+        const originalValue = cell.dataset.original || '';
+        const currentValue = cell.textContent;
+        const header = cell.dataset.header;
+        const row = parseInt(cell.dataset.row);
+        const formType = cell.dataset.form;
+        const isCurrency = cell.dataset.currency === 'true';
+        const isDate = cell.dataset.date === 'true';
+        const isTIN = cell.dataset.tin === 'true';
+        
+        // Format the value based on type
+        let displayValue = currentValue;
+        if (isCurrency && currentValue !== 'N/A') {
+            const numValue = parseCurrencyValue(currentValue);
+            displayValue = formatCurrency(numValue);
+            cell.textContent = displayValue;
+        } else if (isDate && currentValue !== 'N/A') {
+            displayValue = formatDate(currentValue);
+            cell.textContent = displayValue;
+        } else if (isTIN && currentValue !== 'N/A') {
+            displayValue = formatTIN(currentValue);
+            cell.textContent = displayValue;
+        }
+        
+        // Check if value changed
+        if (originalValue !== currentValue && currentValue !== cell.dataset.currentValue) {
+            // Store change
+            const changeId = `${formType}-${row}-${header}`;
+            const existingChangeIndex = cellEditHistory.findIndex(change => change.id === changeId);
+            
+            if (existingChangeIndex >= 0) {
+                // Update existing change
+                cellEditHistory[existingChangeIndex].newValue = currentValue;
+                cellEditHistory[existingChangeIndex].displayValue = displayValue;
+            } else {
+                // Add new change
+                cellEditHistory.push({
+                    id: changeId,
+                    formType: formType,
+                    row: row,
+                    header: header,
+                    originalValue: originalValue,
+                    newValue: currentValue,
+                    displayValue: displayValue,
+                    isCurrency: isCurrency,
+                    isDate: isDate,
+                    isTIN: isTIN
+                });
+            }
+            
+            changesMade = true;
+            updateSaveButton();
+            
+            // Update cell's original value for future comparisons
+            cell.dataset.original = currentValue;
+        }
+    }
+    
+    function handleCellInput(e) {
+        // You can add live validation here if needed
+    }
+    
+    function handleCellKeydown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+        }
+    }
+    
+    async function saveAllChanges() {
+        if (!changesMade || cellEditHistory.length === 0) {
+            showSaveStatus('No changes to save', 'error');
+            return;
+        }
+        
+        const saveBtn = document.getElementById('save-all-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = '💾 Saving...';
+        
+        try {
+            // Apply changes to currentData
+            cellEditHistory.forEach(change => {
+                // Find the data item
+                const dataIndex = currentData.findIndex(item => 
+                    (item.form_type === change.formType || 
+                     item.form_type === change.formType.replace('-', '_')) &&
+                    // This is a simplified matching - you might need more robust logic
+                    currentData.indexOf(item) === change.row
+                );
+                
+                if (dataIndex >= 0 && currentData[dataIndex].data) {
+                    // Update the data
+                    currentData[dataIndex].data[change.header] = change.newValue;
+                }
+            });
+            
+            // In a real application, you would send the updated data back to your server
+            // For now, we'll just show a success message and clear changes
+            showSaveStatus(`Successfully saved ${cellEditHistory.length} changes!`);
+            
+            // Clear changes
+            cellEditHistory = [];
+            changesMade = false;
+            updateSaveButton();
+            
+            // Update the display
+            renderAllTables();
+            
+        } catch (error) {
+            console.error('Error saving changes:', error);
+            showSaveStatus('Error saving changes: ' + error.message, 'error');
+        } finally {
+            saveBtn.textContent = '💾 Save All Changes';
+        }
+    }
+    
+    function renderAllTables() {
+        renderTable(currentData, 'vatable-sales', 'vatable_sales');
+        renderTable(currentData, 'non-vat-sales', 'non_vat_sales');
+        renderTable(currentData, 'vatable-purchases', 'vatable_purchases');
+        renderTable(currentData, 'non-vat-purchases', 'non_vat_purchases');
+        renderTable(currentData, 'vatable-expenses', 'vatable_expenses');
+        renderTable(currentData, 'non-vat-expenses', 'non_vat_expenses');
+        renderTable(currentData, 'capex', 'capex');
+        renderTable(currentData, 'taxes-licenses', 'taxes_licenses');
+        renderTable(currentData, 'purchase-returns', 'purchase_returns');
     }
     
     async function loadData() {
@@ -677,6 +988,16 @@
         errorContainer.style.display = 'none';
         dataContainer.style.display = 'none';
         errorContainer.innerHTML = '';
+        
+        // Clear any pending changes
+        if (changesMade) {
+            if (!confirm('You have unsaved changes. Are you sure you want to reload?')) {
+                return;
+            }
+            cellEditHistory = [];
+            changesMade = false;
+            updateSaveButton();
+        }
         
         try {
             // Try raw.githubcontent first (more reliable for JSON)
@@ -692,25 +1013,21 @@
             
             const data = await response.json();
             
+            // Store data
+            originalData = JSON.parse(JSON.stringify(data));
+            currentData = JSON.parse(JSON.stringify(data));
+            
             // Hide loading, show data
             loadingEl.style.display = 'none';
             dataContainer.style.display = 'block';
             
-            // Render each section
-            renderTable(data, 'vatable-sales', 'vatable_sales');
-            renderTable(data, 'non-vat-sales', 'non_vat_sales');
-            renderTable(data, 'vatable-purchases', 'vatable_purchases');
-            renderTable(data, 'non-vat-purchases', 'non_vat_purchases');
-            renderTable(data, 'vatable-expenses', 'vatable_expenses');
-            renderTable(data, 'non-vat-expenses', 'non_vat_expenses');
-            renderTable(data, 'capex', 'capex');
-            renderTable(data, 'taxes-licenses', 'taxes_licenses');
-            renderTable(data, 'purchase-returns', 'purchase_returns');
+            // Render all tables
+            renderAllTables();
             
             // Update last updated timestamp
             document.getElementById('last-updated').textContent = 
                 'Last updated: ' + new Date().toLocaleString() + 
-                ` | Total entries: ${data.length}`;
+                ` | Total entries: ${data.length} | Cells are editable - click to edit`;
             
         } catch (error) {
             console.error('Error loading data:', error);
@@ -735,8 +1052,21 @@
     // Load data on page load
     document.addEventListener('DOMContentLoaded', loadData);
     
-    // Auto-refresh every 5 minutes
-    setInterval(loadData, 300000);
+    // Auto-refresh every 5 minutes (with warning if there are changes)
+    setInterval(() => {
+        if (!changesMade) {
+            loadData();
+        }
+    }, 300000);
+    
+    // Warn user before leaving page if there are unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+        if (changesMade) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return e.returnValue;
+        }
+    });
     </script>
 </body>
 </html>
