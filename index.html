@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VAT Encoding Data Repository</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* [All your CSS styles remain exactly the same as before] */
         * {
             margin: 0;
             padding: 0;
@@ -17,43 +15,211 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #b71c1c 100%);
-            min-height: 100vh;
+            background-color: #f5f5f5;
         }
         
-        /* ... [Keep all your existing CSS] ... */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
         
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #aaa;
+            font-size: 1rem;
+        }
+        
+        .data-section {
+            background-color: white;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background-color: #444;
+            color: white;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .section-content {
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .refresh-btn {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #0055aa;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="header-content">
-            <div class="header-text">
-                <h1><i class="fas fa-database"></i> VAT Encoding Data Repository</h1>
+            <div>
+                <h1>VAT Encoding Data Repository</h1>
                 <p class="subtitle">Automatically synced data from PHP Desktop Encoder</p>
-                <p class="subtitle">
-                    <i class="fab fa-github"></i> Repository: 
-                    <a href="https://github.com/vlademhaire/encoding_excel" class="github-link" target="_blank">
-                        github.com/vlademhaire/encoding_excel
-                    </a>
-                </p>
+                <p class="subtitle">Repository: <a href="https://github.com/vlademhaire/encoding_excel" style="color: #aaa;">github.com/vlademhaire/encoding_excel</a></p>
             </div>
-            <button class="refresh-btn" onclick="loadData()">
-                <i class="fas fa-sync-alt"></i> Refresh Data
-            </button>
+            <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
         </div>
     </header>
     
     <div class="container">
-        <div class="loading" id="loading">
-            <div class="loading-spinner"></div>
-            Loading data from GitHub repository...
-        </div>
-        
+        <div class="loading" id="loading">Loading data from GitHub repository...</div>
         <div id="error-container" style="display: none;"></div>
         
         <div id="data-container" style="display: none;">
-            <!-- [All your HTML structure remains the same] -->
+            <div class="data-section">
+                <div class="section-header">Vatable Sales</div>
+                <div class="section-content" id="vatable-sales">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Non-VAT Sales</div>
+                <div class="section-content" id="non-vat-sales">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Vatable Purchases</div>
+                <div class="section-content" id="vatable-purchases">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Non-VAT Purchases</div>
+                <div class="section-content" id="non-vat-purchases">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Vatable Expenses</div>
+                <div class="section-content" id="vatable-expenses">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Non-VAT Expenses</div>
+                <div class="section-content" id="non-vat-expenses">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Capex</div>
+                <div class="section-content" id="capex">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Taxes & Licenses</div>
+                <div class="section-content" id="taxes-licenses">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="data-section">
+                <div class="section-header">Purchase Returns</div>
+                <div class="section-content" id="purchase-returns">
+                    <div class="no-data">No data available</div>
+                </div>
+            </div>
+            
+            <div class="last-updated" id="last-updated">
+                Last updated: Loading...
+            </div>
         </div>
     </div>
     
@@ -63,20 +229,11 @@
     const REPO_NAME = 'encoding_excel';
     const DATA_FILE = 'data.json';
     
-    // Use multiple URLs to try (CORS workaround)
-    const URLS = [
-        `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${DATA_FILE}`,
-        `https://${REPO_OWNER}.github.io/${REPO_NAME}/${DATA_FILE}`,
-        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_FILE}`
-    ];
+    // GitHub Pages URL for the data file
+    const DATA_URL = `https://${REPO_OWNER}.github.io/${REPO_NAME}/${DATA_FILE}`;
+    // Alternative: Raw GitHub URL (works better for JSON)
+    const RAW_DATA_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${DATA_FILE}`;
     
-    // Cache buster to avoid stale data
-    function getCacheBusterUrl(url) {
-        const timestamp = new Date().getTime();
-        return `${url}?t=${timestamp}`;
-    }
-    
-    // All your formatting functions remain the same...
     function formatCurrency(amount) {
         if (typeof amount !== 'number') {
             amount = parseFloat(amount) || 0;
@@ -88,9 +245,6 @@
         if (!dateString) return 'N/A';
         try {
             const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                return dateString;
-            }
             return date.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
@@ -102,125 +256,47 @@
     }
     
     function formatTIN(tin) {
-        if (!tin || typeof tin !== 'string') return 'N/A';
-        const cleanTIN = tin.replace(/\D/g, '');
-        if (cleanTIN.length === 12) {
-            return cleanTIN.substring(0, 3) + '-' + cleanTIN.substring(3, 6) + '-' +
-                   cleanTIN.substring(6, 9) + '-' + cleanTIN.substring(9, 12);
+        if (!tin) return 'N/A';
+        if (tin.length === 12) {
+            return tin.substring(0, 3) + '-' + tin.substring(3, 6) + '-' +
+                   tin.substring(6, 9) + '-' + tin.substring(9, 12);
         }
         if (tin.length === 14 && tin.includes('-')) {
             return tin; // Already formatted
         }
-        return cleanTIN || 'N/A';
-    }
-    
-    function truncateText(text, maxLength = 50) {
-        if (!text) return '';
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
-    }
-    
-    function getColumnHeader(key) {
-        const headerMap = {
-            'date': 'Date',
-            'invoice_date': 'Invoice Date',
-            'invoice_number': 'Invoice No.',
-            'invoice_type': 'Invoice Type',
-            'mode_of_payment': 'Payment Mode',
-            'particulars': 'Particulars',
-            'supplier': 'Supplier',
-            'customer': 'Customer',
-            'tin_number': 'TIN',
-            'address': 'Address',
-            'supplier_address': 'Supplier Address',
-            'customer_address': 'Customer Address',
-            'gross_sales': 'Gross Sales',
-            'gross_purchases': 'Gross Purchases',
-            'gross_amount': 'Gross Amount',
-            'exempt_sales': 'Exempt Sales',
-            'sales_type': 'Sales Type',
-            'net_sales': 'Net Sales',
-            'net_purchases': 'Net Purchases',
-            'output_tax': 'Output Tax',
-            'input_tax': 'Input Tax',
-            'vat_rate': 'VAT Rate',
-            'withholding_tax_rate': 'WHT Rate',
-            'withholding_amount': 'WHT Amount',
-            'amount': 'Amount',
-            'description': 'Description',
-            'tax_type': 'Tax Type',
-            'license_type': 'License Type',
-            'gross_purchase_1': 'Gross Purchase 1',
-            'gross_purchase_2': 'Gross Purchase 2',
-            'gross_purchase_returns': 'Gross Purchase Returns',
-            'return_reason': 'Return Reason',
-            'or_no': 'OR No.',
-            'si_no': 'SI No.',
-            'transaction_type': 'Transaction Type',
-            'nature_of_expense': 'Expense Nature',
-            'asset_description': 'Asset Description',
-            'net_expenses': 'Net Expenses',
-            'withholding_tax': 'Withholding Tax',
-            'remarks': 'Remarks'
-        };
-        
-        return headerMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return tin;
     }
     
     function renderTable(data, containerId, formType) {
         const container = document.getElementById(containerId);
-        const countElement = document.getElementById(`${containerId}-count`);
         
         if (!data || data.length === 0) {
-            container.innerHTML = '<div class="no-data"><i class="fas fa-clipboard-list"></i><p>No data available</p></div>';
-            countElement.textContent = '0 entries';
-            return 0;
+            container.innerHTML = '<div class="no-data">No data available</div>';
+            return;
         }
         
         // Filter by form type
-        const filteredData = data.filter(entry => {
-            const entryFormType = entry.form_type || '';
-            return entryFormType.toLowerCase() === formType.toLowerCase() || 
-                   entryFormType.toLowerCase() === formType.toLowerCase().replace('-', '_');
-        });
+        const filteredData = data.filter(entry => 
+            entry.form_type === formType || 
+            entry.form_type === formType.replace('-', '_')
+        );
         
         if (filteredData.length === 0) {
-            container.innerHTML = '<div class="no-data"><i class="fas fa-clipboard-list"></i><p>No data available</p></div>';
-            countElement.textContent = '0 entries';
-            return 0;
+            container.innerHTML = '<div class="no-data">No data available</div>';
+            return;
         }
         
-        // Get all unique headers from the data
-        const headers = new Set();
-        filteredData.forEach(entry => {
-            if (entry.data) {
-                Object.keys(entry.data).forEach(key => headers.add(key));
-            }
-        });
-        
-        // Sort headers with priority for common fields
-        const priorityOrder = ['date', 'invoice_number', 'invoice_type', 'mode_of_payment', 
-                              'particulars', 'address', 'tin_number', 'gross_sales', 
-                              'gross_purchases', 'gross_amount', 'exempt_sales', 
-                              'net_sales', 'net_purchases', 'output_tax', 'input_tax',
-                              'withholding_tax_rate', 'withholding_amount', 'remarks'];
-        
-        const sortedHeaders = Array.from(headers).sort((a, b) => {
-            const indexA = priorityOrder.indexOf(a);
-            const indexB = priorityOrder.indexOf(b);
-            
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
-            return a.localeCompare(b);
-        });
+        // Get headers from first data item
+        const firstItem = filteredData[0].data || {};
+        const headers = Object.keys(firstItem);
         
         let html = '<table>';
         
         // Table header
         html += '<thead><tr>';
-        sortedHeaders.forEach(header => {
-            html += `<th>${getColumnHeader(header)}</th>`;
+        headers.forEach(header => {
+            const displayName = header.replace(/_/g, ' ').toUpperCase();
+            html += `<th>${displayName}</th>`;
         });
         html += '</tr></thead>';
         
@@ -229,339 +305,99 @@
         filteredData.forEach(item => {
             const itemData = item.data || {};
             html += '<tr>';
-            sortedHeaders.forEach(header => {
+            headers.forEach(header => {
                 let value = itemData[header];
-                let displayValue = 'N/A';
                 
-                if (value !== undefined && value !== null && value !== '') {
-                    // Format based on header
-                    if (header.includes('date')) {
-                        displayValue = formatDate(value);
-                    } else if (header.includes('tin')) {
-                        displayValue = `<span class="tin-number">${formatTIN(value)}</span>`;
-                    } else if (typeof value === 'number' || 
-                              (typeof value === 'string' && !isNaN(value) && value.trim() !== '')) {
-                        const numValue = parseFloat(value);
-                        if (!isNaN(numValue)) {
-                            if (header.includes('amount') || header.includes('sales') || 
-                                header.includes('purchases') || header.includes('expenses') || 
-                                header.includes('tax') || header.includes('gross') || 
-                                header.includes('net') || header === 'amount') {
-                                displayValue = `<span class="currency">${formatCurrency(numValue)}</span>`;
-                            } else if (header.includes('rate') || header.includes('vat_rate')) {
-                                displayValue = numValue.toFixed(2) + '%';
-                            } else {
-                                displayValue = value;
-                            }
-                        } else {
-                            displayValue = value;
-                        }
-                    } else if (typeof value === 'string') {
-                        // Truncate long text and add title attribute
-                        if (value.length > 50) {
-                            displayValue = `<span title="${value.replace(/"/g, '&quot;')}">${truncateText(value, 50)}</span>`;
-                        } else {
-                            displayValue = value;
-                        }
-                    } else {
-                        displayValue = value;
+                // Format based on header
+                if (header.includes('date')) {
+                    value = formatDate(value);
+                } else if (header.includes('tin')) {
+                    value = formatTIN(value);
+                } else if (typeof value === 'number' || 
+                          (typeof value === 'string' && !isNaN(value) && value.trim() !== '')) {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue) && 
+                        (header.includes('amount') || header.includes('sales') || 
+                         header.includes('purchases') || header.includes('expenses') || 
+                         header.includes('tax') || header.includes('gross') || 
+                         header.includes('net'))) {
+                        value = formatCurrency(numValue);
+                    } else if (header.includes('rate') && !isNaN(numValue)) {
+                        value = numValue + '%';
                     }
                 }
                 
-                html += `<td>${displayValue}</td>`;
+                html += `<td>${value !== undefined && value !== null ? value : 'N/A'}</td>`;
             });
             html += '</tr>';
         });
         html += '</tbody></table>';
         
         container.innerHTML = html;
-        countElement.textContent = `${filteredData.length} ${filteredData.length === 1 ? 'entry' : 'entries'}`;
-        
-        return filteredData.length;
-    }
-    
-    async function tryUrl(url, method = 'fetch') {
-        try {
-            if (method === 'fetch') {
-                const response = await fetch(getCacheBusterUrl(url), {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    },
-                    mode: 'cors'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                return await response.json();
-            } else if (method === 'github-api') {
-                // For GitHub API URL
-                const response = await fetch(url, {
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`GitHub API error: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                // GitHub API returns base64 encoded content
-                if (data.content && data.encoding === 'base64') {
-                    const decoded = atob(data.content);
-                    return JSON.parse(decoded);
-                }
-                throw new Error('Invalid GitHub API response');
-            }
-        } catch (error) {
-            console.log(`Failed to fetch from ${url}:`, error.message);
-            throw error;
-        }
     }
     
     async function loadData() {
         const loadingEl = document.getElementById('loading');
         const errorContainer = document.getElementById('error-container');
         const dataContainer = document.getElementById('data-container');
-        const statsBar = document.getElementById('stats-bar');
         
         loadingEl.style.display = 'block';
         errorContainer.style.display = 'none';
         dataContainer.style.display = 'none';
-        statsBar.style.display = 'none';
         errorContainer.innerHTML = '';
         
-        let data = null;
-        let successfulUrl = '';
-        
-        // Try multiple URLs in sequence
-        for (let i = 0; i < URLS.length; i++) {
-            const url = URLS[i];
-            const method = url.includes('api.github.com') ? 'github-api' : 'fetch';
-            
-            try {
-                loadingEl.innerHTML = `<div class="loading-spinner"></div>Trying source ${i+1}/${URLS.length}...`;
-                data = await tryUrl(url, method);
-                successfulUrl = url;
-                console.log(`Successfully loaded data from: ${url}`);
-                break;
-            } catch (error) {
-                console.log(`Failed to load from ${url}:`, error.message);
-                // Continue to next URL
-            }
-        }
-        
-        if (!data) {
-            // All URLs failed, try a CORS proxy as last resort
-            try {
-                loadingEl.innerHTML = `<div class="loading-spinner"></div>Trying CORS proxy...`;
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(URLS[0])}`;
-                const response = await fetch(proxyUrl);
-                if (response.ok) {
-                    data = await response.json();
-                    successfulUrl = 'CORS Proxy';
-                } else {
-                    throw new Error('Proxy failed');
-                }
-            } catch (proxyError) {
-                console.log('CORS proxy also failed');
-                showFinalError();
-                return;
-            }
-        }
-        
-        // Successfully loaded data
         try {
-            if (!Array.isArray(data)) {
-                throw new Error('Invalid data format: Expected an array');
+            // Try raw.githubcontent first (more reliable for JSON)
+            const response = await fetch(RAW_DATA_URL, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
             }
+            
+            const data = await response.json();
             
             // Hide loading, show data
             loadingEl.style.display = 'none';
             dataContainer.style.display = 'block';
-            statsBar.style.display = 'flex';
             
-            let totalEntries = 0;
-            let sectionsLoaded = 0;
+            // Render each section
+            renderTable(data, 'vatable-sales', 'vatable_sales');
+            renderTable(data, 'non-vat-sales', 'non_vat_sales');
+            renderTable(data, 'vatable-purchases', 'vatable_purchases');
+            renderTable(data, 'non-vat-purchases', 'non_vat_purchases');
+            renderTable(data, 'vatable-expenses', 'vatable_expenses');
+            renderTable(data, 'non-vat-expenses', 'non_vat_expenses');
+            renderTable(data, 'capex', 'capex');
+            renderTable(data, 'taxes-licenses', 'taxes_licenses');
+            renderTable(data, 'purchase-returns', 'purchase_returns');
             
-            // Render each section and count entries
-            const sections = [
-                { id: 'vatable-sales', formType: 'vatable_sales' },
-                { id: 'non-vat-sales', formType: 'non_vat_sales' },
-                { id: 'vatable-purchases', formType: 'vatable_purchases' },
-                { id: 'non-vat-purchases', formType: 'non_vat_purchases' },
-                { id: 'vatable-expenses', formType: 'vatable_expenses' },
-                { id: 'non-vat-expenses', formType: 'non_vat_expenses' },
-                { id: 'capex', formType: 'capex' },
-                { id: 'taxes-licenses', formType: 'taxes_licenses' },
-                { id: 'purchase-returns', formType: 'purchase_returns' }
-            ];
-            
-            sections.forEach(section => {
-                const count = renderTable(data, section.id, section.formType);
-                if (count > 0) {
-                    sectionsLoaded++;
-                    totalEntries += count;
-                }
-            });
-            
-            // Update statistics
-            document.getElementById('last-updated-time').textContent = 
-                `Last updated: ${new Date().toLocaleTimeString()}`;
-            document.getElementById('total-entries').textContent = 
-                `Total entries: ${totalEntries}`;
-            document.getElementById('total-sections').textContent = 
-                `Sections loaded: ${sectionsLoaded}`;
-            
-            // Update last updated footer
-            document.getElementById('last-updated').innerHTML = 
-                `<i class="fas fa-check-circle" style="color: #4CAF50;"></i> Data loaded successfully from ${successfulUrl.replace('https://', '')}<br>` +
-                `Last updated: ${new Date().toLocaleString()} | ` +
-                `Auto-refresh every 5 minutes | ` +
-                `<a href="${URLS[0]}" target="_blank" style="color: #ffcc00;">View raw JSON</a>`;
-            
-        } catch (processingError) {
-            console.error('Error processing data:', processingError);
-            showError(`Error processing data: ${processingError.message}`);
-        }
-    }
-    
-    function showError(message) {
-        const errorContainer = document.getElementById('error-container');
-        const loadingEl = document.getElementById('loading');
-        
-        loadingEl.style.display = 'none';
-        errorContainer.style.display = 'block';
-        errorContainer.innerHTML = `
-            <div class="error">
-                <h3><i class="fas fa-exclamation-triangle"></i> Data Loading Error</h3>
-                <p><strong>Details:</strong> ${message}</p>
-                <p>Possible solutions:</p>
-                <ol>
-                    <li>Check if the JSON file is valid at: 
-                        <a href="${URLS[0]}" target="_blank">${URLS[0].replace('https://', '')}</a>
-                    </li>
-                    <li>Make sure GitHub Pages is enabled in repository settings</li>
-                    <li>Try refreshing the page in a few minutes</li>
-                    <li>Check browser console (F12) for more details</li>
-                </ol>
-                <p style="margin-top: 1rem;">
-                    <button onclick="loadData()" class="refresh-btn">
-                        <i class="fas fa-sync-alt"></i> Try Again
-                    </button>
-                </p>
-            </div>
-        `;
-    }
-    
-    function showFinalError() {
-        const loadingEl = document.getElementById('loading');
-        const errorContainer = document.getElementById('error-container');
-        
-        loadingEl.style.display = 'none';
-        errorContainer.style.display = 'block';
-        errorContainer.innerHTML = `
-            <div class="error">
-                <h3><i class="fas fa-exclamation-triangle"></i> Connection Issues Detected</h3>
-                <p>Unable to fetch data due to CORS restrictions. Here's what you can do:</p>
-                
-                <div style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
-                    <h4>Option 1: Enable GitHub Pages</h4>
-                    <ol>
-                        <li>Go to: <a href="https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/pages" target="_blank">GitHub Pages Settings</a></li>
-                        <li>Set "Source" to "Deploy from a branch"</li>
-                        <li>Select "main" branch and "/root" folder</li>
-                        <li>Click "Save"</li>
-                        <li>Wait 1-2 minutes for deployment</li>
-                    </ol>
-                </div>
-                
-                <div style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
-                    <h4>Option 2: Manual Workaround</h4>
-                    <p>Copy your data from: 
-                        <a href="${URLS[0]}" target="_blank">${URLS[0].replace('https://', '')}</a>
-                    </p>
-                    <p>Then paste it into this tool:</p>
-                    <textarea id="manualJson" placeholder="Paste JSON data here..." style="width: 100%; height: 150px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin: 10px 0; font-family: monospace;"></textarea>
-                    <button onclick="loadManualData()" class="refresh-btn" style="margin-top: 10px;">
-                        <i class="fas fa-upload"></i> Load Pasted Data
-                    </button>
-                </div>
-                
-                <div style="margin-top: 1rem;">
-                    <button onclick="loadData()" class="refresh-btn">
-                        <i class="fas fa-sync-alt"></i> Try Auto-Load Again
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-    
-    function loadManualData() {
-        const jsonInput = document.getElementById('manualJson');
-        try {
-            const data = JSON.parse(jsonInput.value);
-            if (!Array.isArray(data)) {
-                throw new Error('Data must be an array');
-            }
-            
-            // Hide error and process data
-            document.getElementById('error-container').style.display = 'none';
-            processDataSuccess(data, 'Manual Input');
+            // Update last updated timestamp
+            document.getElementById('last-updated').textContent = 
+                'Last updated: ' + new Date().toLocaleString() + 
+                ` | Total entries: ${data.length}`;
             
         } catch (error) {
-            alert('Invalid JSON data. Please check your input.\nError: ' + error.message);
+            console.error('Error loading data:', error);
+            loadingEl.style.display = 'none';
+            errorContainer.style.display = 'block';
+            errorContainer.innerHTML = `
+                <div class="error">
+                    <h3>Error Loading Data</h3>
+                    <p>${error.message}</p>
+                    <p>Please ensure:</p>
+                    <ol>
+                        <li><code>data.json</code> exists in your GitHub repository</li>
+                        <li>GitHub Pages is enabled for your repository</li>
+                        <li>The file is accessible at: <a href="${RAW_DATA_URL}" target="_blank">${RAW_DATA_URL}</a></li>
+                    </ol>
+                    <p><button onclick="loadData()" class="refresh-btn">Try Again</button></p>
+                </div>
+            `;
         }
-    }
-    
-    function processDataSuccess(data, source) {
-        const dataContainer = document.getElementById('data-container');
-        const statsBar = document.getElementById('stats-bar');
-        
-        dataContainer.style.display = 'block';
-        statsBar.style.display = 'flex';
-        
-        let totalEntries = 0;
-        let sectionsLoaded = 0;
-        
-        // Render each section
-        const sections = [
-            { id: 'vatable-sales', formType: 'vatable_sales' },
-            { id: 'non-vat-sales', formType: 'non_vat_sales' },
-            { id: 'vatable-purchases', formType: 'vatable_purchases' },
-            { id: 'non-vat-purchases', formType: 'non_vat_purchases' },
-            { id: 'vatable-expenses', formType: 'vatable_expenses' },
-            { id: 'non-vat-expenses', formType: 'non_vat_expenses' },
-            { id: 'capex', formType: 'capex' },
-            { id: 'taxes-licenses', formType: 'taxes_licenses' },
-            { id: 'purchase-returns', formType: 'purchase_returns' }
-        ];
-        
-        sections.forEach(section => {
-            const count = renderTable(data, section.id, section.formType);
-            if (count > 0) {
-                sectionsLoaded++;
-                totalEntries += count;
-            }
-        });
-        
-        // Update statistics
-        document.getElementById('last-updated-time').textContent = 
-            `Last updated: ${new Date().toLocaleTimeString()}`;
-        document.getElementById('total-entries').textContent = 
-            `Total entries: ${totalEntries}`;
-        document.getElementById('total-sections').textContent = 
-            `Sections loaded: ${sectionsLoaded}`;
-        
-        // Update last updated footer
-        document.getElementById('last-updated').innerHTML = 
-            `<i class="fas fa-check-circle" style="color: #4CAF50;"></i> Data loaded from ${source}<br>` +
-            `Last updated: ${new Date().toLocaleString()} | ` +
-            `<a href="${URLS[0]}" target="_blank" style="color: #ffcc00;">View raw JSON on GitHub</a>`;
     }
     
     // Load data on page load
@@ -569,25 +405,6 @@
     
     // Auto-refresh every 5 minutes
     setInterval(loadData, 300000);
-    
-    // Add keyboard shortcut for refresh (Ctrl/Cmd + R)
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
-            e.preventDefault();
-            loadData();
-        }
-    });
-    
-    // Add periodic connection check
-    setInterval(() => {
-        if (navigator.onLine) {
-            const errorContainer = document.getElementById('error-container');
-            if (errorContainer.style.display !== 'none') {
-                console.log('Connection restored, attempting to reload data...');
-                loadData();
-            }
-        }
-    }, 60000);
     </script>
 </body>
 </html>
