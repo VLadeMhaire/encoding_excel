@@ -120,6 +120,7 @@
             color: var(--white);
             background: var(--gradient-blue-red);
             min-height: 100vh;
+            user-select: none; /* Prevent text selection for Excel-like feel */
         }
 
         .container {
@@ -204,7 +205,7 @@
             overflow-y: auto;
         }
 
-        /* Tables */
+        /* Tables - Excel-like styling */
         table {
             width: 100%;
             border-collapse: separate;
@@ -220,13 +221,16 @@
         table td {
             padding: var(--spacing-sm) var(--spacing-md);
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             color: var(--white);
             font-size: var(--font-size-sm);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 200px;
+            cursor: default; /* Default cursor for non-editable state */
+            transition: background-color var(--transition-fast);
+            position: relative;
         }
 
         table th {
@@ -239,31 +243,73 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            cursor: default;
+            user-select: none;
         }
 
         table td {
             background: transparent;
-            transition: background-color var(--transition-fast);
-            cursor: text;
-            position: relative;
+            user-select: none; /* Prevent text selection when not editing */
         }
 
-        table td:hover {
+        /* Excel-like cell selection */
+        table td.selectable {
+            cursor: cell;
+        }
+
+        table td.selectable:hover {
             background: rgba(255, 255, 255, 0.08);
         }
 
-        table td[contenteditable="true"]:focus {
-            outline: 2px solid var(--blue-primary);
-            outline-offset: -1px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: var(--radius-sm);
+        table td.selected {
+            background: rgba(33, 150, 243, 0.2);
+            border: 2px solid var(--blue-primary) !important;
+            z-index: 5;
         }
 
-        /* Editable cell specific styles */
-        table td.editing {
-            background: rgba(255, 255, 255, 0.2) !important;
-            box-shadow: inset 0 0 0 2px var(--blue-primary);
-            border-radius: var(--radius-sm);
+        /* Editable cell styling */
+        table td.editable {
+            cursor: text;
+            user-select: text;
+        }
+
+        table td.editable:focus {
+            outline: 2px solid var(--blue-primary);
+            outline-offset: -2px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 0;
+            z-index: 20;
+            position: relative;
+        }
+
+        /* Excel-like editing input overlay */
+        .cell-editor {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--gray-darkest);
+            border: 2px solid var(--blue-primary);
+            border-radius: 2px;
+            box-shadow: var(--shadow-lg);
+            padding: 0;
+            font-family: var(--font-primary);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            z-index: 1000;
+            overflow: hidden;
+            min-width: 150px;
+            min-height: 30px;
+        }
+
+        .cell-editor input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-family: var(--font-primary);
+            font-size: var(--font-size-sm);
+            background: transparent;
+            color: var(--gray-darkest);
+            outline: none;
         }
 
         /* Ensure text fits perfectly in cells */
@@ -365,6 +411,7 @@
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+            opacity: 0.6;
         }
 
         .loading {
@@ -436,6 +483,15 @@
                 transform: translateX(0);
                 opacity: 1;
             }
+        }
+
+        /* Excel-like selection indicator */
+        .selection-indicator {
+            position: absolute;
+            border: 2px solid var(--blue-primary);
+            background: rgba(33, 150, 243, 0.1);
+            pointer-events: none;
+            z-index: 10;
         }
 
         /* Scrollbar Styling */
@@ -563,6 +619,9 @@
                     <h1>VAT Encoding Data Repository</h1>
                     <p class="subtitle">Automatically synced data from PHP Desktop Encoder</p>
                     <p class="subtitle">Repository: <a href="https://github.com/vlademhaire/encoding_excel">github.com/vlademhaire/encoding_excel</a></p>
+                    <p class="subtitle" style="font-size: var(--font-size-xs); color: var(--warning); margin-top: var(--spacing-xs);">
+                        💡 <strong>Excel-like Editing:</strong> Double-click any cell to edit | Click once to select | Press Enter to save
+                    </p>
                 </div>
                 <div>
                     <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
@@ -660,6 +719,9 @@
     let currentData = [];
     let changesMade = false;
     let cellEditHistory = [];
+    let selectedCell = null;
+    let cellEditor = null;
+    let isEditing = false;
     
     function formatCurrency(amount) {
         if (typeof amount !== 'number') {
@@ -741,6 +803,163 @@
         }
     }
     
+    function selectCell(cell) {
+        // Remove selection from previously selected cell
+        if (selectedCell && selectedCell !== cell) {
+            selectedCell.classList.remove('selected');
+        }
+        
+        // Select new cell
+        cell.classList.add('selected');
+        selectedCell = cell;
+    }
+    
+    function createCellEditor(cell) {
+        // Remove existing editor
+        if (cellEditor) {
+            cellEditor.remove();
+        }
+        
+        // Get cell position and dimensions
+        const rect = cell.getBoundingClientRect();
+        
+        // Create editor overlay
+        cellEditor = document.createElement('div');
+        cellEditor.className = 'cell-editor';
+        cellEditor.style.position = 'fixed';
+        cellEditor.style.top = `${rect.top}px`;
+        cellEditor.style.left = `${rect.left}px`;
+        cellEditor.style.width = `${rect.width}px`;
+        cellEditor.style.height = `${rect.height}px`;
+        
+        // Create input field
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = cell.dataset.original || cell.textContent;
+        
+        // Set input to select all text
+        input.addEventListener('focus', function() {
+            setTimeout(() => this.select(), 10);
+        });
+        
+        // Handle input events
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveCellEdit(cell, this.value);
+                cellEditor.remove();
+                cellEditor = null;
+                isEditing = false;
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelCellEdit(cell);
+                cellEditor.remove();
+                cellEditor = null;
+                isEditing = false;
+            }
+        });
+        
+        input.addEventListener('blur', function() {
+            // Small delay to handle Enter/Escape key press
+            setTimeout(() => {
+                if (cellEditor && document.body.contains(cellEditor)) {
+                    saveCellEdit(cell, this.value);
+                    cellEditor.remove();
+                    cellEditor = null;
+                    isEditing = false;
+                }
+            }, 100);
+        });
+        
+        cellEditor.appendChild(input);
+        document.body.appendChild(cellEditor);
+        
+        // Focus the input
+        input.focus();
+        input.select();
+        
+        isEditing = true;
+    }
+    
+    function saveCellEdit(cell, newValue) {
+        const originalValue = cell.dataset.original || '';
+        const header = cell.dataset.header;
+        const row = parseInt(cell.dataset.row);
+        const formType = cell.dataset.form;
+        const isCurrency = cell.dataset.currency === 'true';
+        const isDate = cell.dataset.date === 'true';
+        const isTIN = cell.dataset.tin === 'true';
+        
+        // Format the value based on type
+        let displayValue = newValue;
+        if (isCurrency && newValue !== 'N/A') {
+            const numValue = parseCurrencyValue(newValue);
+            displayValue = formatCurrency(numValue);
+            cell.textContent = displayValue;
+        } else if (isDate && newValue !== 'N/A') {
+            displayValue = formatDate(newValue);
+            cell.textContent = displayValue;
+        } else if (isTIN && newValue !== 'N/A') {
+            displayValue = formatTIN(newValue);
+            cell.textContent = displayValue;
+        } else {
+            cell.textContent = displayValue;
+        }
+        
+        // Check if value changed
+        if (originalValue !== newValue) {
+            // Store change
+            const changeId = `${formType}-${row}-${header}`;
+            const existingChangeIndex = cellEditHistory.findIndex(change => change.id === changeId);
+            
+            if (existingChangeIndex >= 0) {
+                // Update existing change
+                cellEditHistory[existingChangeIndex].newValue = newValue;
+                cellEditHistory[existingChangeIndex].displayValue = displayValue;
+            } else {
+                // Add new change
+                cellEditHistory.push({
+                    id: changeId,
+                    formType: formType,
+                    row: row,
+                    header: header,
+                    originalValue: originalValue,
+                    newValue: newValue,
+                    displayValue: displayValue,
+                    isCurrency: isCurrency,
+                    isDate: isDate,
+                    isTIN: isTIN
+                });
+            }
+            
+            changesMade = true;
+            updateSaveButton();
+            
+            // Update cell's original value for future comparisons
+            cell.dataset.original = newValue;
+        }
+    }
+    
+    function cancelCellEdit(cell) {
+        // Restore original value
+        const originalValue = cell.dataset.original || '';
+        const isCurrency = cell.dataset.currency === 'true';
+        const isDate = cell.dataset.date === 'true';
+        const isTIN = cell.dataset.tin === 'true';
+        
+        let displayValue = originalValue;
+        if (isCurrency && originalValue !== 'N/A') {
+            const numValue = parseCurrencyValue(originalValue);
+            displayValue = formatCurrency(numValue);
+        } else if (isDate && originalValue !== 'N/A') {
+            displayValue = formatDate(originalValue);
+        } else if (isTIN && originalValue !== 'N/A') {
+            displayValue = formatTIN(originalValue);
+        }
+        
+        cell.textContent = displayValue;
+    }
+    
     function renderTable(data, containerId, formType) {
         const container = document.getElementById(containerId);
         
@@ -814,8 +1033,7 @@
                 
                 // Store raw value in data attributes
                 const rawValue = itemData[header] || '';
-                html += `<td class="${cellClass}" 
-                            contenteditable="true" 
+                html += `<td class="selectable ${cellClass}" 
                             data-original="${rawValue}"
                             data-header="${header}"
                             data-row="${rowIndex}"
@@ -830,94 +1048,32 @@
         
         container.innerHTML = html;
         
-        // Add event listeners for editable cells
-        const cells = container.querySelectorAll('td[contenteditable="true"]');
+        // Add event listeners for cells
+        const cells = container.querySelectorAll('td.selectable');
         cells.forEach(cell => {
-            cell.addEventListener('focus', handleCellFocus);
-            cell.addEventListener('blur', handleCellBlur);
-            cell.addEventListener('input', handleCellInput);
-            cell.addEventListener('keydown', handleCellKeydown);
+            // Single click to select cell
+            cell.addEventListener('click', handleCellClick);
+            
+            // Double click to edit
+            cell.addEventListener('dblclick', handleCellDoubleClick);
         });
     }
     
-    function handleCellFocus(e) {
+    function handleCellClick(e) {
+        // Don't handle clicks if we're currently editing
+        if (isEditing) return;
+        
         const cell = e.target;
-        cell.classList.add('editing');
-        
-        // Store original value for comparison
-        cell.dataset.currentValue = cell.textContent;
+        selectCell(cell);
     }
     
-    function handleCellBlur(e) {
+    function handleCellDoubleClick(e) {
+        // Don't handle double clicks if we're currently editing
+        if (isEditing) return;
+        
         const cell = e.target;
-        cell.classList.remove('editing');
-        
-        const originalValue = cell.dataset.original || '';
-        const currentValue = cell.textContent;
-        const header = cell.dataset.header;
-        const row = parseInt(cell.dataset.row);
-        const formType = cell.dataset.form;
-        const isCurrency = cell.dataset.currency === 'true';
-        const isDate = cell.dataset.date === 'true';
-        const isTIN = cell.dataset.tin === 'true';
-        
-        // Format the value based on type
-        let displayValue = currentValue;
-        if (isCurrency && currentValue !== 'N/A') {
-            const numValue = parseCurrencyValue(currentValue);
-            displayValue = formatCurrency(numValue);
-            cell.textContent = displayValue;
-        } else if (isDate && currentValue !== 'N/A') {
-            displayValue = formatDate(currentValue);
-            cell.textContent = displayValue;
-        } else if (isTIN && currentValue !== 'N/A') {
-            displayValue = formatTIN(currentValue);
-            cell.textContent = displayValue;
-        }
-        
-        // Check if value changed
-        if (originalValue !== currentValue && currentValue !== cell.dataset.currentValue) {
-            // Store change
-            const changeId = `${formType}-${row}-${header}`;
-            const existingChangeIndex = cellEditHistory.findIndex(change => change.id === changeId);
-            
-            if (existingChangeIndex >= 0) {
-                // Update existing change
-                cellEditHistory[existingChangeIndex].newValue = currentValue;
-                cellEditHistory[existingChangeIndex].displayValue = displayValue;
-            } else {
-                // Add new change
-                cellEditHistory.push({
-                    id: changeId,
-                    formType: formType,
-                    row: row,
-                    header: header,
-                    originalValue: originalValue,
-                    newValue: currentValue,
-                    displayValue: displayValue,
-                    isCurrency: isCurrency,
-                    isDate: isDate,
-                    isTIN: isTIN
-                });
-            }
-            
-            changesMade = true;
-            updateSaveButton();
-            
-            // Update cell's original value for future comparisons
-            cell.dataset.original = currentValue;
-        }
-    }
-    
-    function handleCellInput(e) {
-        // You can add live validation here if needed
-    }
-    
-    function handleCellKeydown(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.target.blur();
-        }
+        selectCell(cell);
+        createCellEditor(cell);
     }
     
     async function saveAllChanges() {
@@ -999,6 +1155,19 @@
             updateSaveButton();
         }
         
+        // Remove cell editor if active
+        if (cellEditor) {
+            cellEditor.remove();
+            cellEditor = null;
+            isEditing = false;
+        }
+        
+        // Clear selection
+        if (selectedCell) {
+            selectedCell.classList.remove('selected');
+            selectedCell = null;
+        }
+        
         try {
             // Try raw.githubcontent first (more reliable for JSON)
             const response = await fetch(RAW_DATA_URL, {
@@ -1027,7 +1196,7 @@
             // Update last updated timestamp
             document.getElementById('last-updated').textContent = 
                 'Last updated: ' + new Date().toLocaleString() + 
-                ` | Total entries: ${data.length} | Cells are editable - click to edit`;
+                ` | Total entries: ${data.length} | Excel-like: Double-click to edit`;
             
         } catch (error) {
             console.error('Error loading data:', error);
@@ -1048,6 +1217,40 @@
             `;
         }
     }
+    
+    // Click outside to deselect and close editor
+    document.addEventListener('click', (e) => {
+        if (isEditing && cellEditor && !cellEditor.contains(e.target) && !e.target.classList.contains('selectable')) {
+            // Find the input value
+            const input = cellEditor.querySelector('input');
+            if (input) {
+                // Find the selected cell
+                if (selectedCell) {
+                    saveCellEdit(selectedCell, input.value);
+                }
+            }
+            cellEditor.remove();
+            cellEditor = null;
+            isEditing = false;
+        } else if (!isEditing && selectedCell && !e.target.classList.contains('selectable')) {
+            selectedCell.classList.remove('selected');
+            selectedCell = null;
+        }
+    });
+    
+    // Handle Escape key to cancel editing
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (isEditing && cellEditor) {
+                if (selectedCell) {
+                    cancelCellEdit(selectedCell);
+                }
+                cellEditor.remove();
+                cellEditor = null;
+                isEditing = false;
+            }
+        }
+    });
     
     // Load data on page load
     document.addEventListener('DOMContentLoaded', loadData);
