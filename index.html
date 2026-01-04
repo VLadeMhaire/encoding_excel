@@ -21,7 +21,7 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -35,7 +35,7 @@
         }
         
         .header-content {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
             display: flex;
@@ -81,30 +81,6 @@
             text-decoration: underline;
         }
         
-        .header-stats {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #4facfe;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .stat-label {
-            font-size: 0.85rem;
-            color: #bbb;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
         .refresh-btn {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
@@ -126,198 +102,97 @@
             box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
         }
         
-        .refresh-btn:active {
-            transform: translateY(0);
-        }
-        
-        .dashboard-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .data-section {
+        .setup-guide {
             background: white;
             border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
             box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-            transition: transform 0.3s;
-            display: flex;
-            flex-direction: column;
-            height: 450px;
+            text-align: center;
         }
         
-        .data-section:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.15);
-        }
-        
-        .section-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 1.2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .section-count {
-            background: rgba(255,255,255,0.2);
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .section-content {
-            padding: 0;
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .table-container {
-            flex: 1;
-            overflow: auto;
-            position: relative;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 600px;
-        }
-        
-        th {
-            position: sticky;
-            top: 0;
-            background: #f8fafc;
-            font-weight: 600;
+        .setup-guide h2 {
             color: #2c3e50;
-            padding: 0.85rem 0.75rem;
-            text-align: left;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #e2e8f0;
-            z-index: 10;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
         }
         
-        td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.9rem;
-            color: #475569;
-            line-height: 1.4;
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
         }
         
-        tr:hover {
-            background-color: #f8fafc;
-        }
-        
-        /* Column-specific styling for better readability */
-        td:nth-child(1), th:nth-child(1) { min-width: 100px; max-width: 120px; } /* Date */
-        td:nth-child(2), th:nth-child(2) { min-width: 120px; max-width: 150px; } /* Invoice */
-        td:nth-child(3), th:nth-child(3) { min-width: 150px; max-width: 200px; } /* Particulars */
-        td:nth-child(4), th:nth-child(4) { min-width: 140px; max-width: 180px; } /* TIN */
-        td:nth-child(5), th:nth-child(5) { min-width: 120px; max-width: 150px; } /* Amount */
-        td:nth-child(6), th:nth-child(6) { min-width: 100px; max-width: 120px; } /* Tax */
-        
-        /* Text truncation and wrapping */
-        td {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            max-width: 100%;
-        }
-        
-        .truncate {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
-        
-        .wrap-text {
-            word-break: break-word;
-            white-space: normal;
-        }
-        
-        .currency-cell {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-        
-        .date-cell {
-            font-family: 'Courier New', monospace;
-            color: #64748b;
-        }
-        
-        .tin-cell {
-            font-family: 'Courier New', monospace;
-            color: #475569;
-        }
-        
-        .no-data {
+        .step {
             text-align: center;
-            padding: 3rem 1rem;
-            color: #94a3b8;
-            font-style: italic;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .no-data i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.3;
-        }
-        
-        .last-updated {
-            text-align: center;
-            color: white;
-            font-size: 0.9rem;
-            margin-top: 2rem;
             padding: 1.5rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
         }
         
-        .loading {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: white;
-            font-size: 1.1rem;
-        }
-        
-        .loading-spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid #4facfe;
-            border-radius: 50%;
+        .step-number {
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin: 0 auto 1rem;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .step h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .step p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        
+        .file-structure {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-family: 'Courier New', monospace;
+            text-align: left;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .file-structure pre {
+            color: #334155;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .test-link {
+            display: inline-block;
+            margin: 1rem;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .test-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
         
         .error {
             background: rgba(239, 68, 68, 0.1);
-            color: #fecaca;
+            color: #dc2626;
             padding: 1.5rem;
             border-radius: 12px;
             margin: 1rem 0;
@@ -325,52 +200,10 @@
         }
         
         .error h3 {
-            color: #fecaca;
             margin-bottom: 0.5rem;
-        }
-        
-        .error ol {
-            margin: 1rem 0 1rem 1.5rem;
-        }
-        
-        .error li {
-            margin-bottom: 0.5rem;
-        }
-        
-        .error a {
-            color: #93c5fd;
-            text-decoration: none;
-        }
-        
-        .error a:hover {
-            text-decoration: underline;
-        }
-        
-        /* Custom scrollbar */
-        .table-container::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        
-        .table-container::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 3px;
-        }
-        
-        .table-container::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        
-        .table-container::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        
-        /* Responsive design */
-        @media (max-width: 1200px) {
-            .dashboard-container {
-                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            }
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         @media (max-width: 768px) {
@@ -379,99 +212,13 @@
                 text-align: center;
             }
             
-            .header-info {
-                min-width: 100%;
-            }
-            
-            .header-stats {
-                justify-content: center;
+            .steps {
+                grid-template-columns: 1fr;
             }
             
             h1 {
                 font-size: 1.8rem;
             }
-            
-            .dashboard-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .data-section {
-                height: 400px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .section-header {
-                padding: 0.8rem 1rem;
-                font-size: 1rem;
-            }
-            
-            th, td {
-                padding: 0.6rem;
-                font-size: 0.8rem;
-            }
-            
-            .data-section {
-                height: 350px;
-            }
-        }
-        
-        /* Highlight important cells */
-        .highlight-positive {
-            color: #10b981;
-            font-weight: 600;
-        }
-        
-        .highlight-negative {
-            color: #ef4444;
-            font-weight: 600;
-        }
-        
-        /* Tooltip for truncated content */
-        .has-tooltip {
-            position: relative;
-            cursor: help;
-        }
-        
-        .has-tooltip:hover::after {
-            content: attr(title);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1a1a1a;
-            color: white;
-            padding: 0.5rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        
-        .has-tooltip:hover::before {
-            content: '';
-            position: absolute;
-            bottom: calc(100% - 5px);
-            left: 50%;
-            transform: translateX(-50%);
-            border: 5px solid transparent;
-            border-top-color: #1a1a1a;
-            z-index: 1000;
-        }
-        
-        /* Data loading animation */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .data-section {
-            animation: fadeIn 0.3s ease-out;
         }
     </style>
 </head>
@@ -481,475 +228,186 @@
             <div class="header-info">
                 <h1>VAT Encoding Data Repository</h1>
                 <p class="subtitle">
-                    <i class="fas fa-sync-alt"></i> Automatically synced data from PHP Desktop Encoder
+                    <i class="fas fa-sync-alt"></i> GitHub Pages Data Viewer
                 </p>
                 <p class="subtitle">
-                    <i class="fab fa-github"></i> Repository: 
+                    <i class="fab fa-github"></i> 
                     <a href="https://github.com/vlademhaire/encoding_excel" class="github-link">
-                        github.com/vlademhaire/encoding_excel
+                        vlademhaire/encoding_excel
                     </a>
                 </p>
             </div>
-            <div class="header-stats">
-                <div class="stat-item">
-                    <div class="stat-number" id="total-entries">0</div>
-                    <div class="stat-label">Total Entries</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="last-update">-</div>
-                    <div class="stat-label">Last Updated</div>
-                </div>
-            </div>
-            <button class="refresh-btn" onclick="loadData()">
-                <i class="fas fa-redo-alt"></i> Refresh Data
+            <button class="refresh-btn" onclick="checkData()">
+                <i class="fas fa-redo-alt"></i> Check Data
             </button>
         </div>
     </header>
     
     <div class="container">
-        <div class="loading" id="loading">
-            <div class="loading-spinner"></div>
-            Loading data from GitHub repository...
-        </div>
-        
-        <div id="error-container" style="display: none;"></div>
-        
-        <div id="data-container" style="display: none;">
-            <div class="dashboard-container">
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-shopping-cart"></i> Vatable Sales</span>
-                        <span class="section-count" id="vatable-sales-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="vatable-sales">
-                            <div class="no-data">
-                                <i class="fas fa-chart-line"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
+        <div class="setup-guide">
+            <h2>📊 Setup Your Data Repository</h2>
+            <p>Follow these steps to enable data viewing on GitHub Pages:</p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Create data.json</h3>
+                    <p>Upload a file named <code>data.json</code> to your repository root.</p>
                 </div>
                 
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-shopping-bag"></i> Non-VAT Sales</span>
-                        <span class="section-count" id="non-vat-sales-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="non-vat-sales">
-                            <div class="no-data">
-                                <i class="fas fa-chart-bar"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Enable Pages</h3>
+                    <p>Go to repository Settings → Pages, select "Deploy from a branch", choose "main" branch and "/ (root)" folder.</p>
                 </div>
                 
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-truck-loading"></i> Vatable Purchases</span>
-                        <span class="section-count" id="vatable-purchases-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="vatable-purchases">
-                            <div class="no-data">
-                                <i class="fas fa-boxes"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Wait for Build</h3>
+                    <p>GitHub will build your site. Wait a few minutes, then refresh this page.</p>
                 </div>
                 
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-truck"></i> Non-VAT Purchases</span>
-                        <span class="section-count" id="non-vat-purchases-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="non-vat-purchases">
-                            <div class="no-data">
-                                <i class="fas fa-warehouse"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-receipt"></i> Vatable Expenses</span>
-                        <span class="section-count" id="vatable-expenses-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="vatable-expenses">
-                            <div class="no-data">
-                                <i class="fas fa-file-invoice-dollar"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-file-alt"></i> Non-VAT Expenses</span>
-                        <span class="section-count" id="non-vat-expenses-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="non-vat-expenses">
-                            <div class="no-data">
-                                <i class="fas fa-file"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-industry"></i> Capex</span>
-                        <span class="section-count" id="capex-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="capex">
-                            <div class="no-data">
-                                <i class="fas fa-hard-hat"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-balance-scale"></i> Taxes & Licenses</span>
-                        <span class="section-count" id="taxes-licenses-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="taxes-licenses">
-                            <div class="no-data">
-                                <i class="fas fa-landmark"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="data-section">
-                    <div class="section-header">
-                        <span><i class="fas fa-exchange-alt"></i> Purchase Returns</span>
-                        <span class="section-count" id="purchase-returns-count">0</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="table-container" id="purchase-returns">
-                            <div class="no-data">
-                                <i class="fas fa-undo"></i>
-                                No data available
-                            </div>
-                        </div>
-                    </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>View Data</h3>
+                    <p>Once the file exists, your data will automatically appear here.</p>
                 </div>
             </div>
             
-            <div class="last-updated" id="last-updated-footer">
-                <i class="fas fa-clock"></i> Last updated: Loading... | <i class="fas fa-database"></i> Total entries: 0
+            <div id="status-container">
+                <h3>📡 Current Status</h3>
+                <div id="status-message" class="error" style="display: none;">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Data Not Found</h3>
+                    <p>The <code>data.json</code> file is not available in your repository yet.</p>
+                </div>
+                
+                <div class="file-structure">
+                    <h4>Required File Structure:</h4>
+                    <pre>
+your-repository/
+├── index.html (this file)
+├── data.json (your data file)
+└── (other files)
+
+data.json should contain:
+[
+    {
+        "id": "unique_id",
+        "user_id": "user123",
+        "form_type": "vatable_sales",
+        "data": {
+            "date": "2024-01-15",
+            "invoice_number": "INV-001",
+            "particulars": "Service provided",
+            "tin_number": "123-456-789-012",
+            "gross_sales": 10000.00,
+            "output_tax": 1200.00
+        },
+        "timestamp": "2024-01-15T10:30:00"
+    }
+]
+                    </pre>
+                </div>
+                
+                <p>
+                    <a href="https://raw.githubusercontent.com/vlademhaire/encoding_excel/main/data.json" 
+                       target="_blank" class="test-link">
+                        <i class="fas fa-external-link-alt"></i> Test Data URL
+                    </a>
+                    <a href="https://github.com/vlademhaire/encoding_excel" 
+                       target="_blank" class="test-link">
+                        <i class="fab fa-github"></i> Go to Repository
+                    </a>
+                    <a href="https://github.com/vlademhaire/encoding_excel/settings/pages" 
+                       target="_blank" class="test-link">
+                        <i class="fas fa-cog"></i> Pages Settings
+                    </a>
+                </p>
             </div>
         </div>
     </div>
     
     <script>
-    // GitHub repository details
-    const REPO_OWNER = 'vlademhaire';
-    const REPO_NAME = 'encoding_excel';
-    const DATA_FILE = 'data.json';
-    
-    // GitHub Pages URL for the data file
-    const DATA_URL = `https://${REPO_OWNER}.github.io/${REPO_NAME}/${DATA_FILE}`;
-    // Alternative: Raw GitHub URL (works better for JSON)
-    const RAW_DATA_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${DATA_FILE}`;
-    
-    // Cache for data to avoid unnecessary fetches
-    let cachedData = null;
-    let lastFetchTime = 0;
-    const CACHE_DURATION = 60000; // 1 minute cache
-    
-    function formatCurrency(amount) {
-        if (typeof amount !== 'number') {
-            amount = parseFloat(amount) || 0;
-        }
-        const isPositive = amount >= 0;
-        const formatted = '₱' + Math.abs(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-        return `<span class="${isPositive ? 'highlight-positive' : 'highlight-negative'}">${formatted}</span>`;
-    }
-    
-    function formatDate(dateString) {
-        if (!dateString) return '<span class="date-cell">N/A</span>';
-        try {
-            const date = new Date(dateString);
-            return `<span class="date-cell" title="${date.toLocaleString()}">${date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            })}</span>`;
-        } catch (e) {
-            return `<span class="date-cell">${dateString}</span>`;
-        }
-    }
-    
-    function formatTIN(tin) {
-        if (!tin) return '<span class="tin-cell">N/A</span>';
-        let formatted = tin;
-        if (tin.length === 12 && !tin.includes('-')) {
-            formatted = tin.substring(0, 3) + '-' + tin.substring(3, 6) + '-' +
-                       tin.substring(6, 9) + '-' + tin.substring(9, 12);
-        }
-        return `<span class="tin-cell" title="${tin}">${formatted}</span>`;
-    }
-    
-    function truncateText(text, maxLength = 30) {
-        if (!text) return 'N/A';
-        text = String(text);
-        if (text.length <= maxLength) return text;
-        return `<span class="has-tooltip truncate" title="${text.replace(/"/g, '&quot;')}">${text.substring(0, maxLength)}...</span>`;
-    }
-    
-    function wrapLongText(text, maxLength = 30) {
-        if (!text) return 'N/A';
-        text = String(text);
-        if (text.length <= maxLength) return text;
-        return `<span class="has-tooltip wrap-text" title="${text.replace(/"/g, '&quot;')}">${text}</span>`;
-    }
-    
-    function getTableHeadersForForm(formType) {
-        // Define headers for each form type
-        const headerMap = {
-            'vatable_sales': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Sales', 'Output Tax'],
-            'non_vat_sales': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Sales'],
-            'vatable_purchases': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Purchases', 'Input Tax'],
-            'non_vat_purchases': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Purchases'],
-            'vatable_expenses': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Amount', 'Input Tax'],
-            'non_vat_expenses': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Amount'],
-            'capex': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Amount', 'Input Tax'],
-            'taxes_licenses': ['Date', 'Invoice No.', 'Particulars', 'Type', 'Amount'],
-            'purchase_returns': ['Date', 'Invoice No.', 'Particulars', 'TIN', 'Gross Returns', 'Input Tax']
-        };
+    async function checkData() {
+        const statusMessage = document.getElementById('status-message');
+        const urls = [
+            'https://vlademhaire.github.io/encoding_excel/data.json',
+            'https://raw.githubusercontent.com/vlademhaire/encoding_excel/main/data.json',
+            'https://raw.githubusercontent.com/vlademhaire/encoding_excel/gh-pages/data.json'
+        ];
         
-        return headerMap[formType] || [];
-    }
-    
-    function getValueByHeader(header, itemData) {
-        // Map header to data field
-        const fieldMap = {
-            'Date': 'date',
-            'Invoice No.': 'invoice_number',
-            'Particulars': 'particulars',
-            'TIN': 'tin_number',
-            'Gross Sales': 'gross_sales',
-            'Gross Purchases': 'gross_purchases',
-            'Gross Amount': 'gross_amount',
-            'Gross Returns': 'gross_purchase_returns',
-            'Amount': 'amount',
-            'Output Tax': 'output_tax',
-            'Input Tax': 'input_tax',
-            'Type': 'tax_type'
-        };
+        let found = false;
+        let workingUrl = '';
         
-        const field = fieldMap[header];
-        return itemData[field];
-    }
-    
-    function formatValueByHeader(header, value) {
-        if (header === 'Date') {
-            return formatDate(value);
-        } else if (header === 'TIN') {
-            return formatTIN(value);
-        } else if (header.includes('Particulars')) {
-            return wrapLongText(value, 25);
-        } else if (header.includes('Invoice')) {
-            return truncateText(value, 15);
-        } else if (header.includes('Amount') || header.includes('Sales') || 
-                   header.includes('Purchases') || header.includes('Returns') || 
-                   header.includes('Tax')) {
-            const numValue = parseFloat(value);
-            return !isNaN(numValue) ? formatCurrency(numValue) : value;
-        } else if (header === 'Type') {
-            return truncateText(value, 20);
-        }
-        return value || 'N/A';
-    }
-    
-    function renderTable(data, containerId, formType) {
-        const container = document.getElementById(containerId);
-        const countElement = document.getElementById(containerId + '-count');
-        
-        if (!data || data.length === 0) {
-            container.innerHTML = '<div class="no-data"><i class="fas fa-chart-line"></i>No data available</div>';
-            countElement.textContent = '0';
-            return;
-        }
-        
-        // Filter by form type
-        const filteredData = data.filter(entry => 
-            entry.form_type === formType || 
-            entry.form_type === formType.replace('-', '_')
-        );
-        
-        if (filteredData.length === 0) {
-            container.innerHTML = '<div class="no-data"><i class="fas fa-chart-line"></i>No data available</div>';
-            countElement.textContent = '0';
-            return;
-        }
-        
-        // Update count
-        countElement.textContent = filteredData.length;
-        
-        // Get headers for this form type
-        const headers = getTableHeadersForForm(formType);
-        
-        if (headers.length === 0) {
-            container.innerHTML = '<div class="no-data"><i class="fas fa-exclamation-triangle"></i>No headers defined</div>';
-            return;
-        }
-        
-        let html = '<table>';
-        
-        // Table header
-        html += '<thead><tr>';
-        headers.forEach(header => {
-            html += `<th>${header}</th>`;
-        });
-        html += '</tr></thead>';
-        
-        // Table body
-        html += '<tbody>';
-        filteredData.forEach((item, index) => {
-            const itemData = item.data || {};
-            html += '<tr>';
-            headers.forEach(header => {
-                const value = getValueByHeader(header, itemData);
-                html += `<td>${formatValueByHeader(header, value)}</td>`;
-            });
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-        
-        container.innerHTML = html;
-    }
-    
-    function updateStats(data) {
-        const totalEntries = data.length;
-        const lastUpdate = new Date().toLocaleTimeString();
-        
-        document.getElementById('total-entries').textContent = totalEntries;
-        document.getElementById('last-update').textContent = lastUpdate;
-        
-        // Update footer
-        document.getElementById('last-updated-footer').innerHTML = 
-            `<i class="fas fa-clock"></i> Last updated: ${new Date().toLocaleString()} | ` +
-            `<i class="fas fa-database"></i> Total entries: ${totalEntries}`;
-    }
-    
-    async function loadData(forceRefresh = false) {
-        const loadingEl = document.getElementById('loading');
-        const errorContainer = document.getElementById('error-container');
-        const dataContainer = document.getElementById('data-container');
-        
-        // Check cache
-        const now = Date.now();
-        if (!forceRefresh && cachedData && (now - lastFetchTime) < CACHE_DURATION) {
-            console.log('Using cached data');
-            renderAllTables(cachedData);
-            updateStats(cachedData);
-            return;
-        }
-        
-        loadingEl.style.display = 'flex';
-        errorContainer.style.display = 'none';
-        dataContainer.style.display = 'none';
-        errorContainer.innerHTML = '';
-        
-        try {
-            // Try raw.githubcontent first (more reliable for JSON)
-            const response = await fetch(RAW_DATA_URL + '?t=' + now, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
+        for (const url of urls) {
+            try {
+                const response = await fetch(url, { 
+                    headers: { 'Accept': 'application/json' },
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    found = true;
+                    workingUrl = url;
+                    break;
                 }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            } catch (error) {
+                console.log(`Failed to fetch from ${url}:`, error.message);
             }
-            
-            const data = await response.json();
-            
-            // Cache the data
-            cachedData = data;
-            lastFetchTime = Date.now();
-            
-            // Hide loading, show data
-            loadingEl.style.display = 'none';
-            dataContainer.style.display = 'block';
-            
-            // Render all tables
-            renderAllTables(data);
-            updateStats(data);
-            
-        } catch (error) {
-            console.error('Error loading data:', error);
-            loadingEl.style.display = 'none';
-            errorContainer.style.display = 'block';
-            errorContainer.innerHTML = `
-                <div class="error">
-                    <h3><i class="fas fa-exclamation-triangle"></i> Error Loading Data</h3>
-                    <p>${error.message}</p>
-                    <p>Please ensure:</p>
-                    <ol>
-                        <li><code>data.json</code> exists in your GitHub repository</li>
-                        <li>GitHub Pages is enabled for your repository</li>
-                        <li>The file is accessible at: <a href="${RAW_DATA_URL}" target="_blank">${RAW_DATA_URL}</a></li>
-                    </ol>
-                    <p><button onclick="loadData(true)" class="refresh-btn"><i class="fas fa-redo-alt"></i> Try Again</button></p>
-                </div>
+        }
+        
+        if (found) {
+            statusMessage.innerHTML = `
+                <h3 style="color: #10b981;"><i class="fas fa-check-circle"></i> Data Found!</h3>
+                <p>Successfully loaded data from: <code>${workingUrl}</code></p>
+                <p>You can now view your data. Redirecting to data viewer...</p>
             `;
+            statusMessage.className = 'success';
+            statusMessage.style.display = 'block';
+            
+            // Redirect to the data viewer page after 3 seconds
+            setTimeout(() => {
+                // You can uncomment this to load the full data viewer
+                // loadDataViewer();
+                // For now, just reload the page
+                location.reload();
+            }, 3000);
+        } else {
+            statusMessage.innerHTML = `
+                <h3><i class="fas fa-exclamation-triangle"></i> Data Not Found</h3>
+                <p>The <code>data.json</code> file is not available in your repository.</p>
+                <p>Please ensure:</p>
+                <ol>
+                    <li>The file exists at: <code>https://raw.githubusercontent.com/vlademhaire/encoding_excel/main/data.json</code></li>
+                    <li>The file contains valid JSON data</li>
+                    <li>GitHub Pages is enabled in repository settings</li>
+                </ol>
+                <p><strong>Next Steps:</strong></p>
+                <p>1. Go to your <a href="https://github.com/vlademhaire/encoding_excel" target="_blank">GitHub repository</a></p>
+                <p>2. Upload or create a <code>data.json</code> file in the root</p>
+                <p>3. Enable GitHub Pages in Settings → Pages</p>
+            `;
+            statusMessage.className = 'error';
+            statusMessage.style.display = 'block';
         }
     }
     
-    function renderAllTables(data) {
-        renderTable(data, 'vatable-sales', 'vatable_sales');
-        renderTable(data, 'non-vat-sales', 'non_vat_sales');
-        renderTable(data, 'vatable-purchases', 'vatable_purchases');
-        renderTable(data, 'non-vat-purchases', 'non_vat_purchases');
-        renderTable(data, 'vatable-expenses', 'vatable_expenses');
-        renderTable(data, 'non-vat-expenses', 'non_vat_expenses');
-        renderTable(data, 'capex', 'capex');
-        renderTable(data, 'taxes-licenses', 'taxes_licenses');
-        renderTable(data, 'purchase-returns', 'purchase_returns');
-    }
+    // Check on page load
+    document.addEventListener('DOMContentLoaded', checkData);
     
-    // Load data on page load
-    document.addEventListener('DOMContentLoaded', () => loadData());
-    
-    // Auto-refresh every 5 minutes
-    setInterval(() => loadData(), 300000);
-    
-    // Add keyboard shortcut (Ctrl/Cmd + R)
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
-            e.preventDefault();
-            loadData(true);
+    // Add CSS for success state
+    const style = document.createElement('style');
+    style.textContent = `
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #065f46;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
-    });
-    
-    // Add service worker for offline capability
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(error => {
-                console.log('Service Worker registration failed:', error);
-            });
-        });
-    }
+        .success h3 {
+            color: #059669;
+        }
+    `;
+    document.head.appendChild(style);
     </script>
 </body>
 </html>
