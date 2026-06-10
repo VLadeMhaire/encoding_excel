@@ -2,1274 +2,1006 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAT Encoding Data Repository</title>
-    <!-- Import Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.5, user-scalable=yes">
+    <title>VAT Tracking System | Professional Kiosk Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        /* ============================================
-           VAT ENCODER SYSTEM - MODERN STYLE
-           Blue/Red Color Combination from index.php
-           ============================================ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* CSS Variables for consistent theming - Blue/Red Theme */
         :root {
-            /* Blue Palette from index.php */
-            --blue-primary: #2196f3;
-            --blue-dark: #0d47a1;
-            --blue-darkest: #1a237e;
-            --blue-light: rgba(33, 150, 243, 0.1);
-            --blue-medium: rgba(33, 150, 243, 0.3);
-            
-            /* Red Palette from index.php */
-            --red-primary: #f44336;
-            --red-dark: #b71c1c;
-            --red-darkest: #bf360c;
-            --red-light: rgba(244, 67, 54, 0.1);
-            --red-medium: rgba(244, 67, 54, 0.3);
-            
-            /* Gradient combinations */
-            --gradient-blue-red: linear-gradient(135deg, var(--blue-darkest) 0%, var(--blue-dark) 50%, var(--red-dark) 100%);
-            --gradient-blue: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
-            --gradient-red: linear-gradient(135deg, var(--red-primary) 0%, var(--red-dark) 100%);
-            
-            /* Neutral Colors */
-            --white: #ffffff;
-            --gray-lightest: #f8f9fa;
-            --gray-lighter: #e9ecef;
-            --gray-light: #dee2e6;
-            --gray-medium: #adb5bd;
-            --gray-dark: #6c757d;
-            --gray-darker: #495057;
-            --gray-darkest: #212529;
-            --black: #000000;
-            
-            /* Semantic Colors matching index.php */
-            --primary: var(--blue-primary);
-            --primary-light: var(--blue-light);
-            --secondary: var(--red-primary);
-            --secondary-light: var(--red-light);
-            --success: #4caf50;
-            --success-dark: #2e7d32;
-            --warning: #ffc107;
-            --warning-dark: #ff9800;
-            --danger: var(--red-primary);
-            --danger-dark: var(--red-dark);
-            --info: #17a2b8;
-            --info-dark: #138496;
-            --vat-color: #ff9800;
-            --vat-dark: #e65100;
-            
-            /* Category colors from index.php */
-            --info-card: linear-gradient(135deg, rgba(33,150,243,0.3) 0%, rgba(13,71,161,0.3) 100%);
-            --sales-card: linear-gradient(135deg, rgba(76,175,80,0.3) 0%, rgba(46,125,50,0.3) 100%);
-            --purchases-card: linear-gradient(135deg, rgba(255,152,0,0.3) 0%, rgba(230,81,0,0.3) 100%);
-            --expenses-card: linear-gradient(135deg, rgba(156,39,176,0.3) 0%, rgba(123,31,162,0.3) 100%);
-            --taxes-card: linear-gradient(135deg, rgba(244,67,54,0.3) 0%, rgba(183,28,28,0.3) 100%);
-            --vat-card: linear-gradient(135deg, rgba(255,193,7,0.3) 0%, rgba(255,152,0,0.3) 100%);
-            
-            /* Typography */
-            --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --font-mono: 'Roboto Mono', 'Courier New', monospace;
-            --font-size-xs: 0.75rem;   /* 12px */
-            --font-size-sm: 0.875rem;  /* 14px */
-            --font-size-base: 1rem;    /* 16px */
-            --font-size-lg: 1.125rem;  /* 18px */
-            --font-size-xl: 1.25rem;   /* 20px */
-            --font-size-2xl: 1.5rem;   /* 24px */
-            --font-size-3xl: 1.875rem; /* 30px */
-            
-            /* Spacing */
-            --spacing-xs: 0.25rem;  /* 4px */
-            --spacing-sm: 0.5rem;   /* 8px */
-            --spacing-md: 1rem;     /* 16px */
-            --spacing-lg: 1.5rem;   /* 24px */
-            --spacing-xl: 2rem;     /* 32px */
-            --spacing-2xl: 3rem;    /* 48px */
-            
-            /* Border Radius */
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 16px;
-            --radius-2xl: 20px;
-            
-            /* Shadows */
-            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
-            --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.2);
-            
-            /* Transitions */
-            --transition-fast: 150ms ease-in-out;
-            --transition-normal: 300ms ease-in-out;
-            --transition-slow: 350ms ease-in-out;
+            --ink: #0d1117;
+            --ink-60: rgba(13,17,23,0.6);
+            --ink-30: rgba(13,17,23,0.3);
+            --ink-10: rgba(13,17,23,0.08);
+            --surface: #ffffff;
+            --surface-2: #f5f6f9;
+            --surface-3: #eef0f7;
+            --blue-vivid: #1a47cc;
+            --blue-mid: #2a5de8;
+            --blue-light: #dde8ff;
+            --blue-xlight: #f0f4ff;
+            --teal: #0d8a6e;
+            --teal-light: #d4f3eb;
+            --amber: #c47a0a;
+            --amber-light: #fef2d6;
+            --red: #c0352a;
+            --red-light: #fde8e6;
+            --purple: #6640c8;
+            --purple-light: #ede9ff;
+            --gold: #b8870e;
+            --gold-light: #fdf3d7;
+            --nav-h: 68px;
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
         }
 
-        /* Reset & Base Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: var(--font-primary);
-            font-size: var(--font-size-base);
-            line-height: 1.6;
-            color: var(--white);
-            background: var(--gradient-blue-red);
+            font-family: 'DM Sans', sans-serif;
+            background: var(--surface-2);
+            color: var(--ink);
+            line-height: 1.55;
             min-height: 100vh;
-            user-select: none; /* Prevent text selection for Excel-like feel */
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: var(--spacing-md);
-            gap: var(--spacing-lg);
-        }
-
-        /* Header/Navbar */
-        header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: var(--radius-xl);
-            padding: var(--spacing-lg);
-            text-align: center;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-        }
-
-        h1 {
-            font-size: var(--font-size-2xl);
-            color: var(--white);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .subtitle {
-            font-size: var(--font-size-sm);
-            opacity: 0.9;
-            color: var(--white);
-        }
-
-        .subtitle a {
-            color: var(--blue-primary);
-            text-decoration: none;
-            transition: color var(--transition-fast);
-        }
-
-        .subtitle a:hover {
-            color: var(--white);
-            text-decoration: underline;
-        }
-
-        /* Data Sections */
-        .data-section {
-            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
-            margin-bottom: var(--spacing-lg);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(5px);
-        }
-
-        .section-header {
-            background: linear-gradient(135deg, var(--blue-medium) 0%, var(--blue-light) 100%);
-            color: var(--white);
-            padding: var(--spacing-md) var(--spacing-lg);
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .section-content {
-            padding: var(--spacing-lg);
-            overflow-x: auto;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
-        /* Tables - Excel-like styling */
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            backdrop-filter: blur(5px);
-            min-width: 600px;
-        }
-
-        table th,
-        table td {
-            padding: var(--spacing-sm) var(--spacing-md);
-            text-align: left;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--white);
-            font-size: var(--font-size-sm);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-            cursor: default; /* Default cursor for non-editable state */
-            transition: background-color var(--transition-fast);
             position: relative;
         }
 
-        table th {
-            background: linear-gradient(135deg, var(--blue-medium) 0%, var(--blue-light) 100%);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: var(--font-size-xs);
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid var(--blue-primary);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            cursor: default;
-            user-select: none;
-        }
-
-        table td {
-            background: transparent;
-            user-select: none; /* Prevent text selection when not editing */
-        }
-
-        /* Excel-like cell selection */
-        table td.selectable {
-            cursor: cell;
-        }
-
-        table td.selectable:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        table td.selected {
-            background: rgba(33, 150, 243, 0.2);
-            border: 2px solid var(--blue-primary) !important;
-            z-index: 5;
-        }
-
-        /* Editable cell styling */
-        table td.editable {
-            cursor: text;
-            user-select: text;
-        }
-
-        table td.editable:focus {
-            outline: 2px solid var(--blue-primary);
-            outline-offset: -2px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 0;
-            z-index: 20;
-            position: relative;
-        }
-
-        /* Excel-like editing input overlay */
-        .cell-editor {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.95);
-            color: var(--gray-darkest);
-            border: 2px solid var(--blue-primary);
-            border-radius: 2px;
-            box-shadow: var(--shadow-lg);
-            padding: 0;
-            font-family: var(--font-primary);
-            font-size: var(--font-size-sm);
-            line-height: 1.4;
-            z-index: 1000;
-            overflow: hidden;
-            min-width: 150px;
-            min-height: 30px;
-        }
-
-        .cell-editor input {
-            width: 100%;
-            height: 100%;
-            border: none;
-            padding: var(--spacing-sm) var(--spacing-md);
-            font-family: var(--font-primary);
-            font-size: var(--font-size-sm);
-            background: transparent;
-            color: var(--gray-darkest);
-            outline: none;
-        }
-
-        /* Ensure text fits perfectly in cells */
-        table td:not(:first-child) {
-            min-width: 120px;
-        }
-
-        table td:first-child {
-            min-width: 150px;
-        }
-
-        /* Currency and date cells */
-        table td.currency {
-            font-family: var(--font-mono);
-            text-align: right;
-            min-width: 140px;
-        }
-
-        table td.date {
-            font-family: var(--font-mono);
-            min-width: 130px;
-        }
-
-        table td.tin {
-            font-family: var(--font-mono);
-            min-width: 160px;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: rgba(255, 255, 255, 0.7);
-            font-style: italic;
-            font-size: var(--font-size-lg);
-        }
-
-        .last-updated {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: var(--font-size-sm);
-            margin-top: var(--spacing-lg);
-            padding-top: var(--spacing-md);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-md);
-        }
-
-        /* Buttons */
-        .refresh-btn {
-            background: linear-gradient(135deg, var(--blue-primary) 0%, var(--blue-dark) 100%);
-            color: var(--white);
-            border: none;
-            padding: var(--spacing-sm) var(--spacing-xl);
-            border-radius: var(--radius-2xl);
-            cursor: pointer;
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            transition: all var(--transition-normal);
-            box-shadow: var(--shadow-sm);
-            min-width: 140px;
-        }
-
-        .refresh-btn:hover {
-            background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-darkest) 100%);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .refresh-btn:active {
-            transform: translateY(0);
-            box-shadow: var(--shadow-sm);
-        }
-
-        /* Save button for editable content */
-        .save-btn {
-            background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
-            color: var(--white);
-            border: none;
-            padding: var(--spacing-sm) var(--spacing-xl);
-            border-radius: var(--radius-2xl);
-            cursor: pointer;
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            transition: all var(--transition-normal);
-            box-shadow: var(--shadow-sm);
-            min-width: 140px;
-            margin-left: var(--spacing-sm);
-        }
-
-        .save-btn:hover {
-            background: linear-gradient(135deg, var(--success-dark) 0%, #1b5e20 100%);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .save-btn:disabled {
-            background: var(--gray-dark);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-            opacity: 0.6;
-        }
-
-        .loading {
-            text-align: center;
-            padding: var(--spacing-2xl);
-            color: rgba(255, 255, 255, 0.8);
-            font-size: var(--font-size-lg);
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: var(--radius-xl);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .error {
-            background: linear-gradient(135deg, rgba(244, 67, 54, 0.2) 0%, rgba(183, 28, 28, 0.1) 100%);
-            color: var(--red-primary);
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-lg);
-            margin: var(--spacing-lg) 0;
-            border: 1px solid rgba(244, 67, 54, 0.3);
-            backdrop-filter: blur(5px);
-        }
-
-        .error h3 {
-            color: var(--red-primary);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .error ol {
-            margin-left: var(--spacing-lg);
-            margin-top: var(--spacing-md);
-        }
-
-        .error li {
-            margin-bottom: var(--spacing-xs);
-        }
-
-        /* Save status message */
-        .save-status {
+        /* Scroll Progress Bar */
+        .scroll-progress {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-radius: var(--radius-lg);
-            font-weight: 600;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--blue-vivid), var(--teal));
             z-index: 1000;
-            box-shadow: var(--shadow-lg);
-            animation: slideInRight 0.3s ease-out;
-            backdrop-filter: blur(10px);
-        }
-
-        .save-status.success {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(46, 125, 50, 0.9) 100%);
-            color: var(--white);
-            border: 1px solid rgba(76, 175, 80, 0.5);
-        }
-
-        .save-status.error {
-            background: linear-gradient(135deg, rgba(244, 67, 54, 0.9) 0%, rgba(183, 28, 28, 0.9) 100%);
-            color: var(--white);
-            border: 1px solid rgba(244, 67, 54, 0.5);
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Excel-like selection indicator */
-        .selection-indicator {
-            position: absolute;
-            border: 2px solid var(--blue-primary);
-            background: rgba(33, 150, 243, 0.1);
+            transition: width 0.1s ease-out;
             pointer-events: none;
-            z-index: 10;
         }
 
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+        /* DYNAMIC BACKGROUND LAYER WITH SMOOTH TRANSITION */
+        .bg-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            transition: opacity 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
+        .bg-base {
+            background-image: url('MGAALogo.jpg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
         }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--blue-primary), var(--red-primary));
-            border-radius: var(--radius-md);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, var(--blue-dark), var(--red-dark));
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: var(--spacing-sm);
-            }
-            
-            header {
-                padding: var(--spacing-md);
-            }
-            
-            .header-content {
-                flex-direction: column;
-                text-align: center;
-                gap: var(--spacing-md);
-            }
-            
-            .refresh-btn,
-            .save-btn {
-                width: 100%;
-                max-width: 300px;
-                margin: var(--spacing-xs) 0;
-            }
-            
-            .section-content {
-                padding: var(--spacing-md);
-            }
-            
-            table th,
-            table td {
-                padding: var(--spacing-xs) var(--spacing-sm);
-                font-size: var(--font-size-xs);
-            }
-            
-            table td:not(:first-child) {
-                min-width: 100px;
-            }
-            
-            table td:first-child {
-                min-width: 120px;
-            }
-            
-            .save-status {
-                top: 10px;
-                right: 10px;
-                left: 10px;
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: var(--font-size-xl);
-            }
-            
-            .section-header {
-                font-size: var(--font-size-base);
-                padding: var(--spacing-sm);
-            }
-            
-            .no-data {
-                padding: var(--spacing-lg);
-                font-size: var(--font-size-base);
-            }
-            
-            table {
-                min-width: 500px;
-            }
-        }
-
-        /* Animation for loading */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .data-section {
-            animation: fadeIn 0.3s ease-out forwards;
+        .bg-overlay {
+            background-image: url('acct.jpg');
+            background-size: cover;
+            background-position: center;
             opacity: 0;
         }
 
-        .data-section:nth-child(1) { animation-delay: 0.1s; }
-        .data-section:nth-child(2) { animation-delay: 0.15s; }
-        .data-section:nth-child(3) { animation-delay: 0.2s; }
-        .data-section:nth-child(4) { animation-delay: 0.25s; }
-        .data-section:nth-child(5) { animation-delay: 0.3s; }
-        .data-section:nth-child(6) { animation-delay: 0.35s; }
-        .data-section:nth-child(7) { animation-delay: 0.4s; }
-        .data-section:nth-child(8) { animation-delay: 0.45s; }
-        .data-section:nth-child(9) { animation-delay: 0.5s; }
+        /* NAV */
+        .nav {
+            position: sticky; top: 0; z-index: 900;
+            height: var(--nav-h);
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(18px) saturate(180%);
+            border-bottom: 1px solid rgba(13,17,23,0.07);
+            transition: box-shadow 0.3s;
+        }
+        .nav.elevated { box-shadow: 0 2px 24px rgba(13,17,23,0.08); }
+
+        .nav-inner {
+            max-width: 1400px; margin: 0 auto;
+            padding: 0 32px;
+            height: 100%;
+            display: flex; align-items: center; justify-content: space-between; gap: 20px;
+        }
+
+        .brand {
+            display: flex; align-items: center; gap: 12px;
+            text-decoration: none; flex-shrink: 0;
+        }
+        .brand-mark {
+            width: 40px; height: 40px;
+            border-radius: 11px;
+            overflow: hidden;
+            border: 1px solid var(--ink-10);
+            background: var(--surface);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+        .brand-words { line-height: 1.15; }
+        .brand-words strong {
+            display: block;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.95rem; font-weight: 700;
+            color: var(--ink); letter-spacing: -0.01em;
+        }
+        .brand-words em {
+            font-style: normal;
+            font-size: 0.65rem; font-weight: 500;
+            color: var(--blue-vivid);
+            background: var(--blue-xlight);
+            padding: 2px 8px; border-radius: 30px;
+        }
+
+        .nav-links {
+            display: flex; align-items: center; gap: 2px;
+            background: var(--surface-2);
+            border: 1px solid var(--ink-10);
+            border-radius: 50px;
+            padding: 4px 4px;
+        }
+        .nav-link {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 7px 16px;
+            border-radius: 40px;
+            font-size: 0.82rem; font-weight: 500;
+            color: var(--ink-60);
+            text-decoration: none;
+            transition: background 0.18s, color 0.18s;
+            white-space: nowrap;
+        }
+        .nav-link i { font-size: 0.78rem; opacity: 0.7; }
+        .nav-link:hover { background: var(--surface); color: var(--ink); }
+        .nav-link.active {
+            background: var(--surface);
+            color: var(--blue-vivid);
+            font-weight: 600;
+            box-shadow: 0 1px 6px rgba(13,17,23,0.1);
+        }
+        .nav-link.active i { opacity: 1; }
+
+        .nav-right {
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+        }
+        .tin-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 18px;
+            background: var(--ink);
+            color: white;
+            border: none; border-radius: 40px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem; font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .tin-btn i { font-size: 0.78rem; }
+        .tin-btn:hover { background: #1e2836; transform: translateY(-1px); }
+
+        /* ── Identity badges (light nav theme) ── */
+        .identity-strip { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .id-badge { display: flex; align-items: center; gap: 6px; border-radius: 20px; padding: 5px 13px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+        .id-badge i { font-size: 0.7rem; flex-shrink: 0; opacity: 1; }
+        .id-badge-subadmin { background: #ede9fe; border: 1px solid #c4b5fd; color: #6d28d9; }
+        .id-badge-client   { background: #dcfce7; border: 1px solid #86efac; color: #15803d; }
+        .id-badge-sep { font-size: 0.75rem; color: #9ca3af; flex-shrink: 0; }
+
+        /* MAIN WRAP */
+        .wrap {
+            position: relative; z-index: 2;
+            max-width: 1400px; margin: 0 auto;
+            padding: 40px 32px 60px;
+        }
+
+        /* HERO */
+        .hero {
+            background: linear-gradient(130deg, #0d1f5c 0%, #1a3ba0 55%, #1555c2 100%);
+            border-radius: 28px;
+            padding: 48px 52px;
+            margin-bottom: 56px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px -12px rgba(26,71,204,0.35);
+        }
+
+        .hero-bg-img {
+            position: absolute; inset: 0;
+            background-image: url('retro.jpg');
+            background-size: cover;
+            background-position: center;
+            mix-blend-mode: soft-light;
+            opacity: 0.15;
+        }
+
+        .hero-ring {
+            position: absolute; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+        .hero-ring-1 { width: 320px; height: 320px; top: -80px; right: -60px; }
+        .hero-ring-2 { width: 200px; height: 200px; top: 20px; right: 100px; }
+        .hero-glow {
+            position: absolute; border-radius: 50%;
+            background: radial-gradient(circle, rgba(100,160,255,0.18) 0%, transparent 70%);
+            width: 500px; height: 500px;
+            top: -120px; right: -80px;
+            pointer-events: none;
+        }
+
+        .hero-content { position: relative; z-index: 2; }
+
+        .hero-eyebrow {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 5px 14px; border-radius: 30px;
+            font-size: 0.72rem; font-weight: 600;
+            color: rgba(255,255,255,0.85);
+            letter-spacing: 0.06em; text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .hero-eyebrow .pulse {
+            width: 7px; height: 7px;
+            background: #4ade80; border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .hero h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.6rem; font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+        .hero h1 span { color: #93c5fd; }
+
+        .hero p {
+            font-size: 0.95rem; font-weight: 400;
+            color: rgba(255,255,255,0.72);
+            max-width: 520px;
+            line-height: 1.65;
+            margin-bottom: 32px;
+        }
+
+        .hero-stats {
+            display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+        }
+        .hero-stat {
+            display: flex; flex-direction: column;
+        }
+        .hero-stat strong {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.4rem; font-weight: 700;
+            color: white; line-height: 1.1;
+        }
+        .hero-stat span {
+            font-size: 0.72rem; font-weight: 500;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .stat-divider {
+            width: 1px; height: 36px;
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* SECTION HEADER */
+        .section-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .section-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.02em;
+        }
+        .section-label span {
+            display: block;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 400;
+            color: var(--ink-60);
+            letter-spacing: 0;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--teal);
+            background: var(--teal-light);
+            padding: 5px 14px;
+            border-radius: 30px;
+        }
+
+        /* BUTTON ABOVE GRID */
+        .kiosk-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 28px;
+        }
+        .modules-trigger-btn {
+            background: var(--surface);
+            border: 1px solid var(--ink-10);
+            border-radius: 60px;
+            padding: 12px 32px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--blue-vivid);
+            cursor: pointer;
+            transition: all 0.25s var(--ease-out);
+            backdrop-filter: blur(4px);
+            background: rgba(255,255,255,0.85);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .modules-trigger-btn i {
+            font-size: 1rem;
+            transition: transform 0.3s var(--ease-out);
+        }
+        .modules-trigger-btn:hover {
+            background: var(--surface);
+            border-color: var(--blue-light);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 22px -12px rgba(26,71,204,0.2);
+        }
+        .modules-trigger-btn:hover i {
+            transform: translateY(2px);
+        }
+
+        /* GRID ANIMATION */
+        .grid-wrapper {
+            overflow: visible;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            transition: all 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            will-change: transform, opacity;
+        }
+        .grid-wrapper.animate-down .grid {
+            animation: smoothSlideDown 0.55s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+        }
+        @keyframes smoothSlideDown {
+            0% { opacity: 0.3; transform: translateY(-35px); }
+            40% { opacity: 0.8; }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* REVEAL CARDS */
+        .reveal {
+            opacity: 0;
+            transform: translateY(32px);
+            transition: opacity 0.65s var(--ease-out), transform 0.65s var(--ease-out);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* CARD STYLES */
+        .card {
+            display: block;
+            background: var(--surface);
+            border-radius: 22px;
+            border: 1px solid rgba(13,17,23,0.07);
+            padding: 26px;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out), border-color 0.2s;
+            cursor: pointer;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--card-accent-from, transparent) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 22px;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 48px -8px rgba(13,17,23,0.12);
+            border-color: rgba(13,17,23,0.13);
+        }
+        .card:hover::before { opacity: 1; }
+
+        .card-top {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .card-icon {
+            width: 50px; height: 50px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem;
+            transition: transform 0.25s var(--ease-out);
+            flex-shrink: 0;
+        }
+        .card:hover .card-icon { transform: scale(0.93) rotate(-3deg); }
+
+        .badge {
+            font-size: 0.62rem; font-weight: 700;
+            padding: 4px 11px; border-radius: 30px;
+            letter-spacing: 0.04em; text-transform: uppercase;
+        }
+
+        .card-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem; font-weight: 700;
+            color: var(--ink); letter-spacing: -0.01em;
+            margin-bottom: 6px;
+        }
+        .card-desc {
+            font-size: 0.8rem; font-weight: 400;
+            color: var(--ink-60);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+        .card-cta {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.75rem; font-weight: 600;
+            color: var(--blue-vivid);
+            transition: gap 0.2s;
+        }
+        .card:hover .card-cta { gap: 12px; }
+        .card-cta i { font-size: 0.7rem; }
+
+        /* Color themes */
+        .theme-ledger .card-icon { background: var(--purple-light); color: var(--purple); }
+        .theme-ledger { --card-accent-from: rgba(102,64,200,0.04); }
+        .theme-ledger .badge { background: var(--purple-light); color: var(--purple); }
+        .theme-vat .card-icon { background: var(--blue-light); color: var(--blue-vivid); }
+        .theme-vat { --card-accent-from: rgba(26,71,204,0.04); }
+        .theme-vat .badge { background: var(--blue-light); color: var(--blue-vivid); }
+        .theme-nonvat .card-icon { background: #d4f3f0; color: #0d7a72; }
+        .theme-nonvat { --card-accent-from: rgba(13,138,110,0.04); }
+        .theme-nonvat .badge { background: #d4f3f0; color: #0d7a72; }
+        .theme-capex .card-icon { background: var(--amber-light); color: var(--amber); }
+        .theme-capex { --card-accent-from: rgba(196,122,10,0.04); }
+        .theme-capex .badge { background: var(--amber-light); color: var(--amber); }
+        .theme-gov .card-icon { background: var(--teal-light); color: var(--teal); }
+        .theme-gov { --card-accent-from: rgba(13,138,110,0.04); }
+        .theme-gov .badge { background: var(--teal-light); color: var(--teal); }
+        .theme-returns .card-icon { background: var(--red-light); color: var(--red); }
+        .theme-returns { --card-accent-from: rgba(192,53,42,0.04); }
+        .theme-returns .badge { background: var(--red-light); color: var(--red); }
+        .theme-company .card-icon { background: #e0e7ff; color: #3730a3; }
+        .theme-company { --card-accent-from: rgba(55,48,163,0.04); }
+        .theme-company .badge { background: #e0e7ff; color: #3730a3; }
+
+        /* ── Company Information card — premium shiny emphasis ── */
+
+/* Shimmer sweep animation */
+@keyframes shimmerSweep {
+    0%   { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+    10%  { opacity: 1; }
+    60%  { opacity: 0.7; }
+    100% { transform: translateX(220%) skewX(-15deg); opacity: 0; }
+}
+
+/* Glow pulse on the border */
+@keyframes companyGlowPulse {
+    0%, 100% { box-shadow: 0 6px 24px -4px rgba(99,102,241,0.28), 0 0 0 0 rgba(99,102,241,0); }
+    50%       { box-shadow: 0 10px 32px -4px rgba(99,102,241,0.42), 0 0 0 6px rgba(99,102,241,0.06); }
+}
+
+/* Icon sparkle */
+@keyframes iconSparkle {
+    0%, 100% { transform: scale(1) rotate(0deg);   filter: brightness(1); }
+    50%       { transform: scale(1.08) rotate(-5deg); filter: brightness(1.15); }
+}
+
+.theme-company {
+    background: linear-gradient(145deg, #eef2ff 0%, #f5f3ff 50%, #ede9fe 100%);
+    border: 1.5px solid rgba(99, 102, 241, 0.35);
+    box-shadow: 0 6px 24px -4px rgba(99,102,241,0.28);
+    animation: companyGlowPulse 3s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Repeating shimmer sweep */
+.theme-company::before {
+    content: '';
+    position: absolute;
+    top: -20%; left: -60%;
+    width: 45%;
+    height: 140%;
+    background: linear-gradient(
+        105deg,
+        transparent 35%,
+        rgba(255,255,255,0.55) 50%,
+        rgba(255,255,255,0.15) 58%,
+        transparent 65%
+    );
+    transform: translateX(-100%) skewX(-15deg);
+    animation: shimmerSweep 3.4s cubic-bezier(0.4,0,0.6,1) infinite;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 22px;
+}
+
+/* Top accent bar — indigo→violet gradient */
+.theme-company::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+    border-radius: 22px 22px 0 0;
+    z-index: 2;
+}
+
+.theme-company .card-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #7c3aed 100%);
+    color: #ffffff;
+    box-shadow:
+        0 4px 14px -2px rgba(99,102,241,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.25);
+    animation: iconSparkle 3s ease-in-out infinite;
+    position: relative;
+    z-index: 2;
+}
+
+.theme-company .badge {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    letter-spacing: 0.06em;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+    position: relative;
+    z-index: 2;
+}
+
+.theme-company .card-title {
+    color: #3730a3;
+    font-weight: 800;
+    position: relative;
+    z-index: 2;
+}
+
+.theme-company .card-desc {
+    position: relative;
+    z-index: 2;
+}
+
+.theme-company .card-cta {
+    color: #4338ca;
+    font-weight: 700;
+    position: relative;
+    z-index: 2;
+}
+
+.theme-company:hover {
+    background: linear-gradient(145deg, #e0e7ff 0%, #ede9fe 50%, #ddd6fe 100%);
+    border-color: rgba(99, 102, 241, 0.55);
+    box-shadow:
+        0 20px 48px -8px rgba(99,102,241,0.35),
+        0 0 0 3px rgba(99,102,241,0.08);
+    transform: translateY(-6px) scale(1.01);
+    animation: none;
+}
+
+.theme-company:hover .card-icon {
+    animation: none;
+    transform: scale(0.93) rotate(-3deg);
+}
+
+        /* Footer */
+        .footer {
+            position: relative; z-index: 2;
+            background: var(--surface);
+            border-top: 1px solid var(--ink-10);
+            padding: 24px 0;
+        }
+        .footer-inner {
+            max-width: 1400px; margin: 0 auto;
+            padding: 0 32px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 14px;
+        }
+        .footer-copy {
+            font-size: 0.73rem; color: var(--ink-60);
+        }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a {
+            font-size: 0.73rem; font-weight: 500;
+            color: var(--ink-60); text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--blue-vivid); }
+
+        @media (max-width: 900px) {
+            .hero { padding: 36px 32px; }
+            .hero h1 { font-size: 2rem; }
+            .nav-links { gap: 2px; }
+            .nav-link { padding: 6px 12px; font-size: 0.75rem; }
+        }
+        @media (max-width: 700px) {
+            .nav-inner { flex-wrap: wrap; height: auto; padding: 12px 20px; gap: 10px; }
+            .nav-links { order: 3; width: 100%; justify-content: center; padding: 4px; }
+            .wrap { padding: 24px 20px 48px; }
+            .hero { padding: 28px 24px; border-radius: 20px; }
+            .hero h1 { font-size: 1.65rem; }
+            .stat-divider { display: none; }
+            .kiosk-actions { justify-content: center; margin-bottom: 20px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <div>
-                    <h1>VAT Encoding Data Repository</h1>
-                    <p class="subtitle">Automatically synced data from PHP Desktop Encoder</p>
-                    <p class="subtitle">Repository: <a href="https://github.com/vlademhaire/encoding_excel">github.com/vlademhaire/encoding_excel</a></p>
-                    <p class="subtitle" style="font-size: var(--font-size-xs); color: var(--warning); margin-top: var(--spacing-xs);">
-                        💡 <strong>Excel-like Editing:</strong> Double-click any cell to edit | Click once to select | Press Enter to save
-                    </p>
-                </div>
-                <div>
-                    <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
-                    <button class="save-btn" onclick="saveAllChanges()" id="save-all-btn" disabled>💾 Save All Changes</button>
-                </div>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Dynamic background layers for smooth transition -->
+<div class="bg-layer bg-base" id="bgBase"></div>
+<div class="bg-layer bg-overlay" id="bgOverlay"></div>
+
+<nav class="nav" id="nav">
+    <div class="nav-inner">
+        <a class="brand" href="#">
+            <div class="brand-mark"><img src="MGAALogo.jpg" alt="MGAA" onerror="this.src='https://placehold.co/40x40/1a47cc/white?text=M'"></div>
+            <div class="brand-words"><em>Professional Kiosk</em><strong>VAT Tracking System</strong></div>
+        </a>
+        <div class="nav-links">
+            <a href="../index.html" class="nav-link active"><i class="fas fa-home"></i> Portal</a>
+            <a href="tax_facts.html" class="nav-link"><i class="fas fa-book-open"></i> Tax Facts</a>
+            <a href="tax_calculator.html" class="nav-link"><i class="fas fa-calculator"></i> Calculator</a>
+            <a href="compensation.html" class="nav-link"><i class="fas fa-money-check-alt"></i> Compensation</a>
+            <a href="tax_game.html" class="nav-link"><i class="fas fa-gamepad"></i> Tax Game</a>
+            <a href="quick_guide.html" class="nav-link"><i class="fas fa-compass"></i> Guide</a>
+            <a href="help.html" class="nav-link"><i class="fas fa-life-ring"></i> Help</a>
+        </div>
+        <div class="nav-right">
+            <!-- Identity strip: role-specific badges -->
+            <div class="identity-strip" id="identityStrip" style="display:none">
+                <div class="id-badge id-badge-subadmin hidden" id="subAdminBadge"><i class="fas fa-user-shield"></i><span id="subAdminBadgeLabel">—</span></div>
+                <span class="id-badge-sep hidden" id="identitySep">›</span>
+                <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
             </div>
-        </header>
-        
-        <div class="loading" id="loading">📊 Loading data from GitHub repository...</div>
-        <div id="error-container" style="display: none;"></div>
-        
-        <div id="data-container" style="display: none;">
-            <div class="data-section">
-                <div class="section-header">Vatable Sales</div>
-                <div class="section-content" id="vatable-sales">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Non-VAT Sales</div>
-                <div class="section-content" id="non-vat-sales">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Vatable Purchases</div>
-                <div class="section-content" id="vatable-purchases">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Non-VAT Purchases</div>
-                <div class="section-content" id="non-vat-purchases">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Vatable Expenses</div>
-                <div class="section-content" id="vatable-expenses">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Non-VAT Expenses</div>
-                <div class="section-content" id="non-vat-expenses">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Capex</div>
-                <div class="section-content" id="capex">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Taxes & Licenses</div>
-                <div class="section-content" id="taxes-licenses">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="data-section">
-                <div class="section-header">Purchase Returns</div>
-                <div class="section-content" id="purchase-returns">
-                    <div class="no-data">No data available</div>
-                </div>
-            </div>
-            
-            <div class="last-updated" id="last-updated">
-                Last updated: Loading...
-            </div>
+            <a href="tin_library.html" class="tin-btn"><i class="fas fa-id-card"></i> TIN Library</a>
         </div>
     </div>
+</nav>
 
-    <script>
-    // GitHub repository details
-    const REPO_OWNER = 'vlademhaire';
-    const REPO_NAME = 'encoding_excel';
-    const DATA_FILE = 'data.json';
+<div class="wrap">
+    <section class="hero reveal" id="hero">
+        <div class="hero-bg-img"></div>
+        <div class="hero-ring hero-ring-1"></div>
+        <div class="hero-ring hero-ring-2"></div>
+        <div class="hero-glow"></div>
+        <div class="hero-content">
+            <div class="hero-eyebrow"><span class="pulse"></span> All Modules Live</div>
+            <h1>VAT Compliance<br><span>Kiosk Dashboard</span></h1>
+            <p>Professional interface for tracking vatable sales, purchases, expenses, journal entries, and government remittances — all in one place.</p>
+            <div class="hero-stats"><div class="hero-stat"><strong>10</strong><span>Modules</span></div><div class="stat-divider"></div><div class="hero-stat"><strong>12%</strong><span>VAT Rate</span></div><div class="stat-divider"></div><div class="hero-stat"><strong>Auto</strong><span>Saved Locally</span></div></div>
+        </div>
+    </section>
+
+    <!-- Original header design: "Navigation Tracking Modules" + BIR VAT Compliant tag -->
+    <div class="section-header reveal" style="transition-delay: 0.1s;">
+        <div class="section-label"><span>Navigation</span>Tracking Modules</div>
+        <div class="section-tag"><i class="fas fa-shield-alt"></i> BIR VAT Compliant</div>
+    </div>
+
+    <!-- Smooth action button -->
+    <div class="kiosk-actions reveal" style="transition-delay: 0.05s;">
+        <button class="modules-trigger-btn" id="smoothModulesBtn">
+            <i class="fas fa-arrow-circle-down"></i> View All Modules
+            <i class="fas fa-caret-down" style="font-size: 0.85rem;"></i>
+        </button>
+    </div>
+
+    <div class="grid-wrapper" id="gridWrapper">
+        <div class="grid" id="moduleGrid">
+            <a href="company_information.html" class="card theme-company reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-building"></i></div><span class="badge">Company</span></div><div class="card-title">Company Information</div><div class="card-desc">Manage business name, TIN, address, and authorized signatory. Syncs directly to the VAT Sales right panel.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_journal.html" class="card theme-ledger reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-journal-whills"></i></div><span class="badge">Ledger</span></div><div class="card-title">Journal Entry</div><div class="card-desc">Tally table with debits & credits. Subtotals per section: Sales, Purchases, CAPEX, and more.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_record.html" class="card theme-vat reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-file-invoice-dollar"></i></div><span class="badge">VAT</span></div><div class="card-title">VAT Sales</div><div class="card-desc">Track vatable sales with automated 12% output VAT calculations and invoice summaries.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_purchases.html" class="card theme-vat reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-shopping-cart"></i></div><span class="badge">VAT</span></div><div class="card-title">VAT Purchases</div><div class="card-desc">Track vatable purchases with input tax calculations and supplier TIN integration.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_expenses.html" class="card theme-vat reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-money-bill-wave"></i></div><span class="badge">VAT</span></div><div class="card-title">VAT Expenses</div><div class="card-desc">Track vatable operational expenses with automated VAT calculations and period filters.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_npurch.html" class="card theme-nonvat reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-shopping-basket"></i></div><span class="badge">Non-VAT</span></div><div class="card-title">Non-VAT Purchases</div><div class="card-desc">Track exempt purchases and those from non-VAT registered suppliers accurately.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_nexp.html" class="card theme-nonvat reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-receipt"></i></div><span class="badge">Non-VAT</span></div><div class="card-title">Non-VAT Expenses</div><div class="card-desc">Track VAT-exempt operational expenses and zero-rated transactions.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_capex.html" class="card theme-capex reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-building"></i></div><span class="badge">CAPEX</span></div><div class="card-title">Capital Expenditures</div><div class="card-desc">Track asset acquisitions with VAT calculations and depreciation scheduling.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_taxes.html" class="card theme-gov reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-gavel"></i></div><span class="badge">Government</span></div><div class="card-title">Taxes & Licenses</div><div class="card-desc">Track BIR tax payments, government license fees, and regulatory compliance dues.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+            <a href="monthly_returns.html" class="card theme-returns reveal"><div class="card-top"><div class="card-icon"><i class="fas fa-undo-alt"></i></div><span class="badge">Returns</span></div><div class="card-title">Purchase Returns</div><div class="card-desc">Track purchase returns and adjustments with VAT reversals and debit note management.</div><div class="card-cta"><i class="fas fa-arrow-right"></i> Access module</div></a>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="footer-inner"><div class="footer-copy">© 2026 MGAA VAT Tracking System · Professional Kiosk v2.0</div><div class="footer-links"><a href="quick_guide.html"><i class="fas fa-compass"></i> Quick Guide</a><a href="help.html"><i class="fas fa-headset"></i> Help & Support</a></div><div class="footer-copy"><i class="fas fa-database"></i> Auto-saved locally</div></div>
+</footer>
+
+
+
+<script>
+(function(){
+    // Nav elevation
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => nav.classList.toggle('elevated', window.scrollY > 10), { passive: true });
     
-    // GitHub Pages URL for the data file
-    const DATA_URL = `https://${REPO_OWNER}.github.io/${REPO_NAME}/${DATA_FILE}`;
-    // Alternative: Raw GitHub URL (works better for JSON)
-    const RAW_DATA_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${DATA_FILE}`;
-    
-    // Store original data and changes
-    let originalData = [];
-    let currentData = [];
-    let changesMade = false;
-    let cellEditHistory = [];
-    let selectedCell = null;
-    let cellEditor = null;
-    let isEditing = false;
-    
-    function formatCurrency(amount) {
-        if (typeof amount !== 'number') {
-            amount = parseFloat(amount) || 0;
-        }
-        return '₱' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    // Intersection observer for reveal cards
+    const reveals = document.querySelectorAll('.reveal');
+    const cards = document.querySelectorAll('.card.reveal');
+    cards.forEach((card, i) => card.style.transitionDelay = `${0.08 * i}s`);
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if(entry.isIntersecting){ entry.target.classList.add('visible'); observer.unobserve(entry.target); } });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => observer.observe(el));
+
+    // Scroll Progress Bar
+    const scrollProgress = document.getElementById('scrollProgress');
+    if (scrollProgress) {
+        window.addEventListener('scroll', () => {
+            const scrollPercent = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+            scrollProgress.style.width = scrollPercent + '%';
+        });
     }
-    
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
+
+    // Background scroll transition from MGAALogo.jpg (top) to acct.jpg (bottom)
+    const bgBase = document.getElementById('bgBase');
+    const bgOverlay = document.getElementById('bgOverlay');
+
+    // Set initial states
+    bgBase.style.opacity = '0.15'; // Base visible at top
+    bgOverlay.style.opacity = '0'; // Overlay hidden at top
+
+    // Function to update background based on scroll position
+    function updateBackgroundOnScroll() {
+        const scrollPosition = window.scrollY;
+        const maxScroll = document.body.scrollHeight - window.innerHeight;
+        
+        // Calculate scroll percentage (0 to 1)
+        let scrollPercent = maxScroll > 0 ? scrollPosition / maxScroll : 0;
+        
+        // Apply easing for smoother transition (optional - uncomment for slower start)
+        // scrollPercent = Math.pow(scrollPercent, 0.8);
+        
+        // As we scroll down, fade out MGAALogo and fade in acct
+        const baseOpacity = Math.max(0, 0.15 * (1 - scrollPercent * 1.2));
+        const overlayOpacity = Math.min(0.25, scrollPercent * 0.35);
+        
+        bgBase.style.opacity = baseOpacity;
+        bgOverlay.style.opacity = overlayOpacity;
+    }
+
+    // Throttle the scroll event for performance
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                updateBackgroundOnScroll();
+                ticking = false;
             });
-        } catch (e) {
-            return dateString;
-        }
-    }
-    
-    function formatTIN(tin) {
-        if (!tin) return 'N/A';
-        if (tin.length === 12) {
-            return tin.substring(0, 3) + '-' + tin.substring(3, 6) + '-' +
-                   tin.substring(6, 9) + '-' + tin.substring(9, 12);
-        }
-        if (tin.length === 14 && tin.includes('-')) {
-            return tin; // Already formatted
-        }
-        return tin;
-    }
-    
-    function parseCurrencyValue(value) {
-        if (typeof value === 'string') {
-            // Remove currency symbol and commas
-            const cleaned = value.replace(/[₱,]/g, '').trim();
-            return parseFloat(cleaned) || 0;
-        }
-        return parseFloat(value) || 0;
-    }
-    
-    function showSaveStatus(message, type = 'success') {
-        // Remove existing status
-        const existingStatus = document.querySelector('.save-status');
-        if (existingStatus) {
-            existingStatus.remove();
-        }
-        
-        // Create new status
-        const status = document.createElement('div');
-        status.className = `save-status ${type}`;
-        status.textContent = message;
-        document.body.appendChild(status);
-        
-        // Auto remove after 3 seconds
-        setTimeout(() => {
-            if (status.parentNode) {
-                status.style.opacity = '0';
-                status.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (status.parentNode) {
-                        status.remove();
-                    }
-                }, 300);
-            }
-        }, 3000);
-    }
-    
-    function updateSaveButton() {
-        const saveBtn = document.getElementById('save-all-btn');
-        if (changesMade) {
-            saveBtn.disabled = false;
-            saveBtn.title = `Changes made: ${cellEditHistory.length} cell(s)`;
-        } else {
-            saveBtn.disabled = true;
-            saveBtn.title = 'No changes to save';
-        }
-    }
-    
-    function selectCell(cell) {
-        // Remove selection from previously selected cell
-        if (selectedCell && selectedCell !== cell) {
-            selectedCell.classList.remove('selected');
-        }
-        
-        // Select new cell
-        cell.classList.add('selected');
-        selectedCell = cell;
-    }
-    
-    function createCellEditor(cell) {
-        // Remove existing editor
-        if (cellEditor) {
-            cellEditor.remove();
-        }
-        
-        // Get cell position and dimensions
-        const rect = cell.getBoundingClientRect();
-        
-        // Create editor overlay
-        cellEditor = document.createElement('div');
-        cellEditor.className = 'cell-editor';
-        cellEditor.style.position = 'fixed';
-        cellEditor.style.top = `${rect.top}px`;
-        cellEditor.style.left = `${rect.left}px`;
-        cellEditor.style.width = `${rect.width}px`;
-        cellEditor.style.height = `${rect.height}px`;
-        
-        // Create input field
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = cell.dataset.original || cell.textContent;
-        
-        // Set input to select all text
-        input.addEventListener('focus', function() {
-            setTimeout(() => this.select(), 10);
-        });
-        
-        // Handle input events
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                saveCellEdit(cell, this.value);
-                cellEditor.remove();
-                cellEditor = null;
-                isEditing = false;
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                cancelCellEdit(cell);
-                cellEditor.remove();
-                cellEditor = null;
-                isEditing = false;
-            }
-        });
-        
-        input.addEventListener('blur', function() {
-            // Small delay to handle Enter/Escape key press
-            setTimeout(() => {
-                if (cellEditor && document.body.contains(cellEditor)) {
-                    saveCellEdit(cell, this.value);
-                    cellEditor.remove();
-                    cellEditor = null;
-                    isEditing = false;
-                }
-            }, 100);
-        });
-        
-        cellEditor.appendChild(input);
-        document.body.appendChild(cellEditor);
-        
-        // Focus the input
-        input.focus();
-        input.select();
-        
-        isEditing = true;
-    }
-    
-    function saveCellEdit(cell, newValue) {
-        const originalValue = cell.dataset.original || '';
-        const header = cell.dataset.header;
-        const row = parseInt(cell.dataset.row);
-        const formType = cell.dataset.form;
-        const isCurrency = cell.dataset.currency === 'true';
-        const isDate = cell.dataset.date === 'true';
-        const isTIN = cell.dataset.tin === 'true';
-        
-        // Format the value based on type
-        let displayValue = newValue;
-        if (isCurrency && newValue !== 'N/A') {
-            const numValue = parseCurrencyValue(newValue);
-            displayValue = formatCurrency(numValue);
-            cell.textContent = displayValue;
-        } else if (isDate && newValue !== 'N/A') {
-            displayValue = formatDate(newValue);
-            cell.textContent = displayValue;
-        } else if (isTIN && newValue !== 'N/A') {
-            displayValue = formatTIN(newValue);
-            cell.textContent = displayValue;
-        } else {
-            cell.textContent = displayValue;
-        }
-        
-        // Check if value changed
-        if (originalValue !== newValue) {
-            // Store change
-            const changeId = `${formType}-${row}-${header}`;
-            const existingChangeIndex = cellEditHistory.findIndex(change => change.id === changeId);
-            
-            if (existingChangeIndex >= 0) {
-                // Update existing change
-                cellEditHistory[existingChangeIndex].newValue = newValue;
-                cellEditHistory[existingChangeIndex].displayValue = displayValue;
-            } else {
-                // Add new change
-                cellEditHistory.push({
-                    id: changeId,
-                    formType: formType,
-                    row: row,
-                    header: header,
-                    originalValue: originalValue,
-                    newValue: newValue,
-                    displayValue: displayValue,
-                    isCurrency: isCurrency,
-                    isDate: isDate,
-                    isTIN: isTIN
-                });
-            }
-            
-            changesMade = true;
-            updateSaveButton();
-            
-            // Update cell's original value for future comparisons
-            cell.dataset.original = newValue;
-        }
-    }
-    
-    function cancelCellEdit(cell) {
-        // Restore original value
-        const originalValue = cell.dataset.original || '';
-        const isCurrency = cell.dataset.currency === 'true';
-        const isDate = cell.dataset.date === 'true';
-        const isTIN = cell.dataset.tin === 'true';
-        
-        let displayValue = originalValue;
-        if (isCurrency && originalValue !== 'N/A') {
-            const numValue = parseCurrencyValue(originalValue);
-            displayValue = formatCurrency(numValue);
-        } else if (isDate && originalValue !== 'N/A') {
-            displayValue = formatDate(originalValue);
-        } else if (isTIN && originalValue !== 'N/A') {
-            displayValue = formatTIN(originalValue);
-        }
-        
-        cell.textContent = displayValue;
-    }
-    
-    function renderTable(data, containerId, formType) {
-        const container = document.getElementById(containerId);
-        
-        if (!data || data.length === 0) {
-            container.innerHTML = '<div class="no-data">No data available</div>';
-            return;
-        }
-        
-        // Filter by form type
-        const filteredData = data.filter(entry => 
-            entry.form_type === formType || 
-            entry.form_type === formType.replace('-', '_')
-        );
-        
-        if (filteredData.length === 0) {
-            container.innerHTML = '<div class="no-data">No data available</div>';
-            return;
-        }
-        
-        // Get headers from first data item
-        const firstItem = filteredData[0].data || {};
-        const headers = Object.keys(firstItem);
-        
-        let html = '<table>';
-        
-        // Table header
-        html += '<thead><tr>';
-        headers.forEach(header => {
-            const displayName = header.replace(/_/g, ' ').toUpperCase();
-            html += `<th>${displayName}</th>`;
-        });
-        html += '</tr></thead>';
-        
-        // Table body
-        html += '<tbody>';
-        filteredData.forEach((item, rowIndex) => {
-            const itemData = item.data || {};
-            html += '<tr>';
-            headers.forEach(header => {
-                let value = itemData[header];
-                let cellClass = '';
-                let isCurrency = false;
-                let isDate = false;
-                let isTIN = false;
-                
-                // Determine cell type
-                if (header.includes('date')) {
-                    cellClass = 'date';
-                    isDate = true;
-                    value = formatDate(value);
-                } else if (header.includes('tin')) {
-                    cellClass = 'tin';
-                    isTIN = true;
-                    value = formatTIN(value);
-                } else if (typeof value === 'number' || 
-                          (typeof value === 'string' && !isNaN(value) && value.trim() !== '')) {
-                    const numValue = parseFloat(value);
-                    if (!isNaN(numValue) && 
-                        (header.includes('amount') || header.includes('sales') || 
-                         header.includes('purchases') || header.includes('expenses') || 
-                         header.includes('tax') || header.includes('gross') || 
-                         header.includes('net') || header.includes('value') ||
-                         header.includes('cost') || header.includes('price'))) {
-                        cellClass = 'currency';
-                        isCurrency = true;
-                        value = formatCurrency(numValue);
-                    } else if (header.includes('rate') && !isNaN(numValue)) {
-                        value = numValue + '%';
-                    }
-                }
-                
-                // Store raw value in data attributes
-                const rawValue = itemData[header] || '';
-                html += `<td class="selectable ${cellClass}" 
-                            data-original="${rawValue}"
-                            data-header="${header}"
-                            data-row="${rowIndex}"
-                            data-form="${formType}"
-                            data-currency="${isCurrency}"
-                            data-date="${isDate}"
-                            data-tin="${isTIN}">${value !== undefined && value !== null ? value : 'N/A'}</td>`;
-            });
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-        
-        container.innerHTML = html;
-        
-        // Add event listeners for cells
-        const cells = container.querySelectorAll('td.selectable');
-        cells.forEach(cell => {
-            // Single click to select cell
-            cell.addEventListener('click', handleCellClick);
-            
-            // Double click to edit
-            cell.addEventListener('dblclick', handleCellDoubleClick);
-        });
-    }
-    
-    function handleCellClick(e) {
-        // Don't handle clicks if we're currently editing
-        if (isEditing) return;
-        
-        const cell = e.target;
-        selectCell(cell);
-    }
-    
-    function handleCellDoubleClick(e) {
-        // Don't handle double clicks if we're currently editing
-        if (isEditing) return;
-        
-        const cell = e.target;
-        selectCell(cell);
-        createCellEditor(cell);
-    }
-    
-    async function saveAllChanges() {
-        if (!changesMade || cellEditHistory.length === 0) {
-            showSaveStatus('No changes to save', 'error');
-            return;
-        }
-        
-        const saveBtn = document.getElementById('save-all-btn');
-        saveBtn.disabled = true;
-        saveBtn.textContent = '💾 Saving...';
-        
-        try {
-            // Apply changes to currentData
-            cellEditHistory.forEach(change => {
-                // Find the data item
-                const dataIndex = currentData.findIndex(item => 
-                    (item.form_type === change.formType || 
-                     item.form_type === change.formType.replace('-', '_')) &&
-                    // This is a simplified matching - you might need more robust logic
-                    currentData.indexOf(item) === change.row
-                );
-                
-                if (dataIndex >= 0 && currentData[dataIndex].data) {
-                    // Update the data
-                    currentData[dataIndex].data[change.header] = change.newValue;
-                }
-            });
-            
-            // In a real application, you would send the updated data back to your server
-            // For now, we'll just show a success message and clear changes
-            showSaveStatus(`Successfully saved ${cellEditHistory.length} changes!`);
-            
-            // Clear changes
-            cellEditHistory = [];
-            changesMade = false;
-            updateSaveButton();
-            
-            // Update the display
-            renderAllTables();
-            
-        } catch (error) {
-            console.error('Error saving changes:', error);
-            showSaveStatus('Error saving changes: ' + error.message, 'error');
-        } finally {
-            saveBtn.textContent = '💾 Save All Changes';
-        }
-    }
-    
-    function renderAllTables() {
-        renderTable(currentData, 'vatable-sales', 'vatable_sales');
-        renderTable(currentData, 'non-vat-sales', 'non_vat_sales');
-        renderTable(currentData, 'vatable-purchases', 'vatable_purchases');
-        renderTable(currentData, 'non-vat-purchases', 'non_vat_purchases');
-        renderTable(currentData, 'vatable-expenses', 'vatable_expenses');
-        renderTable(currentData, 'non-vat-expenses', 'non_vat_expenses');
-        renderTable(currentData, 'capex', 'capex');
-        renderTable(currentData, 'taxes-licenses', 'taxes_licenses');
-        renderTable(currentData, 'purchase-returns', 'purchase_returns');
-    }
-    
-    async function loadData() {
-        const loadingEl = document.getElementById('loading');
-        const errorContainer = document.getElementById('error-container');
-        const dataContainer = document.getElementById('data-container');
-        
-        loadingEl.style.display = 'block';
-        errorContainer.style.display = 'none';
-        dataContainer.style.display = 'none';
-        errorContainer.innerHTML = '';
-        
-        // Clear any pending changes
-        if (changesMade) {
-            if (!confirm('You have unsaved changes. Are you sure you want to reload?')) {
-                return;
-            }
-            cellEditHistory = [];
-            changesMade = false;
-            updateSaveButton();
-        }
-        
-        // Remove cell editor if active
-        if (cellEditor) {
-            cellEditor.remove();
-            cellEditor = null;
-            isEditing = false;
-        }
-        
-        // Clear selection
-        if (selectedCell) {
-            selectedCell.classList.remove('selected');
-            selectedCell = null;
-        }
-        
-        try {
-            // Try raw.githubcontent first (more reliable for JSON)
-            const response = await fetch(RAW_DATA_URL, {
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            // Store data
-            originalData = JSON.parse(JSON.stringify(data));
-            currentData = JSON.parse(JSON.stringify(data));
-            
-            // Hide loading, show data
-            loadingEl.style.display = 'none';
-            dataContainer.style.display = 'block';
-            
-            // Render all tables
-            renderAllTables();
-            
-            // Update last updated timestamp
-            document.getElementById('last-updated').textContent = 
-                'Last updated: ' + new Date().toLocaleString() + 
-                ` | Total entries: ${data.length} | Excel-like: Double-click to edit`;
-            
-        } catch (error) {
-            console.error('Error loading data:', error);
-            loadingEl.style.display = 'none';
-            errorContainer.style.display = 'block';
-            errorContainer.innerHTML = `
-                <div class="error">
-                    <h3>Error Loading Data</h3>
-                    <p>${error.message}</p>
-                    <p>Please ensure:</p>
-                    <ol>
-                        <li><code>data.json</code> exists in your GitHub repository</li>
-                        <li>GitHub Pages is enabled for your repository</li>
-                        <li>The file is accessible at: <a href="${RAW_DATA_URL}" target="_blank">${RAW_DATA_URL}</a></li>
-                    </ol>
-                    <p><button onclick="loadData()" class="refresh-btn">Try Again</button></p>
-                </div>
-            `;
-        }
-    }
-    
-    // Click outside to deselect and close editor
-    document.addEventListener('click', (e) => {
-        if (isEditing && cellEditor && !cellEditor.contains(e.target) && !e.target.classList.contains('selectable')) {
-            // Find the input value
-            const input = cellEditor.querySelector('input');
-            if (input) {
-                // Find the selected cell
-                if (selectedCell) {
-                    saveCellEdit(selectedCell, input.value);
-                }
-            }
-            cellEditor.remove();
-            cellEditor = null;
-            isEditing = false;
-        } else if (!isEditing && selectedCell && !e.target.classList.contains('selectable')) {
-            selectedCell.classList.remove('selected');
-            selectedCell = null;
+            ticking = true;
         }
     });
-    
-    // Handle Escape key to cancel editing
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            if (isEditing && cellEditor) {
-                if (selectedCell) {
-                    cancelCellEdit(selectedCell);
-                }
-                cellEditor.remove();
-                cellEditor = null;
-                isEditing = false;
-            }
-        }
-    });
-    
-    // Load data on page load
-    document.addEventListener('DOMContentLoaded', loadData);
-    
-    // Auto-refresh every 5 minutes (with warning if there are changes)
-    setInterval(() => {
-        if (!changesMade) {
-            loadData();
-        }
-    }, 300000);
-    
-    // Warn user before leaving page if there are unsaved changes
-    window.addEventListener('beforeunload', (e) => {
-        if (changesMade) {
+
+    // Smooth modules button (scroll + animation + background transition)
+    const btn = document.getElementById('smoothModulesBtn');
+    const gridWrapper = document.getElementById('gridWrapper');
+    if(btn && gridWrapper) {
+        btn.addEventListener('click', function(e) {
             e.preventDefault();
-            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-            return e.returnValue;
-        }
+            
+            // Scroll to kiosk grid area
+            const targetOffsetTop = document.getElementById('moduleGrid').getBoundingClientRect().top + window.scrollY - 95;
+            window.scrollTo({
+                top: targetOffsetTop,
+                behavior: 'smooth'
+            });
+            
+            // Add smooth grid animation
+            gridWrapper.classList.remove('animate-down');
+            void gridWrapper.offsetWidth;
+            gridWrapper.classList.add('animate-down');
+            
+            setTimeout(() => {
+                gridWrapper.classList.remove('animate-down');
+            }, 700);
+            
+            // Background will naturally transition during scroll
+            // The scroll event will handle the background update
+        });
+    }
+
+    // Initial call to set correct background position
+    updateBackgroundOnScroll();
+
+
+})();
+</script>
+
+<script>
+// Continue music from welcome page - plays once on dashboard load
+(function() {
+    const musicShouldPlay = sessionStorage.getItem('musicPlaying') === 'true';
+    
+    if (musicShouldPlay) {
+        const savedTime = parseFloat(sessionStorage.getItem('musicCurrentTime')) || 0;
+        
+        // Create audio element - NO LOOP
+        const audio = new Audio('startup.mp3');
+        audio.loop = false;
+        audio.volume = 0.3;
+        audio.currentTime = savedTime;
+        
+        // Play the music when dashboard loads
+        setTimeout(() => {
+            audio.play().catch(error => {
+                console.log("Autoplay blocked - adding play button", error);
+                addPlayButton(audio);
+            });
+        }, 100); // Small delay to ensure page is ready
+        
+        window.backgroundMusic = audio;
+        
+        // Add music control button
+        addMusicControl(audio);
+    }
+    
+    function addPlayButton(audio) {
+        const playBtn = document.createElement('div');
+        playBtn.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1a47cc, #e53935); padding: 12px 20px; border-radius: 40px; color: white; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                <i class="fas fa-play"></i> Play Music
+            </div>
+        `;
+        playBtn.style.cssText = 'position: fixed; bottom: 80px; right: 20px; z-index: 1001;';
+        playBtn.onclick = () => {
+            audio.play();
+            playBtn.remove();
+        };
+        document.body.appendChild(playBtn);
+        
+        setTimeout(() => playBtn.remove(), 10000);
+    }
+    
+    function addMusicControl(audio) {
+        const controlBtn = document.createElement('button');
+        controlBtn.innerHTML = '<i class="fas fa-music"></i>';
+        controlBtn.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(13,17,23,0.1);
+            color: #1a47cc;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+            font-family: 'DM Sans', sans-serif;
+        `;
+        
+        let isPlaying = true;
+        
+        controlBtn.onmouseenter = () => controlBtn.style.transform = 'scale(1.1)';
+        controlBtn.onmouseleave = () => controlBtn.style.transform = 'scale(1)';
+        
+        controlBtn.onclick = () => {
+            if (isPlaying) {
+                audio.pause();
+                controlBtn.style.background = 'rgba(13,17,23,0.95)';
+                controlBtn.style.color = '#e53935';
+                controlBtn.innerHTML = '<i class="fas fa-music-slash"></i>';
+                isPlaying = false;
+            } else {
+                audio.play().catch(e => console.log("Play failed"));
+                controlBtn.style.background = 'rgba(255,255,255,0.95)';
+                controlBtn.style.color = '#1a47cc';
+                controlBtn.innerHTML = '<i class="fas fa-music"></i>';
+                isPlaying = true;
+            }
+        };
+        
+        audio.addEventListener('ended', () => {
+            controlBtn.style.opacity = '0.5';
+            controlBtn.style.cursor = 'default';
+            controlBtn.onclick = null;
+        });
+        
+        document.body.appendChild(controlBtn);
+    }
+    
+    // Clear sessionStorage after music starts to prevent replay on refresh
+    window.addEventListener('beforeunload', () => {
+        sessionStorage.removeItem('musicPlaying');
+        sessionStorage.removeItem('musicCurrentTime');
     });
-    </script>
+})();
+</script>
+
+<script>
+/* ── Identity badges ─────────────────────────────────────────────
+   Rules (strict, no cross-contamination):
+
+   Sub-Admin/index2.html (own page, INDEX2_READONLY absent):
+     → ONLY show SA badge (purple). Clear any stale
+       VAT_TRACKER_VIEWING_CLIENT that may linger from a prior
+       client-view navigation.
+
+   Sub-Admin/index2.html (client-view, INDEX2_READONLY=1):
+     → Show SA badge › Client badge: "associate1 › client1"
+
+   Client/index2.html:
+     → ONLY show Client badge (green).
+
+   No monthly context — badges are name-only (no month prefix).
+────────────────────────────────────────────────────────────── */
+(function() {
+    const _path = window.location.pathname;
+    const _role = _path.includes('/Client/')    ? 'Client'
+                : _path.includes('/Sub-Admin/') ? 'SubAdmin'
+                : 'Main';
+
+    if (_role === 'Main') return; // nothing to show on the Main dashboard
+
+    const _saReadOnly   = sessionStorage.getItem('INDEX2_READONLY') === '1';
+    const _saClientName = sessionStorage.getItem('VAT_TRACKER_VIEWING_CLIENT') || '';
+
+    let vatSession = null;
+    try { vatSession = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null'); } catch(e) {}
+    const loggedInUser = vatSession?.username || '';
+
+    const strip   = document.getElementById('identityStrip');
+    const saBadge = document.getElementById('subAdminBadge');
+    const saLabel = document.getElementById('subAdminBadgeLabel');
+    const clBadge = document.getElementById('clientBadge');
+    const clLabel = document.getElementById('clientBadgeLabel');
+    const sep     = document.getElementById('identitySep');
+
+    if (_role === 'SubAdmin') {
+        if (_saReadOnly && _saClientName) {
+            // Sub-Admin viewing a client's dashboard (read-only mode)
+            const saName = loggedInUser;
+            if (saName) { saLabel.textContent = saName; saBadge.classList.remove('hidden'); }
+            clLabel.textContent = _saClientName;
+            clBadge.classList.remove('hidden');
+            if (saName) sep.classList.remove('hidden');
+            strip.style.display = 'flex';
+        } else {
+            // Sub-Admin on their OWN dashboard.
+            // Clear any stale client-view keys so they don't contaminate.
+            sessionStorage.removeItem('VAT_TRACKER_VIEWING_CLIENT');
+            sessionStorage.removeItem('INDEX2_READONLY');
+            const saName = loggedInUser;
+            if (saName) {
+                saLabel.textContent = saName;
+                saBadge.classList.remove('hidden');
+                strip.style.display = 'flex';
+            }
+        }
+
+    } else if (_role === 'Client') {
+        // Client's own dashboard — show ONLY the client badge.
+        const clName = loggedInUser;
+        if (clName) {
+            clLabel.textContent = clName;
+            clBadge.classList.remove('hidden');
+            strip.style.display = 'flex';
+        }
+    }
+})();
+</script>
 </body>
 </html>
