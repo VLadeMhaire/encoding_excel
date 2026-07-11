@@ -546,16 +546,6 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 <div class="footer">© 2026 MGAA Graphical Analysis &nbsp;·&nbsp; VAT Sales · VAT Purchases · VAT Expenses · Non-VAT Purchases · Non-VAT Expenses · CAPEX · Taxes &amp; Licenses · Purchase Returns</div>
 
 <script>
-// ── Auth guard: redirect to sign-in if no active session ──
-(function() {
-  try {
-    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
-    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
-  } catch(e) { window.location.replace('../bookkeeping.html'); }
-})();
-</script>
-
-<script>
 /* ============================================================
    CONSTANTS
 ============================================================ */
