@@ -800,18 +800,6 @@
     <div class="footer-inner"><div class="footer-copy">© 2026 MGAA VAT Tracking System · Professional Kiosk v2.0</div><div class="footer-links"><a href="quick_guide.html"><i class="fas fa-compass"></i> Quick Guide</a><a href="help.html"><i class="fas fa-headset"></i> Help & Support</a></div><div class="footer-copy"><i class="fas fa-database"></i> Auto-saved locally</div></div>
 </footer>
 
-
-
-<script>
-// ── Auth guard: redirect to sign-in if no active session ──
-(function() {
-  try {
-    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
-    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
-  } catch(e) { window.location.replace('../bookkeeping.html'); }
-})();
-</script>
-
 <script>
 (function(){
     // Nav elevation
