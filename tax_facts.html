@@ -1369,16 +1369,6 @@
     </div><!-- /main-content -->
 
     <script>
-// ── Auth guard: redirect to sign-in if no active session ──
-(function() {
-  try {
-    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
-    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
-  } catch(e) { window.location.replace('../bookkeeping.html'); }
-})();
-</script>
-
-    <script>
         // Highlight sidebar nav button for current section while scrolling
         const sections = document.querySelectorAll('.tax-section[id]');
 
