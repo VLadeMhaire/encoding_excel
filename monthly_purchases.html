@@ -354,7 +354,6 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="vatable_purchases.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index.html" class="topbar-btn"><i class="fas fa-home"></i> Dashboard</a>
@@ -509,16 +508,6 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
     </div>
   </div>
 </div>
-
-<script>
-// ── Auth guard: redirect to sign-in if no active session ──
-(function() {
-  try {
-    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
-    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
-  } catch(e) { window.location.replace('../bookkeeping.html'); }
-})();
-</script>
 
 <script>
 /* ============================================================
