@@ -141,6 +141,12 @@ td:last-child{border-right:none;}
 .footer-bar{background:white;border-top:1px solid var(--gray-200);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;font-size:11px;color:var(--gray-400);}
 .footer-bar strong{color:var(--gray-600);}
 
+/* "Client" column badge in table */
+.client-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--blue-50);color:var(--blue-700);border:1px solid var(--blue-100);white-space:nowrap;}
+.client-tag.tag-unscoped{background:var(--gray-50);color:var(--gray-500);border-color:var(--gray-200);}
+/* Modal client field */
+.modal-client-tag{display:inline-flex;align-items:center;gap:5px;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600;color:var(--blue-800);}
+
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;}
 .modal-overlay.hidden{display:none;}
@@ -179,12 +185,6 @@ td:last-child{border-right:none;}
     <button class="topbar-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
     <button class="topbar-btn" id="exportBtn"><i class="fas fa-file-export"></i> Export CSV</button>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-home"></i> Dashboard</a>
-    <a href="vatable_sales.html" class="topbar-btn"><i class="fas fa-file-invoice-dollar"></i> VAT Sales</a>
-    <a href="vatable_purchases.html" class="topbar-btn"><i class="fas fa-shopping-cart"></i> VAT Purchases</a>
-    <a href="vatable_expenses.html" class="topbar-btn"><i class="fas fa-receipt"></i> VAT Expenses</a>
-    <a href="non_vat_purchases.html" class="topbar-btn"><i class="fas fa-shopping-basket"></i> Non-VAT Purch.</a>
-    <a href="non_vat_expenses.html" class="topbar-btn"><i class="fas fa-file-alt"></i> Non-VAT Exp.</a>
-    <a href="capex.html" class="topbar-btn"><i class="fas fa-building"></i> CAPEX</a>
   </div>
 </div>
 
@@ -204,6 +204,14 @@ td:last-child{border-right:none;}
       <option value="Government">Government (Sales)</option>
       <option value="Pending">Pending / Unknown</option>
     </select>
+    <!-- Client / Sub-Admin search: type a sub-admin name to see ALL their clients' TIN data,
+         or type a specific client's name to see only that client's TIN data. -->
+    <div class="search-wrap" style="min-width:180px;max-width:260px;">
+      <i class="fas fa-user-tag"></i>
+      <input type="text" class="search-input" id="clientSearchInput" placeholder="Search client or sub-admin…" autocomplete="off" list="clientSearchList">
+    </div>
+    <datalist id="clientSearchList"></datalist>
+    <button class="btn btn-secondary" id="clientSearchBtn" title="Search client/sub-admin"><i class="fas fa-search"></i> Search</button>
     <select class="filter-select" id="recordTypeFilter">
       <option value="">All Records</option>
       <option value="sales">Sales Only</option>
@@ -287,6 +295,7 @@ td:last-child{border-right:none;}
           <th data-col="address">Address <i class="fas fa-sort sort-icon"></i></th>
           <th data-col="salesType">Sales/Payment Type <i class="fas fa-sort sort-icon"></i></th>
           <th data-col="recordType">Record Type</th>
+          <th data-col="clientUsername">Client Account</th>
           <th>Source</th>
         </tr>
       </thead>
@@ -337,6 +346,10 @@ td:last-child{border-right:none;}
         <div class="modal-field-val" id="mdRecordType">—</div>
       </div>
       <div class="modal-field">
+        <label>Client Account</label>
+        <div class="modal-field-val" id="mdClient">—</div>
+      </div>
+      <div class="modal-field">
         <label>Data Source</label>
         <div class="modal-field-val" id="mdSource">—</div>
       </div>
@@ -346,6 +359,16 @@ td:last-child{border-right:none;}
     </div>
   </div>
 </div>
+
+<script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
 
 <script>
 'use strict';
@@ -408,14 +431,244 @@ const CAPEX_NS = {
 let allRecords = [];
 let filteredRecords = [];
 let activeSource = 'all';
+let activeClient    = 'all';   // 'all' | clientId string
+let activeSubAdmin = 'all';   // 'all' | subAdminId | '_unassigned'
 let sortCol = 'name';
 let sortDir = 'asc';
+
+/* ── CLIENT ACCOUNTS ──────────────────────────────────────────
+   Primary: fetch from GET /accounts API using JWT from VAT_SESSION.
+   Fallback: read VAT_PORTAL_DATA from localStorage (legacy).
+   Builds:
+     clientAccountsMap  { clientId → account }
+     subAdminMap        { subAdminId → account }
+──────────────────────────────────────────────────────────────*/
+let clientAccountsMap = {};
+let subAdminMap       = {};
+
+function _getAuthToken() {
+  // 1. sessionStorage VAT_SESSION (same-tab navigation from bookkeeping.html)
+  try {
+    const s = sessionStorage.getItem('VAT_SESSION');
+    if (s) {
+      const obj = JSON.parse(s);
+      const t = obj._token || obj.token || null;
+      if (t) return t;
+    }
+  } catch(e) {}
+  // 2. localStorage VAT_AUTH_TOKEN (cross-page mirror written by bookkeeping.html on login)
+  try {
+    const t = localStorage.getItem('VAT_AUTH_TOKEN');
+    if (t) return t;
+  } catch(e) {}
+  // 3. localStorage VAT_SESSION fallback (legacy)
+  try {
+    const s = localStorage.getItem('VAT_SESSION');
+    if (s) {
+      const obj = JSON.parse(s);
+      return obj._token || obj.token || null;
+    }
+  } catch(e) {}
+  return null;
+}
+
+/* ── Account maps (populated by _parseAccountsList) ───────────
+   allAccountsArr    — raw array from /accounts API
+   clientAccountsMap — { clientId → account }
+   subAdminMap       — { subAdminId → account }
+──────────────────────────────────────────────────────────────*/
+let allAccountsArr = [];
+
+function _parseAccountsList(accounts) {
+  allAccountsArr    = accounts || [];
+  clientAccountsMap = {};
+  subAdminMap       = {};
+  allAccountsArr.forEach(a => {
+    const role = (a.role || '').toLowerCase();
+    if (role === 'client')   clientAccountsMap[a.id] = a;
+    if (role === 'subadmin') subAdminMap[a.id]       = a;
+  });
+}
+
+function _loadFromPortalData() {
+  try {
+    const raw = localStorage.getItem('VAT_PORTAL_DATA');
+    if (raw) {
+      const store = JSON.parse(raw);
+      _parseAccountsList(store.accounts || []);
+    }
+  } catch(e) {}
+}
+
+async function loadClientAccountsAsync() {
+  const merged = {};
+
+  /* ── Source 1 (PRIMARY): VAT_ACCOUNTS_MIRROR ─────────────────
+     Written by bookkeeping.html on every login & every loadAll() call.
+     Same localStorage origin, no token needed, no passwords.
+     This is the most reliable source across page navigations.    */
+  try {
+    const raw = localStorage.getItem('VAT_ACCOUNTS_MIRROR');
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list) && list.length) {
+        list.forEach(a => { if (a.id) merged[a.id] = a; });
+        console.log('[TIN Library] VAT_ACCOUNTS_MIRROR:', list.length, 'entries');
+      }
+    }
+  } catch(e) {}
+
+  /* ── Source 2: Direct API call with correct base URL ─────────
+     bookkeeping.html uses http://localhost:8000 — match that exactly.
+     Detect the API base: try VAT_API_BASE from localStorage
+     (written by bookkeeping.html), else default to localhost:8000.     */
+  try {
+    const token = _getAuthToken();
+    if (token) {
+      const apiBase = localStorage.getItem('VAT_API_BASE') || 'http://localhost:8000';
+
+      // Fetch /accounts/me first to get the current user's full profile
+      // (role, username, id) — critical for the subadmin self-inject below.
+      try {
+        const meRes = await fetch(apiBase + '/accounts/me', {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          if (me && me.id) {
+            merged[me.id] = { ...merged[me.id], ...me };
+            console.log('[TIN Library] /accounts/me:', me.username, '/', me.role);
+          }
+        }
+      } catch(e) {}
+
+      const res = await fetch(apiBase + '/accounts', {
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.accounts || []);
+        list.forEach(a => { if (a.id) merged[a.id] = { ...merged[a.id], ...a }; });
+        console.log('[TIN Library] API /accounts:', list.length, 'entries');
+      } else {
+        console.warn('[TIN Library] API /accounts HTTP', res.status);
+      }
+    }
+  } catch(e) {
+    console.warn('[TIN Library] API fetch error:', e.message);
+  }
+
+  /* ── Source 3 (OFFLINE fallback): VAT_PORTAL_DATA ────────────
+     Only populated in localStorage mode (no backend).           */
+  try {
+    const raw = localStorage.getItem('VAT_PORTAL_DATA');
+    if (raw) {
+      const store = JSON.parse(raw);
+      (store.accounts || []).forEach(a => {
+        if (a.id && !merged[a.id]) merged[a.id] = a;
+      });
+    }
+  } catch(e) {}
+
+  /* ── Self-inject current user if they are a subadmin ────────────
+     When a subadmin logs in, GET /accounts only returns themselves
+     + their clients — not other subadmins. So merged has no subadmin
+     entries, and _parseAccountsList leaves subAdminMap empty, causing
+     the dropdown to show a flat list with no grouping.
+
+     Strategy (in priority order):
+       1. /accounts/me result already in merged (most reliable — done above)
+       2. VAT_ACCOUNTS_MIRROR entry for the current token's sub claim
+       3. JWT payload role claim from VAT_AUTH_TOKEN                        */
+  try {
+    // Decode the JWT to get the current user's id
+    let currentId   = null;
+    let currentRole = null;
+    const tok = _getAuthToken();
+    if (tok) {
+      try {
+        const payload = JSON.parse(atob(tok.split('.')[1]));
+        currentId   = payload.sub  || null;
+        currentRole = payload.role || null;
+      } catch(e) {}
+    }
+
+    // If we have an id, look up the full account in merged
+    if (currentId && merged[currentId]) {
+      currentRole = merged[currentId].role || currentRole;
+    }
+
+    if (currentId && (currentRole || '').toLowerCase() === 'subadmin') {
+      // Ensure the subadmin's own entry has the correct role
+      if (!merged[currentId]) {
+        merged[currentId] = { id: currentId, username: 'Associate', role: 'subadmin' };
+      } else {
+        merged[currentId].role = 'subadmin';
+      }
+
+      // Every client in merged that has no assignedSubAdmin belongs to this SA.
+      // The API returns clients without that field when the caller is a subadmin.
+      Object.values(merged).forEach(a => {
+        if ((a.role || '').toLowerCase() === 'client' && !a.assignedSubAdmin) {
+          a.assignedSubAdmin = currentId;
+        }
+      });
+
+      console.log('[TIN Library] Self-injected subadmin:',
+        merged[currentId].username || currentId,
+        '— clients assigned:', Object.values(merged).filter(a => a.assignedSubAdmin === currentId).length
+      );
+    }
+  } catch(e) {
+    console.warn('[TIN Library] Self-inject error:', e.message);
+  }
+
+  const combined = Object.values(merged);
+  console.log('[TIN Library] Final accounts:', combined.length,
+    '| sub-admins:', combined.filter(a => a.role === 'subadmin').map(a => a.username).join(', ') || 'none',
+    '| clients:',   combined.filter(a => a.role === 'client').map(a => a.username).join(', ') || 'none'
+  );
+
+  _parseAccountsList(combined);
+  return combined.length > 0;
+}
+
+/* ── buildClientPills ─────────────────────────────────────────
+   The visual pill panel has been removed. This function is kept
+   as a no-op so existing call sites don't throw.
+──────────────────────────────────────────────────────────────*/
+function buildClientPills() {
+  // Panel removed — dropdown in toolbar handles filtering instead.
+}
+
+function escHTiny(t) {
+  return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 function makeKey(name, tin) {
   return `${(name||'').toLowerCase().trim()}|${(tin||'').replace(/\D/g,'').toLowerCase()}`;
 }
 
-function loadAllData() {
+/* ── Derive clientId from a storage key ──────────────────────
+   Client-scoped monthly keys follow the pattern:
+     PREFIX_MONTHLY_{clientId}_Client_{year}_{mm}
+   Registry keys use role-based patterns (Main/Client/SubAdmin)
+   and are NOT client-scoped, so they get clientId = null.
+──────────────────────────────────────────────────────────────*/
+function clientIdFromKey(key) {
+  // Patterns: PURCH_MONTHLY_{id}_Client_2026_01[_COMPANY], EXP_MONTHLY_{id}_Client_*, etc.
+  // {id} itself can contain underscores (real ids look like "acc_fd07cf3cb2de"),
+  // so capture greedily up to the LAST "_Client_YYYY_MM" marker rather than
+  // stopping at the first underscore.
+  const m = key.match(/^(?:PURCH|EXP|NEXP|NPURCH|CAPEX|VAT)_MONTHLY_(.+)_Client_\d{4}_\d{2}/);
+  if (m) return m[1];
+  return null;
+}
+
+async function loadAllData() {
+  // Fetch accounts from API first (falls back to VAT_PORTAL_DATA)
+  await loadClientAccountsAsync();
+
   const salesRegistryRecords  = [];
   const salesTableRecords     = [];
   const purchRegistryRecords  = [];
@@ -495,8 +748,8 @@ function loadAllData() {
   const allKeys = Object.keys(localStorage);
   const salesSessionKeys = allKeys.filter(k =>
     k.startsWith('VAT_SESSION_TABLE_') ||
-    k.startsWith('VAT_MONTHLY_') ||
-    (k.startsWith('VAT_') && !k.startsWith('VAT_CUSTOMER') && !k.startsWith('VAT_SUBMIT') && !k.startsWith('VAT_PORTAL') && !k.startsWith('VAT_CLIENT') && !k.startsWith('VAT_SESSION'))
+    (k.startsWith('VAT_MONTHLY_') && !k.includes('_META_')) ||
+    (k.startsWith('VAT_') && !k.includes('_META_') && !k.startsWith('VAT_CUSTOMER') && !k.startsWith('VAT_SUBMIT') && !k.startsWith('VAT_PORTAL') && !k.startsWith('VAT_CLIENT') && !k.startsWith('VAT_SESSION') && !k.startsWith('VAT_ACCOUNTS') && !k.startsWith('VAT_AUTH') && !k.startsWith('VAT_API'))
   );
   ROLES.forEach(role => salesSessionKeys.push(SALES_NS[role].SESSION));
   const uniqueSalesKeys = [...new Set(salesSessionKeys)];
@@ -508,13 +761,15 @@ function loadAllData() {
       const d = JSON.parse(raw);
       const rows = d.tableData || d.table_data || [];
       if (!Array.isArray(rows)) return;
+      const cid = clientIdFromKey(key);
+      const cUsername = (cid && clientAccountsMap[cid]) ? clientAccountsMap[cid].username : null;
       rows.forEach(row => {
         const name     = (row.customerName || row.customer_name || '').trim();
         const tin      = (row.tinNumber || row.tin_number || row.tin || '').trim();
         const address  = (row.address || '').trim();
         const salesType = (row.salesType || row.sales_type || '').trim();
         if (!name && !tin) return;
-        salesTableRecords.push({ name, tin, address, salesType, source: 'table', recordType: 'sales' });
+        salesTableRecords.push({ name, tin, address, salesType, source: 'table', recordType: 'sales', clientId: cid, clientUsername: cUsername });
       });
     } catch(e) {}
   });
@@ -574,17 +829,17 @@ function loadAllData() {
     if (!raw) return;
     try {
       const d = JSON.parse(raw);
-      // monthly_purchases.html wraps as { tableData: [...], companyInfo: {} }
-      // vatable_purchases.html session also uses { version, tableData, companyInfo }
       const rows = d.tableData || d.table_data || [];
       if (!Array.isArray(rows)) return;
+      const cid = clientIdFromKey(key);
+      const cUsername = (cid && clientAccountsMap[cid]) ? clientAccountsMap[cid].username : null;
       rows.forEach(row => {
         const name    = (row.supplierName || row.supplier_name || row.customerName || row.customer_name || '').trim();
         const tin     = (row.tinNumber || row.tin_number || row.tin || '').trim();
         const address = (row.address || '').trim();
         const payMode = (row.paymentMode || row.payment_mode || '').trim();
         if (!name && !tin) return;
-        purchTableRecords.push({ name, tin, address, salesType: payMode, source: 'purch-table', recordType: 'purchases' });
+        purchTableRecords.push({ name, tin, address, salesType: payMode, source: 'purch-table', recordType: 'purchases', clientId: cid, clientUsername: cUsername });
       });
     } catch(e) {}
   });
@@ -645,13 +900,15 @@ function loadAllData() {
       const d = JSON.parse(raw);
       const rows = d.tableData || d.table_data || [];
       if (!Array.isArray(rows)) return;
+      const cid = clientIdFromKey(key);
+      const cUsername = (cid && clientAccountsMap[cid]) ? clientAccountsMap[cid].username : null;
       rows.forEach(row => {
         const name    = (row.supplierName || row.supplier_name || '').trim();
         const tin     = (row.tinNumber || row.tin_number || row.tin || '').trim();
         const address = (row.address || '').trim();
         const payMode = (row.paymentMode || row.payment_mode || '').trim();
         if (!name && !tin) return;
-        expTableRecords.push({ name, tin, address, salesType: payMode, source: 'exp-table', recordType: 'expenses' });
+        expTableRecords.push({ name, tin, address, salesType: payMode, source: 'exp-table', recordType: 'expenses', clientId: cid, clientUsername: cUsername });
       });
     } catch(e) {}
   });
@@ -693,13 +950,15 @@ function loadAllData() {
       const d = JSON.parse(raw);
       const rows = d.tableData || d.table_data || [];
       if (!Array.isArray(rows)) return;
+      const cid = clientIdFromKey(key);
+      const cUsername = (cid && clientAccountsMap[cid]) ? clientAccountsMap[cid].username : null;
       rows.forEach(row => {
         const name    = (row.supplierName || row.supplier_name || '').trim();
         const tin     = (row.tinNumber || row.tin_number || row.tin || '').trim();
         const address = (row.address || '').trim();
         const payMode = (row.paymentMode || row.payment_mode || '').trim();
         if (!name && !tin) return;
-        nvpurchTableRecords.push({ name, tin, address, salesType: payMode, source: 'nvpurch-table', recordType: 'nvat-purchases' });
+        nvpurchTableRecords.push({ name, tin, address, salesType: payMode, source: 'nvpurch-table', recordType: 'nvat-purchases', clientId: cid, clientUsername: cUsername });
       });
     } catch(e) {}
   });
@@ -741,13 +1000,15 @@ function loadAllData() {
       const d = JSON.parse(raw);
       const rows = d.tableData || d.table_data || [];
       if (!Array.isArray(rows)) return;
+      const cid = clientIdFromKey(key);
+      const cUsername = (cid && clientAccountsMap[cid]) ? clientAccountsMap[cid].username : null;
       rows.forEach(row => {
         const name    = (row.supplierName || row.supplier_name || '').trim();
         const tin     = (row.tinNumber || row.tin_number || row.tin || '').trim();
         const address = (row.address || '').trim();
         const payMode = (row.paymentMode || row.payment_mode || '').trim();
         if (!name && !tin) return;
-        nvexpTableRecords.push({ name, tin, address, salesType: payMode, source: 'nvexp-table', recordType: 'nvat-expenses' });
+        nvexpTableRecords.push({ name, tin, address, salesType: payMode, source: 'nvexp-table', recordType: 'nvat-expenses', clientId: cid, clientUsername: cUsername });
       });
     } catch(e) {}
   });
@@ -789,13 +1050,15 @@ function loadAllData() {
       const d = JSON.parse(raw);
       const rows = d.tableData || d.table_data || [];
       if (!Array.isArray(rows)) return;
+      const cid = clientIdFromKey(key);
+      const cUsername = (cid && clientAccountsMap[cid]) ? clientAccountsMap[cid].username : null;
       rows.forEach(row => {
         const name    = (row.supplierName || row.supplier_name || '').trim();
         const tin     = (row.tinNumber || row.tin_number || row.tin || '').trim();
         const address = (row.address || '').trim();
         const payMode = (row.paymentMode || row.payment_mode || '').trim();
         if (!name && !tin) return;
-        capexTableRecords.push({ name, tin, address, salesType: payMode, source: 'capex-table', recordType: 'capex' });
+        capexTableRecords.push({ name, tin, address, salesType: payMode, source: 'capex-table', recordType: 'capex', clientId: cid, clientUsername: cUsername });
       });
     } catch(e) {}
   });
@@ -812,6 +1075,14 @@ function loadAllData() {
       const ex = seen.get(k);
       if (!ex.address && r.address) ex.address = r.address;
       if (!ex.salesType && r.salesType) ex.salesType = r.salesType;
+      // Registry sources are shared dictionaries with no client-id info, so
+      // whichever insert happened first may have no clientId at all. Don't
+      // let that permanently shadow a clientId that a later (e.g. Table)
+      // source for the SAME name+tin actually carries.
+      if (!ex.clientId && r.clientId) {
+        ex.clientId       = r.clientId;
+        ex.clientUsername = r.clientUsername;
+      }
       // Upgrade source if more complete
       const srcPriority = {
         'registry': 3, 'purch-registry': 3, 'exp-registry': 3, 'nvpurch-registry': 3, 'nvexp-registry': 3, 'capex-registry': 3,
@@ -848,6 +1119,16 @@ function loadAllData() {
 
   allRecords = Array.from(seen.values());
 
+  // ── Update client pill counts ──────────────────────────────
+  buildClientPills();
+  _updatePillCounts();
+  _populateClientDropdown();
+
+  // Debug: warn if sub-admin map is still empty after load
+  const saCount = Object.keys(subAdminMap).length;
+  const clCount = Object.keys(clientAccountsMap).length;
+  console.log('[TIN Library] After load — subAdmins:', saCount, 'clients:', clCount, 'records:', allRecords.length);
+
   // Update tab counts
   const salesReg    = allRecords.filter(r => r.source === 'registry' || r.source === 'both').length;
   const salesTbl    = allRecords.filter(r => r.source === 'table' || r.source === 'both').length;
@@ -882,6 +1163,164 @@ function loadAllData() {
 }
 
 /* ============================================================
+   PILL COUNT HELPER
+============================================================ */
+function _updatePillCounts() {
+  const allEl = document.getElementById('pillCountAll');
+  if (allEl) allEl.textContent = allRecords.length;
+
+  // Per-client counts
+  Object.keys(clientAccountsMap).forEach(cid => {
+    const el = document.getElementById('pillCount_' + cid);
+    if (el) el.textContent = allRecords.filter(r => r.clientId === cid).length;
+  });
+
+  // Per-sub-admin counts (sum of their clients' records)
+  Object.keys(subAdminMap).forEach(saId => {
+    const el = document.getElementById('saPillCount_' + saId);
+    if (!el) return;
+    const clientIds = Object.values(clientAccountsMap)
+      .filter(c => c.assignedSubAdmin === saId)
+      .map(c => c.id);
+    el.textContent = allRecords.filter(r => clientIds.includes(r.clientId)).length;
+  });
+
+  // Unassigned bucket count
+  const unassignedEl = document.getElementById('saPillCount__unassigned');
+  if (unassignedEl) {
+    const unassignedIds = Object.values(clientAccountsMap)
+      .filter(c => !c.assignedSubAdmin)
+      .map(c => c.id);
+    unassignedEl.textContent = allRecords.filter(r => unassignedIds.includes(r.clientId)).length;
+  }
+}
+
+/* ============================================================
+   PILL SELECTION — Client & Sub-Admin
+============================================================ */
+function _clearAllPillActive() {
+  document.querySelectorAll('.client-pill, .sa-pill').forEach(p => p.classList.remove('active'));
+}
+
+/* Select a specific CLIENT account */
+function selectClient(clientId, el) {
+  activeClient    = clientId;
+  activeSubAdmin  = 'all';
+  _clearAllPillActive();
+  if (el) el.classList.add('active');
+  applyFilters();
+}
+
+/* Select a SUB-ADMIN group — shows all clients under that SA */
+function selectSubAdmin(saId, el) {
+  activeSubAdmin  = saId;
+  activeClient    = 'all';
+  _clearAllPillActive();
+  if (el) el.classList.add('active');
+  // Also remove "all" pill active state
+  const allPill = document.querySelector('.client-pill.pill-all');
+  if (allPill) allPill.classList.remove('active');
+  applyFilters();
+}
+
+/* ============================================================
+   CLIENT / SUB-ADMIN SEARCH
+   Replaces the old grouped dropdown with a free-text search box:
+     • Typing (and searching) a SUB-ADMIN's name shows the TIN
+       data for ALL clients assigned to that sub-admin.
+     • Typing (and searching) a specific CLIENT's name shows
+       only that client's TIN data.
+   A <datalist> is kept in sync with current clients/sub-admins
+   so the input still offers autocomplete suggestions.
+============================================================ */
+
+/** Rebuild the autocomplete suggestions for the client/sub-admin search box. */
+function _populateClientDropdown() {
+  const list = document.getElementById('clientSearchList');
+  const input = document.getElementById('clientSearchInput');
+  if (!list) return;
+
+  const allClients = Object.values(clientAccountsMap);
+  const sas = Object.values(subAdminMap).sort((a, b) => a.username.localeCompare(b.username));
+
+  list.innerHTML = '';
+
+  if (!allClients.length && !sas.length) {
+    if (input) {
+      input.disabled = true;
+      input.placeholder = 'No clients — log in via bookkeeping.html first';
+      input.style.opacity = '0.6';
+    }
+    return;
+  }
+
+  if (input) {
+    input.disabled = false;
+    input.style.opacity = '';
+    input.placeholder = 'Search client or sub-admin…';
+  }
+
+  // Sub-admins first, then clients — alphabetical within each group
+  sas.forEach(sa => {
+    const opt = document.createElement('option');
+    opt.value = sa.username;
+    list.appendChild(opt);
+  });
+  allClients
+    .sort((a, b) => a.username.localeCompare(b.username))
+    .forEach(cl => {
+      const opt = document.createElement('option');
+      opt.value = cl.username;
+      list.appendChild(opt);
+    });
+
+  console.log('[TIN Library] _populateClientDropdown: subAdmins=', sas.length, 'clients=', allClients.length);
+}
+
+/** Run when the user searches the client/sub-admin box.
+ *  Exact-match first (case-insensitive), falls back to a
+ *  "contains" match. Client matches take priority over
+ *  sub-admin matches when a name matches both. */
+function handleClientSearch() {
+  const input = document.getElementById('clientSearchInput');
+  const raw = (input ? input.value : '').trim();
+
+  if (!raw) {
+    activeClient   = 'all';
+    activeSubAdmin = 'all';
+    _clearAllPillActive();
+    applyFilters();
+    return;
+  }
+
+  const q = raw.toLowerCase();
+  const clients = Object.values(clientAccountsMap);
+  const subAdmins = Object.values(subAdminMap);
+
+  let matchClient = clients.find(c => (c.username || '').toLowerCase() === q);
+  let matchSA     = subAdmins.find(s => (s.username || '').toLowerCase() === q);
+
+  if (!matchClient && !matchSA) {
+    matchClient = clients.find(c => (c.username || '').toLowerCase().includes(q));
+    matchSA     = subAdmins.find(s => (s.username || '').toLowerCase().includes(q));
+  }
+
+  if (matchClient) {
+    selectClient(matchClient.id, null);
+    showToast(`Showing TIN data for client "${matchClient.username}"`, 'success');
+  } else if (matchSA) {
+    selectSubAdmin(matchSA.id, null);
+    showToast(`Showing TIN data for all clients under sub-admin "${matchSA.username}"`, 'success');
+  } else {
+    activeClient   = 'all';
+    activeSubAdmin = 'all';
+    _clearAllPillActive();
+    applyFilters();
+    showToast(`No client or sub-admin found matching "${raw}"`, 'error');
+  }
+}
+
+/* ============================================================
    FILTERING & SORTING
 ============================================================ */
 function applyFilters() {
@@ -905,6 +1344,25 @@ function applyFilters() {
   else if (activeSource === 'capex-registry')  rows = rows.filter(r => r.source === 'capex-registry' || r.source === 'capex-both');
   else if (activeSource === 'capex-table')     rows = rows.filter(r => r.source === 'capex-table' || r.source === 'capex-both');
 
+  // Client / Sub-Admin filter
+  if (activeClient !== 'all') {
+    // Single client selected
+    rows = rows.filter(r => r.clientId === activeClient);
+  } else if (activeSubAdmin !== 'all') {
+    // Sub-admin group selected — show all clients under that SA
+    if (activeSubAdmin === '_unassigned') {
+      const unassignedIds = Object.values(clientAccountsMap)
+        .filter(c => !c.assignedSubAdmin)
+        .map(c => c.id);
+      rows = rows.filter(r => unassignedIds.includes(r.clientId));
+    } else {
+      const saClientIds = Object.values(clientAccountsMap)
+        .filter(c => c.assignedSubAdmin === activeSubAdmin)
+        .map(c => c.id);
+      rows = rows.filter(r => saClientIds.includes(r.clientId));
+    }
+  }
+
   // Record type filter
   if (recordTypeF === 'sales')               rows = rows.filter(r => r.recordType === 'sales');
   else if (recordTypeF === 'purchases')      rows = rows.filter(r => r.recordType === 'purchases');
@@ -918,7 +1376,8 @@ function applyFilters() {
     rows = rows.filter(r =>
       (r.name||'').toLowerCase().includes(q) ||
       (r.tin||'').toLowerCase().includes(q) ||
-      (r.address||'').toLowerCase().includes(q)
+      (r.address||'').toLowerCase().includes(q) ||
+      (r.clientUsername||'').toLowerCase().includes(q)
     );
   }
 
@@ -1039,16 +1498,30 @@ function renderTable() {
   }
 
   empty.classList.add('hidden');
-  tbody.innerHTML = filteredRecords.map((r, i) => `
+  tbody.innerHTML = filteredRecords.map((r, i) => {
+    // Build client cell — show SA above client when available
+    let clientCell;
+    if (r.clientUsername) {
+      const cl  = r.clientId ? clientAccountsMap[r.clientId] : null;
+      const sa  = cl?.assignedSubAdmin ? subAdminMap[cl.assignedSubAdmin] : null;
+      const saTag = sa
+        ? `<span style="font-size:9px;color:var(--purple-700);font-weight:700;display:block;margin-bottom:1px"><i class="fas fa-user-tie" style="font-size:8px;margin-right:2px"></i>${escH(sa.username)}</span>`
+        : '';
+      clientCell = `<div style="line-height:1.3">${saTag}<span class="client-tag"><i class="fas fa-user" style="font-size:9px"></i>${escH(r.clientUsername)}</span></div>`;
+    } else {
+      clientCell = `<span class="client-tag tag-unscoped">—</span>`;
+    }
+    return `
     <tr class="${getRowClass(r.salesType)}" style="cursor:pointer" onclick="openModal(${i})">
       <td class="cell-name">${escH(r.name) || '<span style="color:var(--gray-400);font-style:italic">—</span>'}</td>
       <td class="cell-tin">${escH(r.tin) || '<span style="color:var(--gray-400)">No TIN</span>'}</td>
       <td class="cell-address" title="${escH(r.address)}">${escH(r.address) || '<span style="color:var(--gray-400);font-style:italic">—</span>'}</td>
       <td><span class="badge ${getSalesTypeClass(r.salesType)}">${escH(r.salesType) || 'Pending'}</span></td>
       <td>${getRecordTypeLabel(r.recordType)}</td>
+      <td>${clientCell}</td>
       <td>${getSourceLabel(r.source)}</td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 /* ============================================================
@@ -1064,6 +1537,17 @@ function openModal(idx) {
   stEl.innerHTML = `<span class="badge ${getSalesTypeClass(r.salesType)}">${escH(r.salesType)||'Pending'}</span>`;
   const rtEl = document.getElementById('mdRecordType');
   rtEl.innerHTML = getRecordTypeLabel(r.recordType);
+  const clEl = document.getElementById('mdClient');
+  if (r.clientUsername) {
+    const cl  = r.clientId ? clientAccountsMap[r.clientId] : null;
+    const sa  = cl?.assignedSubAdmin ? subAdminMap[cl.assignedSubAdmin] : null;
+    const saLine = sa
+      ? `<div style="font-size:11px;color:var(--purple-700);font-weight:600;margin-bottom:4px"><i class="fas fa-user-tie" style="margin-right:4px"></i>Sub-Admin: ${escH(sa.username)}</div>`
+      : '';
+    clEl.innerHTML = saLine + `<span class="modal-client-tag"><i class="fas fa-user" style="font-size:11px"></i>${escH(r.clientUsername)}</span>`;
+  } else {
+    clEl.innerHTML = '<span style="color:var(--gray-400);font-style:italic">Not client-scoped (shared/registry data)</span>';
+  }
   const srcMap = {
     'registry':        'Sales Customer Registry (VAT_CUSTOMER_TIN_MAP)',
     'table':           'Sales VAT Table Row',
@@ -1098,13 +1582,14 @@ function closeModal() {
 function exportCSV() {
   const rows = filteredRecords.length ? filteredRecords : allRecords;
   if (!rows.length) { showToast('No data to export', 'error'); return; }
-  const header = ['Name', 'TIN Number', 'Address', 'Sales/Payment Type', 'Record Type', 'Source'];
+  const header = ['Name', 'TIN Number', 'Address', 'Sales/Payment Type', 'Record Type', 'Client Account', 'Source'];
   const csvRows = [header, ...rows.map(r => [
     `"${(r.name||'').replace(/"/g,'""')}"`,
     `"${(r.tin||'').replace(/"/g,'""')}"`,
     `"${(r.address||'').replace(/"/g,'""')}"`,
     `"${(r.salesType||'').replace(/"/g,'""')}"`,
     `"${(r.recordType||'').replace(/"/g,'""')}"`,
+    `"${(r.clientUsername||'').replace(/"/g,'""')}"`,
     `"${(r.source||'').replace(/"/g,'""')}"`,
   ])].map(r => r.join(',')).join('\n');
   const blob = new Blob([csvRows], { type: 'text/csv' });
@@ -1162,21 +1647,30 @@ function setupTabs() {
 /* ============================================================
    INIT
 ============================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupSortHeaders();
   setupTabs();
 
   document.getElementById('searchInput').addEventListener('input', applyFilters);
   document.getElementById('typeFilter').addEventListener('change', applyFilters);
   document.getElementById('recordTypeFilter').addEventListener('change', applyFilters);
+  // ── Client / Sub-Admin search (search box + button) ────
+  document.getElementById('clientSearchBtn').addEventListener('click', handleClientSearch);
+  document.getElementById('clientSearchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleClientSearch(); }
+  });
   document.getElementById('clearSearchBtn').addEventListener('click', () => {
     document.getElementById('searchInput').value = '';
     document.getElementById('typeFilter').value = '';
     document.getElementById('recordTypeFilter').value = '';
+    document.getElementById('clientSearchInput').value = '';
+    activeClient   = 'all';
+    activeSubAdmin = 'all';
+    _clearAllPillActive();
     applyFilters();
   });
-  document.getElementById('refreshBtn').addEventListener('click', () => {
-    loadAllData();
+  document.getElementById('refreshBtn').addEventListener('click', async () => {
+    await loadAllData();
     applyFilters();
     showToast('Data refreshed from localStorage (Sales + Purchases)', 'success');
   });
@@ -1185,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
   document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
 
-  loadAllData();
+  await loadAllData();
   applyFilters();
 });
 </script>

@@ -194,6 +194,17 @@ table#vatableTable tfoot .sum-value{font-family:var(--font-mono);font-weight:700
 .field-group input,.field-group select{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--gray-800);background:white;font-family:var(--font);transition:var(--transition);}
 .field-group input:focus,.field-group select:focus{outline:none;border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(59,130,246,.12);}
 .right-panel-footer{padding:12px 16px;border-top:1px solid var(--gray-100);font-size:10px;color:var(--gray-400);}
+/* ── Save & Submit — company info validation error ── */
+.ss-compinfo-error{background:var(--red-50);border:1px solid var(--red-200);border-radius:8px;padding:14px 16px;margin-bottom:14px;animation:fadeInDown .2s ease;}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ss-compinfo-error-header{display:flex;align-items:center;gap:8px;color:var(--red-700);font-size:13px;margin-bottom:7px;}
+.ss-compinfo-error-header i{font-size:14px;flex-shrink:0;}
+.ss-compinfo-error-msg{font-size:12px;color:var(--red-700);margin-bottom:8px;}
+.ss-compinfo-error-list{list-style:none;padding:0;margin:0 0 12px 0;display:flex;flex-direction:column;gap:4px;}
+.ss-compinfo-error-list li{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--red-700);background:rgba(239,68,68,.08);border-radius:5px;padding:5px 9px;}
+.ss-compinfo-error-list li i{font-size:10px;color:var(--red-500);flex-shrink:0;}
+.ss-compinfo-goto-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:var(--red-500);color:white;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:var(--transition);}
+.ss-compinfo-goto-btn:hover{background:var(--red-700);}
 .date-picker-overlay{position:fixed;inset:0;z-index:9000;background:transparent;}
 .date-picker-popup{position:fixed;z-index:9001;background:white;border:1px solid var(--gray-200);border-radius:12px;box-shadow:var(--shadow-lg);overflow:hidden;width:268px;animation:popIn .15s ease;}
 @keyframes popIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -433,7 +444,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <button class="nav-btn" id="showAllBtn"><i class="fas fa-eye"></i>Show All Sections</button>
     <button class="nav-btn" id="tableFocusBtn"><i class="fas fa-expand"></i>Table Focus Mode</button>
     <div class="nav-divider"></div>
-    <a href="../index.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
+    <a href="../bookkeeping.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
   </div>
   <div class="sidebar-footer">
     <div>MGAA VAT System v2.0</div>
@@ -462,7 +473,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
       <p>Automated VAT calculations · Net = Gross ÷ 1.12 · Output Tax = Net × 12%</p>
     </div>
     <div class="header-actions">
-      <a href="../index.html" class="btn-submit hidden" id="submitPortalHeadBtn"><i class="fas fa-paper-plane"></i>Submit Receipt</a>
+      <a href="../bookkeeping.html" class="btn-submit hidden" id="submitPortalHeadBtn"><i class="fas fa-paper-plane"></i>Submit Receipt</a>
       <button class="btn-submit hidden" id="saveAndSubmitBtn" style="background:var(--blue-600)"><i class="fas fa-cloud-upload-alt"></i>Save &amp; Submit</button>
       <button class="btn-secondary" id="exportBtnHead"><i class="fas fa-file-excel"></i>Export</button>
       <button class="btn-primary" id="addRowBtnHead"><i class="fas fa-plus"></i>Add Row</button>
@@ -472,6 +483,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
   <!-- CHANGE 4: Stats bar hidden by default -->
   <div class="stats-bar hidden" id="statsSection">
     <div class="stat-card"><div class="stat-card-label"><i class="fas fa-receipt" style="margin-right:4px;color:var(--blue-400)"></i>Gross Sales</div><div class="stat-card-value">₱ <span id="totalGrossSales">0.00</span></div></div>
+    <div class="stat-card"><div class="stat-card-label"><i class="fas fa-percentage" style="margin-right:4px;color:var(--blue-400)"></i>Zero-Rated Sales</div><div class="stat-card-value">₱ <span id="totalZeroRatedSales">0.00</span></div></div>
     <div class="stat-card"><div class="stat-card-label"><i class="fas fa-ban" style="margin-right:4px;color:var(--blue-400)"></i>Exempt Sales</div><div class="stat-card-value">₱ <span id="totalExemptSales">0.00</span></div></div>
     <div class="stat-card"><div class="stat-card-label"><i class="fas fa-coins" style="margin-right:4px;color:var(--blue-400)"></i>Net Sales</div><div class="stat-card-value">₱ <span id="totalNetSales">0.00</span></div></div>
     <div class="stat-card"><div class="stat-card-label"><i class="fas fa-percent" style="margin-right:4px;color:var(--blue-400)"></i>Output Tax</div><div class="stat-card-value">₱ <span id="totalOutputTax">0.00</span></div></div>
@@ -492,6 +504,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <table id="vatableTable">
       <thead>
         <tr>
+          <th data-col="seq" style="width:42px;text-align:center">#</th>
           <th data-col="date">Date</th>
           <th data-col="invoiceNumber">Invoice No.</th>
           <th data-col="invoiceType">Invoice Type</th>
@@ -500,6 +513,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
           <th data-col="customerName">Customer Name</th>
           <th data-col="address">Address</th>
           <th data-col="grossSales">Gross Sales</th>
+          <th data-col="zeroRatedSales">Zero-Rated Sales</th>
           <th data-col="exemptSales">Exempt Sales</th>
           <th data-col="salesType">Sales Type</th>
           <th data-col="netSales">Net Sales</th>
@@ -640,15 +654,25 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 'use strict';
 /* ============================================================
    BACKEND CONFIG
 ============================================================ */
 const API_BASE = (() => {
   if (window.VAT_API_BASE) return window.VAT_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:8000/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? `${window.location.protocol}//${window.location.hostname}:8000/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -681,6 +705,18 @@ async function checkBackend() {
   text.textContent = 'Local Mode';
 }
 
+// Kick this off immediately (don't wait for DOMContentLoaded) and share the
+// same promise with every consumer (customer TIN map, main init, etc.).
+// BUG FIX: previously the customer-list DOMContentLoaded handler ran BEFORE
+// the one that called checkBackend(), so on every page load the registered
+// customers were loaded from (possibly stale/cleared) localStorage instead
+// of the server — and a stale local copy is exactly what fed into the
+// destructive save-overwrite bug fixed below. Awaiting this same promise
+// everywhere guarantees the server is checked first, exactly once.
+const backendReadyPromise = (document.readyState === 'loading')
+  ? new Promise(res => document.addEventListener('DOMContentLoaded', () => checkBackend().then(res)))
+  : checkBackend();
+
 function apiHeaders() {
   const h = { 'Content-Type': 'application/json' };
   if (authToken) h['Authorization'] = `Bearer ${authToken}`;
@@ -697,6 +733,26 @@ const APP_ROLE = (function(){
   return 'Main';
 })();
 
+/* ============================================================
+   SYSTEM (Accounting vs Bookkeeping)
+   Detected from the folder path, the same way APP_ROLE is.
+   Passed to the backend as `scope=` on the shared, account-wide
+   endpoints (/api/company-info, /api/customers) so that Accounting
+   and Bookkeeping never read/write each other's company info or
+   registered-customer TIN list — even if the same account happens
+   to be logged into both. Falls back to null (legacy/unscoped
+   behavior) if this page isn't under an /Accounting/ or
+   /Bookkeeping/ folder, so older single-system deployments are
+   unaffected.
+============================================================ */
+const APP_SYSTEM = (function(){
+  const p = window.location.pathname;
+  if (p.includes('/Accounting/'))  return 'Accounting';
+  if (p.includes('/Bookkeeping/')) return 'Bookkeeping';
+  return null;
+})();
+function scopeParam() { return APP_SYSTEM ? `&scope=${APP_SYSTEM}` : ''; }
+
 const MONTHLY_CTX = {
   key:   sessionStorage.getItem('VAT_MONTHLY_CONTEXT_KEY')   || null,
   year:  sessionStorage.getItem('VAT_MONTHLY_CONTEXT_YEAR')  || null,
@@ -706,10 +762,16 @@ const MONTHLY_CTX = {
 };
 const IS_MONTHLY = !!(MONTHLY_CTX.key && MONTHLY_CTX.year && MONTHLY_CTX.month);
 
+// SYS_PREFIX namespaces the local-storage fallback keys by system too, so
+// that even on a shared browser/origin, Accounting and Bookkeeping never
+// read each other's cached company info or customer TIN map while waiting
+// on (or falling back from) the API. Legacy deployments with no /Accounting/
+// or /Bookkeeping/ folder in the path keep the original, un-prefixed keys.
+const SYS_PREFIX = APP_SYSTEM ? `${APP_SYSTEM}_` : '';
 const STORAGE_NS = {
-  Client:   { CUSTOMER_TIN_MAP:'VAT_CUSTOMER_TIN_MAP_Client',   COMPANY_INFO:'vatCompanyInfo_Client',   COL_VISIBILITY:'colVisibility_Client',   VIS_STATES:'visStates_Client' },
-  SubAdmin: { CUSTOMER_TIN_MAP:'VAT_CUSTOMER_TIN_MAP_SubAdmin', COMPANY_INFO:'vatCompanyInfo_SubAdmin', COL_VISIBILITY:'colVisibility_SubAdmin', VIS_STATES:'visStates_SubAdmin' },
-  Main:     { CUSTOMER_TIN_MAP:'VAT_CUSTOMER_TIN_MAP_Main',     COMPANY_INFO:'vatCompanyInfo_Main',     COL_VISIBILITY:'colVisibility_Main',     VIS_STATES:'visStates_Main' },
+  Client:   { CUSTOMER_TIN_MAP:`VAT_CUSTOMER_TIN_MAP_${SYS_PREFIX}Client`,   COMPANY_INFO:`vatCompanyInfo_${SYS_PREFIX}Client`,   COL_VISIBILITY:'colVisibility_Client',   VIS_STATES:'visStates_Client' },
+  SubAdmin: { CUSTOMER_TIN_MAP:`VAT_CUSTOMER_TIN_MAP_${SYS_PREFIX}SubAdmin`, COMPANY_INFO:`vatCompanyInfo_${SYS_PREFIX}SubAdmin`, COL_VISIBILITY:'colVisibility_SubAdmin', VIS_STATES:'visStates_SubAdmin' },
+  Main:     { CUSTOMER_TIN_MAP:`VAT_CUSTOMER_TIN_MAP_${SYS_PREFIX}Main`,     COMPANY_INFO:`vatCompanyInfo_${SYS_PREFIX}Main`,     COL_VISIBILITY:'colVisibility_Main',     VIS_STATES:'visStates_Main' },
 };
 const NS = STORAGE_NS[APP_ROLE];
 
@@ -839,11 +901,38 @@ async function apiLoadSession() {
   catch(e) { return null; }
 }
 
-async function apiSaveCustomers(dbObj) {
+async function apiFetchServerCustomers() {
+  if (!(USE_API && authToken)) return null;
+  try {
+    const r = await fetch(`${API_BASE}/customers?role=${APP_ROLE}${scopeParam()}`, { headers: apiHeaders() });
+    if (r.ok) { const d = await r.json(); return d.data || {}; }
+  } catch(_) {}
+  return null;
+}
+
+// BUG FIX: this used to POST the in-memory `db` straight to the server,
+// which *replaces* the entire stored customer registry. If this browser's
+// copy of `db` was ever behind the server's (stale/cleared localStorage,
+// a different computer, or simply not having refreshed yet), registering
+// or editing even ONE customer here would silently wipe out every TIN
+// registered elsewhere. `mergeFromServer=true` (the default) fetches the
+// latest server copy first and folds in any keys we don't already have,
+// so a stale local copy can never erase someone else's data. Callers that
+// are performing an intentional full wipe (Clear All) pass `false`.
+async function apiSaveCustomers(dbObj, mergeFromServer = true) {
   const key = `${NS.CUSTOMER_TIN_MAP}`;
-  localStorage.setItem(key, JSON.stringify(Object.fromEntries(dbObj)));
+  if (mergeFromServer) {
+    const serverData = await apiFetchServerCustomers();
+    if (serverData) {
+      for (const [k, v] of Object.entries(serverData)) {
+        if (!dbObj.has(k)) dbObj.set(k, v);
+      }
+    }
+  }
+  const plain = Object.fromEntries(dbObj);
+  localStorage.setItem(key, JSON.stringify(plain));
   if (USE_API && authToken) {
-    try { await fetch(`${API_BASE}/customers`, { method:'POST', headers:apiHeaders(), body:JSON.stringify({ role:APP_ROLE, data:Object.fromEntries(dbObj) }) }); }
+    try { await fetch(`${API_BASE}/customers${APP_SYSTEM ? `?scope=${APP_SYSTEM}` : ''}`, { method:'POST', headers:apiHeaders(), body:JSON.stringify({ role:APP_ROLE, data:plain }) }); }
     catch(_) {}
   }
 }
@@ -851,7 +940,7 @@ async function apiSaveCustomers(dbObj) {
 async function apiLoadCustomers() {
   if (USE_API && authToken) {
     try {
-      const r = await fetch(`${API_BASE}/customers?role=${APP_ROLE}`, { headers:apiHeaders() });
+      const r = await fetch(`${API_BASE}/customers?role=${APP_ROLE}${scopeParam()}`, { headers:apiHeaders() });
       if (r.ok) {
         const d = await r.json();
         localStorage.setItem(NS.CUSTOMER_TIN_MAP, JSON.stringify(d.data || {}));
@@ -901,7 +990,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 (function(){
   let db = new Map();
   async function loadDB() { db = await apiLoadCustomers(); renderCustomersList(); }
-  async function saveDB() { await apiSaveCustomers(db); renderCustomersList(); }
+  async function saveDB(mergeFromServer = true) { await apiSaveCustomers(db, mergeFromServer); renderCustomersList(); }
 
   window.addCustomerPair = async function(name, tin, salesType, address, silent){
     if(!name) return false;
@@ -909,8 +998,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     const t=tin?tin.trim():'';
     if(!t){
       let changed=false;
-      if(salesType&&db.get('type:name:'+n)!==salesType){db.set('type:name:'+n,salesType);changed=true;}
-      if(address&&db.get('addr:name:'+n)!==address){db.set('addr:name:'+n,address);changed=true;}
+      if(salesType&&db.get('type:'+n)!==salesType){db.set('type:'+n,salesType);changed=true;}
+      if(address&&db.get('addr:'+n)!==address){db.set('addr:'+n,address);changed=true;}
       const isNew=!db.has('notin:'+n);
       if(isNew){db.set('notin:'+n,'1');changed=true;}
       if(changed) await saveDB();
@@ -934,18 +1023,29 @@ document.addEventListener('DOMContentLoaded',()=>{
   window.lookupCustomerData=function(key){return{salesType:db.get('type:'+key)||'',address:db.get('addr:'+key)||''};};
   window.getAllCustomerPairs=function(){
     const pairs=[];
-    for(let[k,v]of db){if(k.startsWith('name:')){const name=k.slice(5),tin=v;pairs.push({name,tin,salesType:db.get('type:'+name)||'',address:db.get('addr:'+name)||''});}}
+    for(let[k,v]of db){if(k.startsWith('name:')){const name=k.slice(5),tin=v;pairs.push({name,tin,salesType:db.get('type:'+name)||'',address:db.get('addr:'+name)||'',noTin:false});}}
+    for(let[k]of db){if(k.startsWith('notin:')){const name=k.slice(6);if(!db.has('name:'+name)){pairs.push({name,tin:'',salesType:db.get('type:'+name)||'',address:db.get('addr:'+name)||'',noTin:true});}}}
     return pairs.sort((a,b)=>a.name.localeCompare(b.name));
   };
   window.deleteCustomerPair=async function(name,tin){
-    if(!confirm('Delete "'+name+'" (TIN: '+tin+'")?')) return;
-    db.delete('name:'+name);db.delete('tin:'+tin);db.delete('type:'+name);db.delete('type:'+tin);
-    db.delete('addr:'+name);db.delete('addr:'+tin);db.delete('notin:'+name);db.delete('type:name:'+name);db.delete('addr:name:'+name);
-    await saveDB(); showToast('Deleted: "'+name+'"','success');
+    const label=tin?'TIN: '+tin:'No TIN';
+    if(!confirm('Delete "'+name+'" ('+label+')?')) return;
+    // Pull in anything registered elsewhere BEFORE deleting, then save
+    // without merging again — otherwise the merge-on-save would just
+    // pull this same entry back from the server and "undo" the delete.
+    const serverData = await apiFetchServerCustomers();
+    if (serverData) { for (const [k,v] of Object.entries(serverData)) { if(!db.has(k)) db.set(k,v); } }
+    db.delete('name:'+name);
+    if(tin){db.delete('tin:'+tin);db.delete('type:'+tin);db.delete('addr:'+tin);}
+    db.delete('type:'+name);db.delete('addr:'+name);
+    db.delete('notin:'+name);
+    db.delete('type:name:'+name);db.delete('addr:name:'+name);
+    await saveDB(false); showToast('Deleted: "'+name+'"','success');
   };
   window.clearAllCustomers=async function(){
     if(!confirm('Delete ALL registered customers?')) return;
-    db.clear(); await saveDB(); showToast('All customers cleared','success');
+    // Intentional full wipe — do NOT merge from server here.
+    db.clear(); await saveDB(false); showToast('All customers cleared','success');
   };
 
   function escH(t){const d=document.createElement('div');d.textContent=t||'';return d.innerHTML;}
@@ -957,7 +1057,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     container.innerHTML=pairs.map(p=>{
       const bc=p.salesType==='Private'?'badge-private':p.salesType==='Government'?'badge-govt':'badge-pending';
       const addr=p.address?`<div class="customer-address"><i class="fas fa-map-marker-alt"></i>${escH(p.address)}</div>`:'';
-      return`<div class="customer-item"><div class="customer-info"><div class="customer-name-tin"><span class="customer-name">${escH(p.name)}</span><span class="customer-arrow">→</span><span class="customer-tin">${escH(p.tin||'No TIN')}</span><span class="badge ${bc}">${escH(p.salesType||'Pending')}</span></div>${addr}</div><button class="delete-customer-btn" onclick="deleteCustomerPair('${escH(p.name)}','${escH(p.tin)}')"><i class="fas fa-trash"></i></button></div>`;
+      const tinDisplay=p.tin?`<span class="customer-tin">${escH(p.tin)}</span>`:`<span class="customer-tin" style="color:var(--gray-400);font-style:italic">No TIN</span>`;
+      return`<div class="customer-item"><div class="customer-info"><div class="customer-name-tin"><span class="customer-name">${escH(p.name)}</span><span class="customer-arrow">→</span>${tinDisplay}<span class="badge ${bc}">${escH(p.salesType||'Pending')}</span></div>${addr}</div><button class="delete-customer-btn" onclick="deleteCustomerPair('${escH(p.name)}','${escH(p.tin)}')"><i class="fas fa-trash"></i></button></div>`;
     }).join('');
   };
   // Expose a refresh function so external code can force a reload from API
@@ -967,7 +1068,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (fresh) { db = fresh; renderCustomersList(); }
   };
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for the backend/auth check to finish before loading the customer
+    // list, so we always load the live server copy first instead of a
+    // possibly-stale local cache (see backendReadyPromise definition above).
+    await backendReadyPromise;
     loadDB();
     // Poll API every 30 s so Computer B stays in sync while page is open
     setInterval(() => { if (USE_API && authToken) window.refreshCustomersFromAPI(); }, 30000);
@@ -1104,7 +1209,9 @@ function selectDate(year,month,day){const input=dpState.targetInput;if(!input){c
 let autoSaveTimer=null;
 
 function getTableData(){
-  return Array.from(document.querySelectorAll('#tableBody tr')).map(r=>({
+  const rows=document.getElementById('tableBody').children;
+  const out=[];
+  for(let i=0,len=rows.length;i<len;i++){const r=rows[i];out.push({
     date:r.querySelector('.date-input')?.value||'',
     invoiceNumber:r.querySelector('.invoice-number')?.value||'',
     invoiceType:r.querySelector('.invoice-type')?.value||'',
@@ -1113,11 +1220,13 @@ function getTableData(){
     customerName:r.querySelector('.customer-name')?.value||'',
     address:r.querySelector('.address')?.value||'',
     grossSales:getInputNumber(r.querySelector('.gross-sales'))+'',
+    zeroRatedSales:getInputNumber(r.querySelector('.zero-rated-sales'))+'',
     exemptSales:getInputNumber(r.querySelector('.exempt-sales'))+'',
     salesType:r.querySelector('.sales-type')?.value||'',
     withholdingRate:r.querySelector('.withholding-rate')?.value||'0',
     remarks:r.querySelector('.remarks')?.value||''
-  }));
+  });}
+  return out;
 }
 function getCompanyData(){
   const f=id=>document.getElementById(id)?.value||'';
@@ -1142,11 +1251,45 @@ async function restoreSession() {
   hideSaving();
   if (!data || !Array.isArray(data.tableData)) return false;
   if (data.companyInfo) applyCompanyInfo(data.companyInfo);
-  document.getElementById('tableBody').innerHTML='';
-  data.tableData.forEach(rd=>addRow(rd));
-  if(data.tableData.length===0) addRow();
-  currentPage=1; renderCurrentPage(); updateAllStats();
+  bulkLoadRows(data.tableData);
   return data.tableData.length;
+}
+
+/**
+ * Bulk-load an array of row-data objects into the table efficiently.
+ * Uses a DocumentFragment so the DOM is only touched once, avoids
+ * per-row renderCurrentPage / scheduleAutoSave / scheduleStatsUpdate calls.
+ */
+function bulkLoadRows(rowDataArray) {
+  const tb = document.getElementById('tableBody');
+  tb.innerHTML = '';
+
+  // Build all rows off-DOM in a fragment — zero reflows during construction
+  const frag = document.createDocumentFragment();
+  const rows  = rowDataArray && rowDataArray.length ? rowDataArray : [{}];
+
+  // Temporarily suppress the per-row side-effects that addRow() triggers
+  const _scheduleAutoSave    = scheduleAutoSave;
+  const _scheduleStatsUpdate = scheduleStatsUpdate;
+  const _renderCurrentPage   = renderCurrentPage;
+  // Override them with no-ops while we build rows
+  window._bulkLoading = true;
+
+  rows.forEach(rd => {
+    const row = createRow(rd);
+    frag.appendChild(row);
+  });
+
+  window._bulkLoading = false;
+
+  // Single DOM write — all rows inserted at once
+  tb.appendChild(frag);
+
+  // Now do a single pass: pagination + stats
+  currentPage = 1;
+  refreshSeqNumbers();
+  renderCurrentPage();
+  updateAllStats();
 }
 
 /* ============================================================
@@ -1185,7 +1328,7 @@ function openSubmitModal(){
 
     showToast('Redirecting to portal…', 'success');
     document.getElementById('submitModalOverlay').classList.add('hidden');
-    setTimeout(()=>{ location.href = '../index.html#submit'; }, 600);
+    setTimeout(()=>{ location.href = '../bookkeeping.html#submit'; }, 600);
   };
 }
 
@@ -1193,9 +1336,10 @@ function openSubmitModal(){
    COLUMN VISIBILITY
 ============================================================ */
 const COLS=[
+  {key:'seq',name:'#'},
   {key:'date',name:'Date'},{key:'invoiceNumber',name:'Invoice No.'},{key:'invoiceType',name:'Invoice Type'},
   {key:'paymentMode',name:'Payment Mode'},{key:'tinNumber',name:'TIN Number'},{key:'customerName',name:'Customer Name'},
-  {key:'address',name:'Address'},{key:'grossSales',name:'Gross Sales'},{key:'exemptSales',name:'Exempt Sales'},
+  {key:'address',name:'Address'},{key:'grossSales',name:'Gross Sales'},{key:'zeroRatedSales',name:'Zero-Rated Sales'},{key:'exemptSales',name:'Exempt Sales'},
   {key:'salesType',name:'Sales Type'},{key:'netSales',name:'Net Sales'},{key:'outputTax',name:'Output Tax'},
   {key:'withholdingRate',name:'W/T Rate'},{key:'withholdingAmount',name:'W/T Amount'},{key:'remarks',name:'Remarks'},{key:'action',name:'Del'}
 ];
@@ -1219,7 +1363,12 @@ function initColVisibility(){
 }
 function applyColVisibility(){
   const table=document.getElementById('vatableTable'),ths=table.querySelectorAll('thead th');
-  COLS.forEach((c,i)=>{const hide=!!colVisibility[c.key];ths[i].classList.toggle('hidden-column',hide);table.querySelectorAll('tbody tr,tfoot tr').forEach(row=>{const td=row.children[i];if(td)td.classList.toggle('hidden-column',hide);});});
+  const tbRows=document.getElementById('tableBody').children;
+  const tfRows=table.querySelectorAll('tfoot tr');
+  COLS.forEach((c,i)=>{const hide=!!colVisibility[c.key];ths[i].classList.toggle('hidden-column',hide);
+    for(let r=0,len=tbRows.length;r<len;r++){const td=tbRows[r].children[i];if(td)td.classList.toggle('hidden-column',hide);}
+    tfRows.forEach(row=>{const td=row.children[i];if(td)td.classList.toggle('hidden-column',hide);});
+  });
   rebuildSummaryRow();
 }
 function saveColVisibility(){localStorage.setItem(NS.COL_VISIBILITY,JSON.stringify(colVisibility));}
@@ -1228,9 +1377,10 @@ function saveColVisibility(){localStorage.setItem(NS.COL_VISIBILITY,JSON.stringi
    PAGINATION
 ============================================================ */
 let currentPage=1,rowsPerPage=25;
-function getTotalPages(){return Math.max(1,Math.ceil(document.querySelectorAll('#tableBody tr').length/rowsPerPage));}
-function updatePagination(){const total=document.querySelectorAll('#tableBody tr').length,totalP=getTotalPages();const start=total===0?0:(currentPage-1)*rowsPerPage+1,end=Math.min(currentPage*rowsPerPage,total);document.getElementById('startEntry').textContent=start;document.getElementById('endEntry').textContent=end;document.getElementById('totalEntries').textContent=total;document.getElementById('totalPages').textContent=totalP;document.getElementById('currentPageDisplay').textContent=currentPage;document.getElementById('firstPageBtn').disabled=currentPage===1;document.getElementById('prevPageBtn').disabled=currentPage===1;document.getElementById('nextPageBtn').disabled=currentPage>=totalP;document.getElementById('lastPageBtn').disabled=currentPage>=totalP;document.getElementById('entryCount').textContent=total;}
-function renderCurrentPage(){const rows=Array.from(document.querySelectorAll('#tableBody tr'));const start=(currentPage-1)*rowsPerPage,end=Math.min(start+rowsPerPage,rows.length);rows.forEach((r,i)=>{r.style.display=(i>=start&&i<end)?'':'none';});updatePagination();}
+function getRowCount(){return document.getElementById('tableBody').children.length;}
+function getTotalPages(){return Math.max(1,Math.ceil(getRowCount()/rowsPerPage));}
+function updatePagination(){const total=getRowCount(),totalP=getTotalPages();const start=total===0?0:(currentPage-1)*rowsPerPage+1,end=Math.min(currentPage*rowsPerPage,total);document.getElementById('startEntry').textContent=start;document.getElementById('endEntry').textContent=end;document.getElementById('totalEntries').textContent=total;document.getElementById('totalPages').textContent=totalP;document.getElementById('currentPageDisplay').textContent=currentPage;document.getElementById('firstPageBtn').disabled=currentPage===1;document.getElementById('prevPageBtn').disabled=currentPage===1;document.getElementById('nextPageBtn').disabled=currentPage>=totalP;document.getElementById('lastPageBtn').disabled=currentPage>=totalP;document.getElementById('entryCount').textContent=total;}
+function renderCurrentPage(){const tb=document.getElementById('tableBody');const rows=Array.from(tb.children);const start=(currentPage-1)*rowsPerPage,end=Math.min(start+rowsPerPage,rows.length);rows.forEach((r,i)=>{r.style.display=(i>=start&&i<end)?'':'none';});updatePagination();}
 function initPagination(){
   document.getElementById('rowsPerPage').addEventListener('change',function(){rowsPerPage=+this.value;currentPage=1;renderCurrentPage();});
   document.getElementById('firstPageBtn').addEventListener('click',()=>{currentPage=1;renderCurrentPage();});
@@ -1261,14 +1411,24 @@ function updateRowColor(row) {
 /* ============================================================
    ROW CREATION
 ============================================================ */
+function refreshSeqNumbers(){
+  const rows=document.getElementById('tableBody').children;
+  for(let i=0,len=rows.length;i<len;i++){
+    const seqEl=rows[i].querySelector('.seq-num');
+    if(seqEl)seqEl.textContent=i+1;
+  }
+}
+
 function createRow(data={}){
   const today=getTodayDisplayDate(),rid='r'+(Date.now()+'').slice(-8)+'_'+Math.floor(Math.random()*1000);
   const tr=document.createElement('tr');tr.id=rid;
   // For gross/exempt, format if they have values
   const grossDisplay = data.grossSales ? formatCurrency(data.grossSales) : '';
+  const zeroRatedDisplay = data.zeroRatedSales ? formatCurrency(data.zeroRatedSales) : '';
   const exemptDisplay = data.exemptSales ? formatCurrency(data.exemptSales) : '';
 
   tr.innerHTML=`
+    <td style="text-align:center;width:42px;color:var(--gray-400);font-size:11px;font-weight:600;user-select:none;"><span class="seq-num">0</span></td>
     <td><input type="text" value="${data.date||today}" class="date-input" placeholder="MM/DD/YYYY"></td>
     <td><input type="text" value="${escH(data.invoiceNumber||'')}" class="invoice-number" placeholder="INV-001"></td>
     <td><select class="invoice-type"><option value="">Select</option>${['Cash','Charge','Billing','Service'].map(v=>`<option${data.invoiceType===v?' selected':''}>${v}</option>`).join('')}</select></td>
@@ -1277,6 +1437,7 @@ function createRow(data={}){
     <td><input type="text" value="${escH(data.customerName||'')}" class="customer-name" placeholder="Customer name"></td>
     <td><input type="text" value="${escH(data.address||'')}" class="address" placeholder="Address"></td>
     <td><input type="text" value="${escH(grossDisplay)}" class="gross-sales" placeholder="0.00" data-raw="${escH(data.grossSales||'')}"></td>
+    <td><input type="text" value="${escH(zeroRatedDisplay)}" class="zero-rated-sales" placeholder="0.00" data-raw="${escH(data.zeroRatedSales||'')}"></td>
     <td><input type="text" value="${escH(exemptDisplay)}" class="exempt-sales" placeholder="0.00" data-raw="${escH(data.exemptSales||'')}"></td>
     <td><select class="sales-type"><option value="">Select</option>${['Private','Government'].map(v=>`<option${data.salesType===v?' selected':''}>${v}</option>`).join('')}</select></td>
     <td><div class="cell-computed net-sales">0.00</div></td>
@@ -1289,8 +1450,10 @@ function createRow(data={}){
 
   // Init currency inputs
   const grossInput = tr.querySelector('.gross-sales');
+  const zeroRatedInput = tr.querySelector('.zero-rated-sales');
   const exemptInput = tr.querySelector('.exempt-sales');
   initCurrencyInput(grossInput);
+  initCurrencyInput(zeroRatedInput);
   initCurrencyInput(exemptInput);
 
   attachRowListeners(tr);calcRow(tr);
@@ -1307,7 +1470,7 @@ function attachRowListeners(row){
   const tin=row.querySelector('.tin-number');
   if(tin){tin.addEventListener('input',()=>formatTIN(tin));tin.addEventListener('blur',()=>{validateTIN(tin);tryAutoFillFromTin(row);storeCustomerPair(row);});tin.addEventListener('focus',()=>{tin.select();setTimeout(()=>showTinSuggestions(tin,row),80);});tin.addEventListener('input',()=>{setTimeout(()=>showTinSuggestions(tin,row),60);});}
   const name=row.querySelector('.customer-name');
-  if(name){name.addEventListener('blur',()=>{tryAutoFillFromName(row);storeCustomerPair(row);});}
+  if(name){name.addEventListener('blur',()=>{tryAutoFillFromName(row);storeCustomerPair(row);});name.addEventListener('focus',()=>{name.select();setTimeout(()=>showNameSuggestions(name,row),80);});name.addEventListener('input',()=>{setTimeout(()=>showNameSuggestions(name,row),60);});}
   const dateInput=row.querySelector('.date-input');
   if(dateInput){dateInput.addEventListener('input',function(){autoFormatReportDate(this);});dateInput.addEventListener('blur',function(){validateReportDate(this);if(this.value&&!validateDisplayDate(this.value))showToast('Invalid date format. Use MM/DD/YYYY','warning');});}
   row.querySelector('.sales-type').addEventListener('change',()=>{storeCustomerPair(row);updateRowColor(row);});
@@ -1331,14 +1494,39 @@ function storeCustomerPair(row){const n=row.querySelector('.customer-name').valu
    TIN SUGGESTION DROPDOWN
 ============================================================ */
 let activeSugBox=null;
-function showTinSuggestions(input,row){if(activeSugBox){activeSugBox.remove();activeSugBox=null;}const q=input.value.trim().toLowerCase();if(!q)return;const pairs=getAllCustomerPairs().filter(p=>p.tin.toLowerCase().startsWith(q)||p.name.toLowerCase().includes(q)).slice(0,8);if(!pairs.length)return;const rect=input.getBoundingClientRect();const box=document.createElement('div');box.className='tin-suggestion-box';box.style.top=(rect.bottom+window.scrollY+2)+'px';box.style.left=(rect.left+window.scrollX)+'px';box.style.width=Math.max(rect.width,240)+'px';box.innerHTML=pairs.map(p=>{const bc=p.salesType==='Private'?'badge-private':p.salesType==='Government'?'badge-govt':'badge-pending';const addr=p.address?`<div class="tin-suggestion-addr"><i class="fas fa-map-marker-alt" style="color:var(--blue-400);font-size:10px;margin-top:1px"></i>${escH(p.address.substring(0,50)+(p.address.length>50?'…':''))}</div>`:'';return`<div class="tin-suggestion-item" data-tin="${escH(p.tin)}" data-name="${escH(p.name)}" data-type="${escH(p.salesType)}" data-addr="${escH(p.address)}"><div style="display:flex;align-items:center;gap:8px"><span class="tin-suggestion-tin">${escH(p.tin||'No TIN')}</span><span class="badge ${bc}" style="font-size:10px">${escH(p.salesType||'Pending')}</span></div><div class="tin-suggestion-name"><i class="fas fa-user" style="font-size:10px;margin-right:3px;color:var(--blue-400)"></i>${escH(p.name)}</div>${addr}</div>`;}).join('');box.querySelectorAll('.tin-suggestion-item').forEach(item=>{item.addEventListener('mousedown',e=>{e.preventDefault();if(item.dataset.tin){input.value=item.dataset.tin;formatTIN(input);}const nm=row.querySelector('.customer-name');if(nm&&!nm.value.trim())nm.value=item.dataset.name;const st=row.querySelector('.sales-type');if(st&&!st.value)st.value=item.dataset.type;const ad=row.querySelector('.address');if(ad&&!ad.value.trim())ad.value=item.dataset.addr;calcRow(row);scheduleStatsUpdate();scheduleAutoSave();box.remove();activeSugBox=null;});});document.body.appendChild(box);activeSugBox=box;const close=e=>{if(!box.contains(e.target)&&e.target!==input){box.remove();activeSugBox=null;document.removeEventListener('mousedown',close);}};setTimeout(()=>document.addEventListener('mousedown',close),0);}
+function showTinSuggestions(input,row){if(activeSugBox){activeSugBox.remove();activeSugBox=null;}if(activeNameSugBox){activeNameSugBox.remove();activeNameSugBox=null;}const q=input.value.trim().toLowerCase();if(!q)return;const pairs=getAllCustomerPairs().filter(p=>p.tin.toLowerCase().startsWith(q)||p.name.toLowerCase().includes(q)).slice(0,8);if(!pairs.length)return;const rect=input.getBoundingClientRect();const box=document.createElement('div');box.className='tin-suggestion-box';box.style.top=(rect.bottom+window.scrollY+2)+'px';box.style.left=(rect.left+window.scrollX)+'px';box.style.width=Math.max(rect.width,240)+'px';box.innerHTML=pairs.map(p=>{const bc=p.salesType==='Private'?'badge-private':p.salesType==='Government'?'badge-govt':'badge-pending';const addr=p.address?`<div class="tin-suggestion-addr"><i class="fas fa-map-marker-alt" style="color:var(--blue-400);font-size:10px;margin-top:1px"></i>${escH(p.address.substring(0,50)+(p.address.length>50?'…':''))}</div>`:'';return`<div class="tin-suggestion-item" data-tin="${escH(p.tin)}" data-name="${escH(p.name)}" data-type="${escH(p.salesType)}" data-addr="${escH(p.address)}"><div style="display:flex;align-items:center;gap:8px"><span class="tin-suggestion-tin">${escH(p.tin||'No TIN')}</span><span class="badge ${bc}" style="font-size:10px">${escH(p.salesType||'Pending')}</span></div><div class="tin-suggestion-name"><i class="fas fa-user" style="font-size:10px;margin-right:3px;color:var(--blue-400)"></i>${escH(p.name)}</div>${addr}</div>`;}).join('');box.querySelectorAll('.tin-suggestion-item').forEach(item=>{item.addEventListener('mousedown',e=>{e.preventDefault();if(item.dataset.tin){input.value=item.dataset.tin;formatTIN(input);}const nm=row.querySelector('.customer-name');if(nm&&!nm.value.trim())nm.value=item.dataset.name;const st=row.querySelector('.sales-type');if(st&&!st.value)st.value=item.dataset.type;const ad=row.querySelector('.address');if(ad&&!ad.value.trim())ad.value=item.dataset.addr;calcRow(row);scheduleStatsUpdate();scheduleAutoSave();box.remove();activeSugBox=null;});});document.body.appendChild(box);activeSugBox=box;const close=e=>{if(!box.contains(e.target)&&e.target!==input){box.remove();activeSugBox=null;document.removeEventListener('mousedown',close);}};setTimeout(()=>document.addEventListener('mousedown',close),0);}
+
+/* ============================================================
+   NAME SUGGESTION DROPDOWN
+============================================================ */
+let activeNameSugBox=null;
+function showNameSuggestions(input,row){if(activeNameSugBox){activeNameSugBox.remove();activeNameSugBox=null;}if(activeSugBox){activeSugBox.remove();activeSugBox=null;}const q=input.value.trim().toLowerCase();if(!q)return;const pairs=getAllCustomerPairs().filter(p=>p.name.toLowerCase().startsWith(q)||p.name.toLowerCase().includes(q)).slice(0,8);if(!pairs.length)return;const rect=input.getBoundingClientRect();const box=document.createElement('div');box.className='tin-suggestion-box';box.style.top=(rect.bottom+window.scrollY+2)+'px';box.style.left=(rect.left+window.scrollX)+'px';box.style.width=Math.max(rect.width,240)+'px';box.innerHTML=pairs.map(p=>{const bc=p.salesType==='Private'?'badge-private':p.salesType==='Government'?'badge-govt':'badge-pending';const tinLabel=p.tin?`<span class="tin-suggestion-tin">${escH(p.tin)}</span>`:`<span class="tin-suggestion-tin" style="color:var(--gray-400);font-style:italic">No TIN</span>`;const addr=p.address?`<div class="tin-suggestion-addr"><i class="fas fa-map-marker-alt" style="color:var(--blue-400);font-size:10px;margin-top:1px"></i>${escH(p.address.substring(0,50)+(p.address.length>50?'\u2026':''))}</div>`:'';return`<div class="tin-suggestion-item" data-tin="${escH(p.tin)}" data-name="${escH(p.name)}" data-type="${escH(p.salesType)}" data-addr="${escH(p.address)}"><div style="display:flex;align-items:center;gap:8px"><span class="tin-suggestion-name" style="font-weight:600;font-size:12px;color:var(--gray-800)">${escH(p.name)}</span><span class="badge ${bc}" style="font-size:10px">${escH(p.salesType||'Pending')}</span></div><div style="margin-top:2px;display:flex;align-items:center;gap:5px"><i class="fas fa-id-card" style="font-size:10px;margin-right:2px;color:var(--blue-400)"></i>${tinLabel}</div>${addr}</div>`;}).join('');box.querySelectorAll('.tin-suggestion-item').forEach(item=>{item.addEventListener('mousedown',e=>{e.preventDefault();input.value=item.dataset.name;const tinEl=row.querySelector('.tin-number');if(tinEl&&!tinEl.value.trim()&&item.dataset.tin){tinEl.value=item.dataset.tin;formatTIN(tinEl);}const st=row.querySelector('.sales-type');if(st&&!st.value)st.value=item.dataset.type;const ad=row.querySelector('.address');if(ad&&!ad.value.trim())ad.value=item.dataset.addr;calcRow(row);scheduleStatsUpdate();scheduleAutoSave();box.remove();activeNameSugBox=null;});});document.body.appendChild(box);activeNameSugBox=box;const close=e=>{if(!box.contains(e.target)&&e.target!==input){box.remove();activeNameSugBox=null;document.removeEventListener('mousedown',close);}};setTimeout(()=>document.addEventListener('mousedown',close),0);}
 
 /* ============================================================
    ADD / DELETE ROWS
 ============================================================ */
-function addRow(data={}){const tb=document.getElementById('tableBody');const row=createRow(data);tb.appendChild(row);currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();return row;}
-function addBatchRows(count){const tb=document.getElementById('tableBody');const frag=document.createDocumentFragment();for(let i=0;i<count;i++)frag.appendChild(createRow());tb.appendChild(frag);currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();}
-function deleteRow(rid){const row=document.getElementById(rid);if(!row||!confirm('Delete this row?'))return;row.style.transition='opacity .2s,transform .2s';row.style.opacity='0';row.style.transform='translateX(-10px)';setTimeout(()=>{row.remove();if(currentPage>getTotalPages())currentPage=Math.max(1,getTotalPages());renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();},200);}
+function addRow(data={}){
+  const tb=document.getElementById('tableBody');
+  const row=createRow(data);
+  tb.appendChild(row);
+  refreshSeqNumbers();
+  if(window._bulkLoading) return row; // skip expensive ops during bulk load
+  currentPage=Math.ceil(tb.children.length/rowsPerPage);
+  renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();
+  return row;
+}
+function addBatchRows(count){
+  const tb=document.getElementById('tableBody');
+  const frag=document.createDocumentFragment();
+  window._bulkLoading=true;
+  for(let i=0;i<count;i++)frag.appendChild(createRow());
+  window._bulkLoading=false;
+  tb.appendChild(frag);
+  refreshSeqNumbers();
+  currentPage=Math.ceil(tb.children.length/rowsPerPage);
+  renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();
+}
+function deleteRow(rid){const row=document.getElementById(rid);if(!row||!confirm('Delete this row?'))return;row.style.transition='opacity .2s,transform .2s';row.style.opacity='0';row.style.transform='translateX(-10px)';setTimeout(()=>{row.remove();refreshSeqNumbers();if(currentPage>getTotalPages())currentPage=Math.max(1,getTotalPages());renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();},200);}
 
 /* ============================================================
    STATS UPDATE — uses getInputNumber for comma-formatted inputs
@@ -1349,51 +1537,104 @@ function updateAllStats(){
   if(statsRunning){statsTimer=setTimeout(updateAllStats,30);return;}statsRunning=true;
   requestAnimationFrame(()=>{
     try{
-      const rows=document.querySelectorAll('#tableBody tr');
-      let gS=0,eS=0,nS=0,oT=0,wH=0,cash=0,charge=0,priv=0,govt=0,cC=0,chC=0,pC=0,gC=0;
-      rows.forEach(r=>{
+      const tb=document.getElementById('tableBody');
+      const rows=tb.children; // HTMLCollection — no DOM search, O(1)
+      let gS=0,zS=0,eS=0,nS=0,oT=0,wH=0,cash=0,charge=0,priv=0,govt=0,cC=0,chC=0,pC=0,gC=0;
+      for(let i=0,len=rows.length;i<len;i++){
+        const r=rows[i];
         const g=getInputNumber(r.querySelector('.gross-sales')),
+              z=getInputNumber(r.querySelector('.zero-rated-sales')),
               e=getInputNumber(r.querySelector('.exempt-sales'));
-        // net/output/withholding are computed displays — parse removing commas
         const nText=r.querySelector('.net-sales')?.textContent||'0';
         const oText=r.querySelector('.output-tax')?.textContent||'0';
         const wText=r.querySelector('.withholding-amount')?.textContent||'0';
         const n=parseFloat(nText.replace(/,/g,''))||0;
         const o=parseFloat(oText.replace(/,/g,''))||0;
         const w=parseFloat(wText.replace(/,/g,''))||0;
-        gS+=g;eS+=e;nS+=n;oT+=o;wH+=w;
+        gS+=g;zS+=z;eS+=e;nS+=n;oT+=o;wH+=w;
         const pm=r.querySelector('.payment-mode')?.value,st=r.querySelector('.sales-type')?.value;
         if(pm==='Cash'){cash+=n;cC++;}else if(pm==='Charge'){charge+=n;chC++;}
         if(st==='Private'){priv+=n;pC++;}else if(st==='Government'){govt+=n;gC++;}
-      });
+      }
       const cnt=rows.length,tallyBase=nS||1;
       const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-      set('totalGrossSales',formatCurrency(gS));set('totalExemptSales',formatCurrency(eS));set('totalNetSales',formatCurrency(nS));set('totalOutputTax',formatCurrency(oT));set('totalWithholding',formatCurrency(wH));
+      set('totalGrossSales',formatCurrency(gS));set('totalZeroRatedSales',formatCurrency(zS));set('totalExemptSales',formatCurrency(eS));set('totalNetSales',formatCurrency(nS));set('totalOutputTax',formatCurrency(oT));set('totalWithholding',formatCurrency(wH));
       set('totalCashAmount',formatCurrency(cash));set('cashCount',cC+' transaction'+(cC!==1?'s':''));set('cashPercentage',((cash/tallyBase)*100).toFixed(1)+'%');
       set('totalChargeAmount',formatCurrency(charge));set('chargeCount',chC+' transaction'+(chC!==1?'s':''));set('chargePercentage',((charge/tallyBase)*100).toFixed(1)+'%');
       set('totalPrivateAmount',formatCurrency(priv));set('privateCount',pC+' transaction'+(pC!==1?'s':''));set('privatePercentage',((priv/tallyBase)*100).toFixed(1)+'%');
       set('totalGovernmentAmount',formatCurrency(govt));set('governmentCount',gC+' transaction'+(gC!==1?'s':''));set('governmentPercentage',((govt/tallyBase)*100).toFixed(1)+'%');
       set('totalTallyAmount','₱ '+formatCurrency(nS));set('totalTallyCount',cnt+' transaction'+(cnt!==1?'s':''));set('totalNetSalesTally',formatCurrency(nS));
       const ec=document.getElementById('entryCount');if(ec){ec.textContent=cnt;ec.classList.add('pulse');setTimeout(()=>ec.classList.remove('pulse'),300);}
-      rebuildSummaryRow(gS,eS,nS,oT,wH);
+      rebuildSummaryRow(gS,zS,eS,nS,oT,wH);
     }finally{statsRunning=false;}
   });
 }
-function rebuildSummaryRow(gS,eS,nS,oT,wH){const foot=document.getElementById('summaryRow');if(!foot)return;if(gS===undefined){const rows=document.querySelectorAll('#tableBody tr');gS=0;eS=0;nS=0;oT=0;wH=0;rows.forEach(r=>{gS+=getInputNumber(r.querySelector('.gross-sales'));eS+=getInputNumber(r.querySelector('.exempt-sales'));const nt=r.querySelector('.net-sales')?.textContent||'0';const ot=r.querySelector('.output-tax')?.textContent||'0';const wt=r.querySelector('.withholding-amount')?.textContent||'0';nS+=parseFloat(nt.replace(/,/g,''))||0;oT+=parseFloat(ot.replace(/,/g,''))||0;wH+=parseFloat(wt.replace(/,/g,''))||0;});}const ths=document.querySelectorAll('#vatableTable thead th');let cells='',firstVisible=true;ths.forEach((th,i)=>{if(th.classList.contains('hidden-column'))return;let content='';if(firstVisible){content='<span class="sum-label">TOTALS</span>';firstVisible=false;}else if(i===7)content='<span class="sum-value">'+formatCurrency(gS)+'</span>';else if(i===8)content='<span class="sum-value">'+formatCurrency(eS)+'</span>';else if(i===10)content='<span class="sum-value">'+formatCurrency(nS)+'</span>';else if(i===11)content='<span class="sum-value">'+formatCurrency(oT)+'</span>';else if(i===13)content='<span class="sum-value">'+formatCurrency(wH)+'</span>';cells+=`<td>${content}</td>`;});foot.innerHTML='<tr>'+cells+'</tr>';}
+function rebuildSummaryRow(gS,zS,eS,nS,oT,wH){const foot=document.getElementById('summaryRow');if(!foot)return;if(gS===undefined){const rows=document.getElementById('tableBody').children;gS=0;zS=0;eS=0;nS=0;oT=0;wH=0;for(let i=0,len=rows.length;i<len;i++){const r=rows[i];gS+=getInputNumber(r.querySelector('.gross-sales'));zS+=getInputNumber(r.querySelector('.zero-rated-sales'));eS+=getInputNumber(r.querySelector('.exempt-sales'));const nt=r.querySelector('.net-sales')?.textContent||'0';const ot=r.querySelector('.output-tax')?.textContent||'0';const wt=r.querySelector('.withholding-amount')?.textContent||'0';nS+=parseFloat(nt.replace(/,/g,''))||0;oT+=parseFloat(ot.replace(/,/g,''))||0;wH+=parseFloat(wt.replace(/,/g,''))||0;}}const ths=document.querySelectorAll('#vatableTable thead th');let cells='',firstVisible=true;ths.forEach((th,i)=>{if(th.classList.contains('hidden-column'))return;let content='';if(firstVisible){content='<span class="sum-label">TOTALS</span>';firstVisible=false;}else if(i===8)content='<span class="sum-value">'+formatCurrency(gS)+'</span>';else if(i===9)content='<span class="sum-value">'+formatCurrency(zS)+'</span>';else if(i===10)content='<span class="sum-value">'+formatCurrency(eS)+'</span>';else if(i===12)content='<span class="sum-value">'+formatCurrency(nS)+'</span>';else if(i===13)content='<span class="sum-value">'+formatCurrency(oT)+'</span>';else if(i===15)content='<span class="sum-value">'+formatCurrency(wH)+'</span>';cells+=`<td>${content}</td>`;});foot.innerHTML='<tr>'+cells+'</tr>';}
 
 /* ============================================================
    SAVE / LOAD FILE
 ============================================================ */
-function saveDataToFile(){const blob=new Blob([JSON.stringify({version:'1.0',timestamp:new Date().toISOString(),companyInfo:getCompanyData(),tableData:getTableData()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='VAT_Data_'+(IS_MONTHLY?MONTHLY_CTX.label.replace(/\s/g,'_')+'_':'')+new Date().toISOString().split('T')[0]+'.vat';a.click();URL.revokeObjectURL(a.href);showToast('Data saved to file','success');}
-function loadDataFromFile(){const fi=document.createElement('input');fi.type='file';fi.accept='.vat,.json';fi.addEventListener('change',function(){const f=this.files[0];if(!f)return;const r=new FileReader();r.onload=async e=>{try{const d=JSON.parse(e.target.result);if(!d.version||!d.tableData)throw new Error('Invalid format');if(d.companyInfo)applyCompanyInfo(d.companyInfo);document.getElementById('tableBody').innerHTML='';d.tableData.forEach(rd=>addRow(rd));if(!d.tableData.length)addRow();currentPage=1;renderCurrentPage();updateAllStats();await saveSession();showToast('Loaded '+d.tableData.length+' rows','success');}catch(ex){showToast('Error: '+ex.message,'error');}};r.readAsText(f);});fi.click();}
+function checkRequiredCompanyFields() {
+  const REQUIRED = [
+    { id: 'companyName',        label: 'Company Name' },
+    { id: 'companyTIN',         label: 'TIN Number' },
+    { id: 'companyAddress',     label: 'Address' },
+    { id: 'lineOfBusiness',     label: 'Line of Business' },
+    { id: 'authorizedEmployee', label: 'Authorized Employee' },
+  ];
+  return REQUIRED.filter(f => {
+    const el = document.getElementById(f.id);
+    return !el || !el.value.trim();
+  });
+}
+
+function highlightMissingCompanyFields(missing) {
+  /* Ensure right panel is open */
+  const rightPanel = document.getElementById('rightPanel');
+  if (rightPanel && rightPanel.classList.contains('collapsed')) {
+    document.getElementById('headerRightToggle')?.click();
+  }
+  missing.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el) return;
+    el.style.transition = 'border-color .2s, box-shadow .2s';
+    el.style.borderColor = 'var(--red-500)';
+    el.style.boxShadow   = '0 0 0 3px rgba(239,68,68,.18)';
+    el.addEventListener('input', function clear() {
+      el.style.borderColor = '';
+      el.style.boxShadow   = '';
+      el.removeEventListener('input', clear);
+    }, { once: true });
+  });
+  const firstEl = document.getElementById(missing[0].id);
+  if (firstEl) { firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => firstEl.focus(), 300); }
+}
+
+function saveDataToFile() {
+  const missing = checkRequiredCompanyFields();
+  if (missing.length > 0) {
+    showToast('Fill in required company info first: ' + missing.map(f => f.label).join(', '), 'error');
+    highlightMissingCompanyFields(missing);
+    return;
+  }
+  const blob = new Blob([JSON.stringify({ version: '1.0', timestamp: new Date().toISOString(), companyInfo: getCompanyData(), tableData: getTableData() }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'VAT_Data_' + (IS_MONTHLY ? MONTHLY_CTX.label.replace(/\s/g, '_') + '_' : '') + new Date().toISOString().split('T')[0] + '.vat';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Data saved to file', 'success');
+}
+function loadDataFromFile(){const fi=document.createElement('input');fi.type='file';fi.accept='.vat,.json';fi.addEventListener('change',function(){const f=this.files[0];if(!f)return;const r=new FileReader();r.onload=async e=>{try{const d=JSON.parse(e.target.result);if(!d.version||!d.tableData)throw new Error('Invalid format');if(d.companyInfo)applyCompanyInfo(d.companyInfo);bulkLoadRows(d.tableData);await saveSession();showToast('Loaded '+d.tableData.length+' rows','success');}catch(ex){showToast('Error: '+ex.message,'error');}};r.readAsText(f);});fi.click();}
 function loadMultipleVatFiles(){const fi=document.createElement('input');fi.type='file';fi.accept='.vat,.json';fi.multiple=true;fi.addEventListener('change',function(){const files=Array.from(this.files);if(!files.length)return;let allData=[],companyInfo=null,done=0,errs=[];files.forEach(file=>{const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d.version||!d.tableData)throw new Error('bad format');allData.push(...d.tableData);if(!companyInfo&&d.companyInfo)companyInfo=d.companyInfo;}catch(ex){errs.push(file.name);}if(++done===files.length)mergeIntoTable(allData,companyInfo,errs,files.length);};r.readAsText(file);});});fi.click();}
-async function mergeIntoTable(rows,companyInfo,errs,total){const curr=document.querySelectorAll('#tableBody tr').length;let action='append';if(curr>0)action=confirm('Table has '+curr+' row(s). OK=Append, Cancel=Replace')?'append':'replace';if(action==='replace')document.getElementById('tableBody').innerHTML='';rows.forEach(rd=>addRow(rd));if(companyInfo&&action==='replace')applyCompanyInfo(companyInfo);currentPage=1;renderCurrentPage();updateAllStats();renderCustomersList();await saveSession();let msg='Loaded '+rows.length+' rows from '+(total-errs.length)+'/'+total+' files';if(errs.length)msg+=' ('+errs.length+' failed)';showToast(msg,errs.length?'warning':'success');}
+async function mergeIntoTable(rows,companyInfo,errs,total){const curr=getRowCount();let action='append';if(curr>0)action=confirm('Table has '+curr+' row(s). OK=Append, Cancel=Replace')?'append':'replace';if(action==='replace'){bulkLoadRows(rows);if(companyInfo)applyCompanyInfo(companyInfo);}else{// Append path — build rows off-DOM then insert
+const tb=document.getElementById('tableBody');const frag=document.createDocumentFragment();window._bulkLoading=true;rows.forEach(rd=>frag.appendChild(createRow(rd)));window._bulkLoading=false;tb.appendChild(frag);currentPage=1;renderCurrentPage();updateAllStats();}renderCustomersList();await saveSession();let msg='Loaded '+rows.length+' rows from '+(total-errs.length)+'/'+total+' files';if(errs.length)msg+=' ('+errs.length+' failed)';showToast(msg,errs.length?'warning':'success');}
 
 /* ============================================================
    UPDATE ALL DATES FROM REPORT DATE
 ============================================================ */
-function updateAllDatesFromReportDate(){const reportDate=document.getElementById('reportDate').value;if(!reportDate){showToast('No report date set.','warning');return;}if(!validateDisplayDate(reportDate)){showToast('Invalid report date format.','warning');return;}const dateInputs=document.querySelectorAll('#tableBody .date-input');if(!dateInputs.length){showToast('No rows to update.','info');return;}let updatedCount=0;dateInputs.forEach(input=>{if(input.value!==reportDate){input.value=reportDate;input.dispatchEvent(new Event('change',{bubbles:true}));updatedCount++;const cell=input.closest('td');cell.classList.add('date-updated');setTimeout(()=>cell.classList.remove('date-updated'),500);}});if(updatedCount>0){showToast(`Updated ${updatedCount} row(s) to ${reportDate}`,'success');scheduleStatsUpdate();scheduleAutoSave();}else showToast('All rows already have the current report date.','info');}
-function setupAutoDateUpdate(){const rdInput=document.getElementById('reportDate');if(!rdInput)return;const rdGroup=rdInput.closest('.field-group');if(rdGroup&&!document.querySelector('.report-date-badge')){const badge=document.createElement('span');badge.className='report-date-badge';badge.innerHTML='<i class="fas fa-calendar-alt"></i> Apply to all rows';badge.title='Update all date rows to this report date';badge.onclick=()=>updateAllDatesFromReportDate();rdGroup.querySelector('label')?.appendChild(badge);}let prev=rdInput.value;rdInput.addEventListener('change',function(){const newDate=this.value;if(prev&&newDate&&newDate!==prev){const cnt=document.querySelectorAll('#tableBody .date-input').length;if(cnt>0&&confirm(`Update all ${cnt} rows to new report date (${newDate})?`))updateAllDatesFromReportDate();}prev=newDate;saveCompanyInfo();});}
+function updateAllDatesFromReportDate(){const reportDate=document.getElementById('reportDate').value;if(!reportDate){showToast('No report date set.','warning');return;}if(!validateDisplayDate(reportDate)){showToast('Invalid report date format.','warning');return;}const tbRows=document.getElementById('tableBody').children;if(!tbRows.length){showToast('No rows to update.','info');return;}let updatedCount=0;for(let i=0,len=tbRows.length;i<len;i++){const input=tbRows[i].querySelector('.date-input');if(!input)continue;if(input.value!==reportDate){input.value=reportDate;input.dispatchEvent(new Event('change',{bubbles:true}));updatedCount++;const cell=input.closest('td');cell.classList.add('date-updated');setTimeout(()=>cell.classList.remove('date-updated'),500);}}if(updatedCount>0){showToast(`Updated ${updatedCount} row(s) to ${reportDate}`,'success');scheduleStatsUpdate();scheduleAutoSave();}else showToast('All rows already have the current report date.','info');}
+function setupAutoDateUpdate(){const rdInput=document.getElementById('reportDate');if(!rdInput)return;const rdGroup=rdInput.closest('.field-group');if(rdGroup&&!document.querySelector('.report-date-badge')){const badge=document.createElement('span');badge.className='report-date-badge';badge.innerHTML='<i class="fas fa-calendar-alt"></i> Apply to all rows';badge.title='Update all date rows to this report date';badge.onclick=()=>updateAllDatesFromReportDate();rdGroup.querySelector('label')?.appendChild(badge);}let prev=rdInput.value;rdInput.addEventListener('change',function(){const newDate=this.value;if(prev&&newDate&&newDate!==prev){const cnt=getRowCount();if(cnt>0&&confirm(`Update all ${cnt} rows to new report date (${newDate})?`))updateAllDatesFromReportDate();}prev=newDate;saveCompanyInfo();});}
 
 /* ============================================================
    EXPORT TO EXCEL
@@ -1401,63 +1642,123 @@ function setupAutoDateUpdate(){const rdInput=document.getElementById('reportDate
 function exportToExcel(){
   const co=getCompanyData();
   if(!co.name||!co.tin||!co.address||!co.business||!co.employee){alert('Please fill all required company fields (*) before exporting.');return;}
-  const rows=document.querySelectorAll('#tableBody tr');
-  let gS=parseFloat((document.getElementById('totalGrossSales').textContent||'0').replace(/,/g,''))||0,
-      eS=parseFloat((document.getElementById('totalExemptSales').textContent||'0').replace(/,/g,''))||0,
-      nS=parseFloat((document.getElementById('totalNetSales').textContent||'0').replace(/,/g,''))||0,
-      oT=parseFloat((document.getElementById('totalOutputTax').textContent||'0').replace(/,/g,''))||0,
-      wH=parseFloat((document.getElementById('totalWithholding').textContent||'0').replace(/,/g,''))||0;
-  const now=new Date(),dateStr=now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
-  let custSummary=new Map(),cashT=0,chargeT=0,privT=0,govtT=0,cC=0,chC=0,pC=0,gC=0;
-  rows.forEach(r=>{
-    const pm=r.querySelector('.payment-mode')?.value,st=r.querySelector('.sales-type')?.value;
-    const n=parseFloat((r.querySelector('.net-sales')?.textContent||'0').replace(/,/g,''))||0;
-    const e=getInputNumber(r.querySelector('.exempt-sales'));
-    const name=(r.querySelector('.customer-name')?.value||'').trim(),tin=(r.querySelector('.tin-number')?.value||'').trim(),addr=(r.querySelector('.address')?.value||'').trim();
-    if(pm==='Cash'){cashT+=n;cC++;}else if(pm==='Charge'){chargeT+=n;chC++;}
-    if(st==='Private'){privT+=n;pC++;}else if(st==='Government'){govtT+=n;gC++;}
-    if((name||tin)&&(n>0||e>0)){const key=name&&tin?name+'|'+tin:name?'notin|'+name:'noname|'+tin;if(custSummary.has(key)){const x=custSummary.get(key);x.net+=n;x.exempt+=e;if(st)x.st=st;if(addr&&!x.addr)x.addr=addr;}else custSummary.set(key,{name:name||'—',tin:tin||'',net:n,exempt:e,st:st||'',addr:addr||''});}
-  });
+  
+  const rows=document.getElementById('tableBody').children;
+  
+  // Recalculate from scratch instead of using potentially stale DOM values
+  let gS=0,zS=0,eS=0,nS=0,oT=0,wH=0;
+  let cashT=0,chargeT=0,privT=0,govtT=0,cC=0,chC=0,pC=0,gC=0;
+  let custSummary=new Map();
+  
+  // Iterate all rows to build data
+  for(let i=0; i<rows.length; i++) {
+    const r=rows[i];
+    // Get gross from the input directly - use the raw value stored in dataset
+    const grossInput = r.querySelector('.gross-sales');
+    const zeroRatedInput = r.querySelector('.zero-rated-sales');
+    const exemptInput = r.querySelector('.exempt-sales');
+    const gross = parseFloat((grossInput?.dataset?.raw || grossInput?.value || '0').replace(/,/g,'')) || 0;
+    const zeroRated = parseFloat((zeroRatedInput?.dataset?.raw || zeroRatedInput?.value || '0').replace(/,/g,'')) || 0;
+    const exempt = parseFloat((exemptInput?.dataset?.raw || exemptInput?.value || '0').replace(/,/g,'')) || 0;
+    
+    // Get computed values from display cells
+    const netText = r.querySelector('.net-sales')?.textContent || '0';
+    const outText = r.querySelector('.output-tax')?.textContent || '0';
+    const whText = r.querySelector('.withholding-amount')?.textContent || '0';
+    const net = parseFloat(netText.replace(/,/g,'')) || 0;
+    const out = parseFloat(outText.replace(/,/g,'')) || 0;
+    const wh = parseFloat(whText.replace(/,/g,'')) || 0;
+    
+    gS += gross;
+    zS += zeroRated;
+    eS += exempt;
+    nS += net;
+    oT += out;
+    wH += wh;
+    
+    const pm = r.querySelector('.payment-mode')?.value || '';
+    const st = r.querySelector('.sales-type')?.value || '';
+    const name = (r.querySelector('.customer-name')?.value || '').trim();
+    const tin = (r.querySelector('.tin-number')?.value || '').trim();
+    const addr = (r.querySelector('.address')?.value || '').trim();
+    
+    if(pm==='Cash'){cashT+=net;cC++;}
+    else if(pm==='Charge'){chargeT+=net;chC++;}
+    if(st==='Private'){privT+=net;pC++;}
+    else if(st==='Government'){govtT+=net;gC++;}
+    
+    if((name||tin)&&(net>0||exempt>0||zeroRated>0)){
+      const key=name&&tin ? name+'|'+tin : name ? 'notin|'+name : 'noname|'+tin;
+      if(custSummary.has(key)){
+        const x=custSummary.get(key);
+        x.net+=net;
+        x.exempt+=exempt;
+        x.zeroRated+=zeroRated;
+        if(st)x.st=st;
+        if(addr&&!x.addr)x.addr=addr;
+      } else {
+        custSummary.set(key,{name:name||'—',tin:tin||'',net:net,exempt:exempt,zeroRated:zeroRated,st:st||'',addr:addr||''});
+      }
+    }
+  }
+  
   const custArr=Array.from(custSummary.values()).sort((a,b)=>b.net-a.net);
+  const now=new Date(),dateStr=now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
   const monthlyNote=IS_MONTHLY?` — ${MONTHLY_CTX.label}`:'';
+  
   let html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><style>*{font-family:Calibri,Arial,sans-serif}.rpt-title{font-size:20pt;font-weight:bold;color:#1E3A8A;text-align:center;border-bottom:2px solid #2563EB;padding-bottom:8px;margin-bottom:12px}.co-table{width:100%;border-collapse:collapse;margin-bottom:16px;background:#EFF6FF}.co-table td{padding:5px 10px;border:1px solid #BFDBFE;font-size:10pt}.co-lbl{font-weight:bold;color:#1D4ED8;width:180px}.dt{width:100%;border-collapse:collapse;margin-top:12px;font-size:9.5pt}.dt th{background:#1E3A8A;color:#DBEAFE;font-weight:bold;text-align:center;padding:8px 6px;border:1px solid #1E40AF}.dt td{padding:6px;border:1px solid #D1D5DB;vertical-align:middle}.dt tr:nth-child(even){background:#EFF6FF}.num{text-align:right;font-family:Consolas,monospace}.sum-row{background:#FEF3C7;font-weight:bold;border-top:2px solid #F59E0B}.sec-ttl{font-size:13pt;font-weight:bold;color:#1E3A8A;margin-top:20px;margin-bottom:6px;border-bottom:1px solid #93C5FD;padding-bottom:4px}.cs-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:9.5pt}.cs-table th{background:#2563EB;color:white;font-weight:bold;padding:8px;border:1px solid #1D4ED8;text-align:center}.cs-table td{padding:7px 10px;border:1px solid #D1D5DB}.bp{background:#EDE9FE;color:#6D28D9;padding:2px 8px;border-radius:12px;font-size:9pt;font-weight:bold}.bg{background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:12px;font-size:9pt;font-weight:bold}.bx{background:#F3F4F6;color:#4B5563;padding:2px 8px;border-radius:12px;font-size:9pt;font-weight:bold}.no-tin{color:#9CA3AF;font-style:italic;font-size:9pt}.fin-table{width:60%;margin-left:auto;border-collapse:collapse}.fin-table td{padding:7px 14px;border-bottom:1px dotted #D1D5DB;font-size:10.5pt}.fin-lbl{text-align:right;color:#1D4ED8;font-weight:bold}.fin-val{text-align:right;font-family:Consolas,monospace;color:#111827}.footer{margin-top:24px;padding-top:12px;border-top:1px solid #D1D5DB;color:#6B7280;font-size:9pt;text-align:center}</style></head><body>
   <div class="rpt-title">VATABLE SALES DATA REPORT${monthlyNote}</div>
   <table class="co-table"><tr><td class="co-lbl">Company Name:</td><td>${escH(co.name)}</td><td class="co-lbl">TIN Number:</td><td>${escH(co.tin)}</td></tr><tr><td class="co-lbl">Address:</td><td>${escH(co.address)}</td><td class="co-lbl">Line of Business:</td><td>${escH(co.business)}</td></tr><tr><td class="co-lbl">Telephone:</td><td>${escH(co.telephone||'N/A')}</td><td class="co-lbl">Report Date:</td><td>${escH(co.date||'')}</td></tr><tr><td class="co-lbl">Authorized Employee:</td><td>${escH(co.employee)}</td><td class="co-lbl">Email:</td><td>${escH(co.email||'N/A')}</td></tr></table>
   <div class="sec-ttl">Sales Transactions</div>
-  <table class="dt"><thead><tr><th>Date</th><th>Invoice No.</th><th>Invoice Type</th><th>Payment Mode</th><th>TIN Number</th><th>Customer Name</th><th>Address</th><th>Gross Sales</th><th>Exempt Sales</th><th>Sales Type</th><th>Net Sales</th><th>Output Tax</th><th>W/T Rate</th><th>W/T Amount</th><th>Remarks</th></tr></thead><tbody>`;
-  rows.forEach(r=>{
+  <table class="dt"><thead><tr><th>#</th><th>Date</th><th>Invoice No.</th><th>Invoice Type</th><th>Payment Mode</th><th>TIN Number</th><th>Customer Name</th><th>Address</th><th>Gross Sales</th><th>Zero-Rated Sales</th><th>Exempt Sales</th><th>Sales Type</th><th>Net Sales</th><th>Output Tax</th><th>W/T Rate</th><th>W/T Amount</th><th>Remarks</th></tr></thead><tbody>`;
+  
+  for(let i=0; i<rows.length; i++) {
+    const r=rows[i];
     const v=cls=>r.querySelector(cls);
     const rate=parseFloat(v('.withholding-rate')?.value)||0;
-    const g=getInputNumber(v('.gross-sales')),e=getInputNumber(v('.exempt-sales'));
+    const grossInput = v('.gross-sales');
+    const zeroRatedInput = v('.zero-rated-sales');
+    const exemptInput = v('.exempt-sales');
+    const g=parseFloat((grossInput?.dataset?.raw || grossInput?.value || '0').replace(/,/g,'')) || 0;
+    const z=parseFloat((zeroRatedInput?.dataset?.raw || zeroRatedInput?.value || '0').replace(/,/g,'')) || 0;
+    const e=parseFloat((exemptInput?.dataset?.raw || exemptInput?.value || '0').replace(/,/g,'')) || 0;
     const n=parseFloat((v('.net-sales')?.textContent||'0').replace(/,/g,''))||0;
     const o=parseFloat((v('.output-tax')?.textContent||'0').replace(/,/g,''))||0;
     const w=parseFloat((v('.withholding-amount')?.textContent||'0').replace(/,/g,''))||0;
-    html+=`<tr><td style="text-align:center">${escH(v('.date-input')?.value||'')}</td><td>${escH(v('.invoice-number')?.value||'')}</td><td style="text-align:center">${escH(v('.invoice-type')?.value||'')}</td><td style="text-align:center">${escH(v('.payment-mode')?.value||'')}</td><td style="text-align:center">${escH(v('.tin-number')?.value||'')}</td><td>${escH(v('.customer-name')?.value||'')}</td><td>${escH(v('.address')?.value||'')}</td><td class="num">${g.toFixed(2)}</td><td class="num">${e.toFixed(2)}</td><td style="text-align:center">${escH(v('.sales-type')?.value||'')}</td><td class="num">${n.toFixed(2)}</td><td class="num">${o.toFixed(2)}</td><td style="text-align:center">${(rate*100).toFixed(0)}%</td><td class="num">${w.toFixed(2)}</td><td>${escH(v('.remarks')?.value||'')}</td></tr>`;
-  });
-  html+=`</tbody><tfoot><tr class="sum-row"><td colspan="7" style="text-align:right;font-weight:bold">TOTALS:</td><td class="num">${gS.toFixed(2)}</td><td class="num">${eS.toFixed(2)}</td><td>-</td><td class="num">${nS.toFixed(2)}</td><td class="num">${oT.toFixed(2)}</td><td>-</td><td class="num">${wH.toFixed(2)}</td><td>-</td></tr></tfoot></table>`;
-  let ctNet=0,ctExempt=0,ctOT=0,ctWT=0;
-  html+=`<div class="sec-ttl">Customer Summary</div><table class="cs-table"><thead><tr><th>Customer Name</th><th>TIN Number</th><th>Sales Type</th><th>Address</th><th>Total Exempt Sales</th><th>Total Net Sales</th><th>Total Output Tax</th><th>Total W/T Amount</th></tr></thead><tbody>`;
-  custArr.forEach(c=>{
+    html+=`<tr><td style="text-align:center;color:#6B7280;font-size:9pt">${i+1}</td><td style="text-align:center">${escH(v('.date-input')?.value||'')}</td><td>${escH(v('.invoice-number')?.value||'')}</td><td style="text-align:center">${escH(v('.invoice-type')?.value||'')}</td><td style="text-align:center">${escH(v('.payment-mode')?.value||'')}</td><td style="text-align:center">${escH(v('.tin-number')?.value||'')}</td><td>${escH(v('.customer-name')?.value||'')}</td><td>${escH(v('.address')?.value||'')}</td><td class="num">${g.toFixed(2)}</td><td class="num">${z.toFixed(2)}</td><td class="num">${e.toFixed(2)}</td><td style="text-align:center">${escH(v('.sales-type')?.value||'')}</td><td class="num">${n.toFixed(2)}</td><td class="num">${o.toFixed(2)}</td><td style="text-align:center">${(rate*100).toFixed(0)}%</td><td class="num">${w.toFixed(2)}</td><td>${escH(v('.remarks')?.value||'')}</td></tr>`;
+  }
+  
+  html+=`</tbody><tfoot><tr class="sum-row"><td colspan="8" style="text-align:right;font-weight:bold">TOTALS:</td><td class="num">${gS.toFixed(2)}</td><td class="num">${zS.toFixed(2)}</td><td class="num">${eS.toFixed(2)}</td><td>-</td><td class="num">${nS.toFixed(2)}</td><td class="num">${oT.toFixed(2)}</td><td>-</td><td class="num">${wH.toFixed(2)}</td><td>-</td></tr></tfoot></table>`;
+  
+  let ctNet=0,ctExempt=0,ctZero=0,ctOT=0,ctWT=0;
+  html+=`<div class="sec-ttl">Customer Summary</div><table class="cs-table"><thead><tr><th>Customer Name</th><th>TIN Number</th><th>Sales Type</th><th>Address</th><th>Total Zero-Rated Sales</th><th>Total Exempt Sales</th><th>Total Net Sales</th><th>Total Output Tax</th><th>Total W/T Amount</th></tr></thead><tbody>`;
+  for(let c of custArr) {
     const bc=c.st==='Private'?'bp':c.st==='Government'?'bg':'bx';
     let custOT=0,custWT=0;
-    rows.forEach(r=>{
-      const rName=(r.querySelector('.customer-name')?.value||'').trim(),rTin=(r.querySelector('.tin-number')?.value||'').trim();
-      if(rName===c.name&&(c.tin?(rTin===c.tin):(rTin===''||rTin===c.tin))){
+    for(let i=0; i<rows.length; i++) {
+      const r=rows[i];
+      const rName=(r.querySelector('.customer-name')?.value||'').trim();
+      const rTin=(r.querySelector('.tin-number')?.value||'').trim();
+      if(rName===c.name && (c.tin?(rTin===c.tin):(rTin===''||rTin===c.tin))){
         custOT+=parseFloat((r.querySelector('.output-tax')?.textContent||'0').replace(/,/g,''))||0;
         custWT+=parseFloat((r.querySelector('.withholding-amount')?.textContent||'0').replace(/,/g,''))||0;
       }
-    });
-    html+=`<tr><td>${escH(c.name)}</td><td style="text-align:center;font-family:monospace">${c.tin?escH(c.tin):'<span class="no-tin">No TIN</span>'}</td><td style="text-align:center"><span class="${bc}">${escH(c.st||'Pending')}</span></td><td>${escH(c.addr||'—')}</td><td class="num">${c.exempt.toFixed(2)}</td><td class="num">${c.net.toFixed(2)}</td><td class="num">${custOT.toFixed(2)}</td><td class="num">${custWT.toFixed(2)}</td></tr>`;
-    ctNet+=c.net;ctExempt+=c.exempt;ctOT+=custOT;ctWT+=custWT;
-  });
-  html+=`<tr class="sum-row"><td colspan="4" style="text-align:right">TOTALS:</td><td class="num">${ctExempt.toFixed(2)}</td><td class="num">${ctNet.toFixed(2)}</td><td class="num">${ctOT.toFixed(2)}</td><td class="num">${ctWT.toFixed(2)}</td></tr></tbody></table>
-  <div class="sec-ttl">Financial Summary</div><table class="fin-table"><tr><td class="fin-lbl">Total Vatable Gross Sales:</td><td class="fin-val">₱ ${gS.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Exempt Sales:</td><td class="fin-val">₱ ${eS.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Net Sales:</td><td class="fin-val">₱ ${nS.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Output Tax (12%):</td><td class="fin-val">₱ ${oT.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Withholding Tax:</td><td class="fin-val">₱ ${wH.toFixed(2)}</td></tr><tr style="border-top:2px solid #2563EB"><td class="fin-lbl" style="color:#1E3A8A">Net Amount Receivable:</td><td class="fin-val" style="color:#1E3A8A;font-weight:bold">₱ ${(nS-wH).toFixed(2)}</td></tr></table>
+    }
+    html+=`<tr><td>${escH(c.name)}</td><td style="text-align:center;font-family:monospace">${c.tin?escH(c.tin):'<span class="no-tin">No TIN</span>'}</td><td style="text-align:center"><span class="${bc}">${escH(c.st||'Pending')}</span></td><td>${escH(c.addr||'—')}</td><td class="num">${(c.zeroRated||0).toFixed(2)}</td><td class="num">${c.exempt.toFixed(2)}</td><td class="num">${c.net.toFixed(2)}</td><td class="num">${custOT.toFixed(2)}</td><td class="num">${custWT.toFixed(2)}</td></tr>`;
+    ctNet+=c.net;ctExempt+=c.exempt;ctZero+=(c.zeroRated||0);ctOT+=custOT;ctWT+=custWT;
+  }
+  html+=`<tr class="sum-row"><td colspan="4" style="text-align:right">TOTALS:</td><td class="num">${ctZero.toFixed(2)}</td><td class="num">${ctExempt.toFixed(2)}</td><td class="num">${ctNet.toFixed(2)}</td><td class="num">${ctOT.toFixed(2)}</td><td class="num">${ctWT.toFixed(2)}</td></tr></tbody></table>
+  <div class="sec-ttl">Financial Summary</div><table class="fin-table"><tr><td class="fin-lbl">Total Vatable Gross Sales:</td><td class="fin-val">₱ ${gS.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Zero-Rated Sales:</td><td class="fin-val">₱ ${zS.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Exempt Sales:</td><td class="fin-val">₱ ${eS.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Net Sales:</td><td class="fin-val">₱ ${nS.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Output Tax (12%):</td><td class="fin-val">₱ ${oT.toFixed(2)}</td></tr><tr><td class="fin-lbl">Total Withholding Tax:</td><td class="fin-val">₱ ${wH.toFixed(2)}</td></tr><tr style="border-top:2px solid #2563EB"><td class="fin-lbl" style="color:#1E3A8A">Net Amount Receivable:</td><td class="fin-val" style="color:#1E3A8A;font-weight:bold">₱ ${(nS-wH).toFixed(2)}</td></tr></table>
   <div class="sec-ttl">Payment Distribution</div><table class="fin-table"><tr><td class="fin-lbl">Cash Transactions:</td><td class="fin-val">₱ ${cashT.toFixed(2)} (${cC} tx)</td></tr><tr><td class="fin-lbl">Charge Transactions:</td><td class="fin-val">₱ ${chargeT.toFixed(2)} (${chC} tx)</td></tr><tr><td class="fin-lbl">Private Sector:</td><td class="fin-val">₱ ${privT.toFixed(2)} (${pC} tx)</td></tr><tr><td class="fin-lbl">Government Sector:</td><td class="fin-val">₱ ${govtT.toFixed(2)} (${gC} tx)</td></tr></table>
   <div class="footer"><p>Report generated on ${dateStr} at ${timeStr}</p><p>Authorized by: ${escH(co.employee)} · Vatable Sales Data Tracker${monthlyNote}</p><p>© ${now.getFullYear()} Vatable Sales Data Tracker – Professional VAT-Compliant System</p></div></body></html>`;
+  
   const blob=new Blob([html],{type:'application/vnd.ms-excel'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
   a.download='Vatable_Sales_'+co.name.replace(/[^a-zA-Z0-9]/g,'_')+(IS_MONTHLY?'_'+MONTHLY_CTX.label.replace(/\s/g,'_'):'')+'.xls';
-  a.click();URL.revokeObjectURL(a.href);showToast('Excel report exported','success');
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Excel report exported','success');
 }
 
 /* ============================================================
@@ -1517,8 +1818,8 @@ function showCtxMenu(x, y) {
   menu.className = 'ctx-menu';
   menu.innerHTML = `
     <div class="ctx-menu-header"><i class="fas fa-mouse-pointer"></i> Selection Actions <span class="ctx-count-badge">${count} cell${count!==1?'s':''}</span></div>
-    <button class="ctx-item" id="ctxCopy"><i class="fas fa-copy"></i> Copy Cells</button>
-    <button class="ctx-item" id="ctxPaste"><i class="fas fa-paste"></i> Paste Here</button>
+    <button class="ctx-item" id="ctxCopy"><i class="fas fa-copy"></i> Copy Cells <span class="ctx-count-badge" style="background:var(--gray-100);color:var(--gray-500)">Ctrl+C</span></button>
+    <button class="ctx-item" id="ctxPaste"><i class="fas fa-paste"></i> Paste Here <span class="ctx-count-badge" style="background:var(--gray-100);color:var(--gray-500)">Ctrl+V</span></button>
     <button class="ctx-item" id="ctxClear"><i class="fas fa-eraser"></i> Clear Cell Values</button>
     <div class="ctx-divider"></div>
     ${hasFullRows ? `<button class="ctx-item danger" id="ctxDeleteRows"><i class="fas fa-trash-alt"></i> Delete Selected Rows <span class="ctx-count-badge" style="background:#FECACA;color:#B91C1C">${selectedRows.length} row${selectedRows.length!==1?'s':''}</span></button><div class="ctx-divider"></div>` : ''}
@@ -1591,12 +1892,78 @@ function deleteSelectedRows(rows) {
 }
 
 function getCellCoords(cell){const r=cell.parentElement;return{row:Array.from(r.parentElement.children).indexOf(r),col:Array.from(r.children).indexOf(cell)};}
-function selectRange(s,e){clearCellSelection();const allRows=Array.from(document.querySelectorAll('#tableBody tr')),r1=Math.min(s.row,e.row),r2=Math.max(s.row,e.row),c1=Math.min(s.col,e.col),c2=Math.max(s.col,e.col);for(let r=r1;r<=r2;r++){const row=allRows[r];if(!row)continue;for(let c=c1;c<=c2;c++){const cell=row.children[c];if(!cell)continue;cell.classList.add('cell-selected');selectedCells.add(cell);}}updateSelectionInfoBar();}
-function clearCellSelection(){document.querySelectorAll('.cell-selected').forEach(c=>c.classList.remove('cell-selected'));selectedCells.clear();updateSelectionInfoBar();}
+function selectRange(s,e){clearCellSelection();const allRows=document.getElementById('tableBody').children,r1=Math.min(s.row,e.row),r2=Math.max(s.row,e.row),c1=Math.min(s.col,e.col),c2=Math.max(s.col,e.col);for(let r=r1;r<=r2;r++){const row=allRows[r];if(!row)continue;for(let c=c1;c<=c2;c++){const cell=row.children[c];if(!cell)continue;cell.classList.add('cell-selected');selectedCells.add(cell);}}updateSelectionInfoBar();}
+function clearCellSelection(){document.querySelectorAll('.cell-selected').forEach(c=>c.classList.remove('cell-selected'));selectedCells.clear();updateSelectionInfoBar();if(hiddenClipEl)hiddenClipEl.value='';}
 function getCellValue(c){const inp=c.querySelector('input,select');if(inp)return inp.value;const comp=c.querySelector('.cell-computed');if(comp)return comp.textContent;return c.textContent.trim();}
 function setCellValue(c,v){const inp=c.querySelector('input');if(inp){inp.value=v;inp.dataset.raw=v.replace(/,/g,'');inp.dispatchEvent(new Event('input',{bubbles:true}));return true;}const sel=c.querySelector('select');if(sel){const opt=Array.from(sel.options).find(o=>o.value===v||o.text===v);if(opt)sel.value=opt.value;sel.dispatchEvent(new Event('change',{bubbles:true}));return true;}return false;}
-function copySelectedCells(){if(!selectedCells.size){showToast('No cells selected','warning');return;}const coords=Array.from(selectedCells).map(c=>({cell:c,...getCellCoords(c)}));const minR=Math.min(...coords.map(c=>c.row)),minC=Math.min(...coords.map(c=>c.col)),maxR=Math.max(...coords.map(c=>c.row)),maxC=Math.max(...coords.map(c=>c.col));const grid=[];for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const found=coords.find(x=>x.row===r&&x.col===c);row.push(found?getCellValue(found.cell):'');}grid.push(row);}navigator.clipboard.writeText(grid.map(r=>r.join('\t')).join('\n')).then(()=>showToast('Copied '+selectedCells.size+' cells','success')).catch(()=>showToast('Clipboard error','error'));}
-function pasteToSelectedCells(){navigator.clipboard.readText().then(text=>{const rows=text.split('\n').map(r=>r.split('\t'));const sorted=Array.from(selectedCells).sort((a,b)=>{const ca=getCellCoords(a),cb=getCellCoords(b);return ca.row!==cb.row?ca.row-cb.row:ca.col-cb.col;});let cnt=0;sorted.forEach((cell,i)=>{const r=Math.floor(i/rows[0].length),c2=i%rows[0].length;if(rows[r]&&rows[r][c2]!==undefined&&setCellValue(cell,rows[r][c2]))cnt++;});clearCellSelection();showToast('Pasted to '+cnt+' cells','success');updateAllStats();}).catch(()=>showToast('Clipboard read failed','error'));}
+let internalClipboardData=null; // {grid:[[...]]} — in-app fallback clipboard
+
+/* Hidden, always-focusable textarea used to bridge the REAL OS clipboard (so Excel<->app
+   copy/paste works). The Async Clipboard API (navigator.clipboard) is blocked by permissions
+   in many contexts; execCommand('copy') and native 'paste' events on a focused element are not,
+   and are exactly how spreadsheet-style web apps implement this. */
+let hiddenClipEl=null;
+function ensureHiddenClipEl(){
+  if(hiddenClipEl) return hiddenClipEl;
+  const ta=document.createElement('textarea');
+  ta.id='hiddenClipboardCapture';
+  ta.setAttribute('tabindex','-1');
+  ta.setAttribute('aria-hidden','true');
+  ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;padding:0;margin:0;border:none;outline:none;opacity:0;resize:none;overflow:hidden;';
+  document.body.appendChild(ta);
+  ta.addEventListener('paste', handleHiddenClipPaste);
+  hiddenClipEl=ta;
+  return ta;
+}
+function buildSelectionTSV(){
+  const coords=Array.from(selectedCells).map(c=>({cell:c,...getCellCoords(c)}));
+  const minR=Math.min(...coords.map(c=>c.row)),minC=Math.min(...coords.map(c=>c.col)),maxR=Math.max(...coords.map(c=>c.row)),maxC=Math.max(...coords.map(c=>c.col));
+  const grid=[];
+  for(let r=minR;r<=maxR;r++){const row=[];for(let c=minC;c<=maxC;c++){const found=coords.find(x=>x.row===r&&x.col===c);row.push(found?getCellValue(found.cell):'');}grid.push(row);}
+  return {grid,tsv:grid.map(r=>r.join('\t')).join('\n')};
+}
+function parseTSV(text){return text.replace(/\r/g,'').split('\n').map(r=>r.split('\t'));}
+function syncHiddenClipValue(){const ta=ensureHiddenClipEl();ta.value=(selectMode&&selectedCells.size)?buildSelectionTSV().tsv:'';}
+function focusHiddenClip(){const ta=ensureHiddenClipEl();try{ta.focus({preventScroll:true});ta.select();}catch(e){}}
+function applyGridToSelection(grid){
+  if(!grid||!grid.length||!grid[0].length){showToast('Nothing to paste','warning');return;}
+  const sorted=Array.from(selectedCells).sort((a,b)=>{const ca=getCellCoords(a),cb=getCellCoords(b);return ca.row!==cb.row?ca.row-cb.row:ca.col-cb.col;});
+  const cols=grid[0].length;let cnt=0;
+  sorted.forEach((cell,i)=>{const r=Math.floor(i/cols),c2=i%cols;if(grid[r]&&grid[r][c2]!==undefined&&setCellValue(cell,grid[r][c2]))cnt++;});
+  clearCellSelection();showToast('Pasted to '+cnt+' cells','success');updateAllStats();
+}
+function handleHiddenClipPaste(e){
+  if(!selectMode||!selectedCells.size)return; // nothing selected to paste into — ignore
+  const cd=e.clipboardData||window.clipboardData;
+  const text=cd?(cd.getData('text/plain')||cd.getData('text')):'';
+  e.preventDefault();
+  if(!text){showToast('Clipboard is empty','warning');return;}
+  applyGridToSelection(parseTSV(text));
+}
+function copySelectedCells(){
+  if(!selectedCells.size){showToast('No cells selected','warning');return;}
+  const {grid,tsv}=buildSelectionTSV();
+  internalClipboardData=grid;
+  const ta=ensureHiddenClipEl();
+  ta.value=tsv;
+  let ok=false;
+  try{ta.focus();ta.select();ok=document.execCommand('copy');}catch(err){ok=false;}
+  showToast(ok?('Copied '+selectedCells.size+' cells — ready to paste in Excel'):('Copied '+selectedCells.size+' cells (in-app only)'),'success');
+}
+function pasteToSelectedCells(){
+  if(!selectedCells.size){showToast('Select target cells first','warning');return;}
+  if(navigator.clipboard&&navigator.clipboard.readText){
+    navigator.clipboard.readText().then(text=>{applyGridToSelection(parseTSV(text));}).catch(()=>{
+      if(internalClipboardData){applyGridToSelection(internalClipboardData);}
+      else{focusHiddenClip();showToast('Your browser blocked that — press Ctrl+V now to paste','info');}
+    });
+  }else if(internalClipboardData){
+    applyGridToSelection(internalClipboardData);
+  }else{
+    focusHiddenClip();
+    showToast('Your browser blocked that — press Ctrl+V now to paste','info');
+  }
+}
 function deleteSelectedCells(){if(!selectedCells.size){showToast('No cells selected','warning');return;}let cnt=0;selectedCells.forEach(c=>{if(setCellValue(c,''))cnt++;});clearCellSelection();showToast('Cleared '+cnt+' cells','success');updateAllStats();}
 
 /* ============================================================
@@ -1686,11 +2053,13 @@ function initSelectionMouseEvents(){
     const td=e.target.closest('td');if(!td)return;
     e.preventDefault();isDragging=true;dragStart=getCellCoords(td);clearCellSelection();
     td.classList.add('cell-selected');selectedCells.add(td);updateSelectionInfoBar();
+    syncHiddenClipValue();focusHiddenClip();
   });
   tb.addEventListener('mousemove',e=>{
     if(!selectMode||!isDragging)return;
     const td=e.target.closest('td');if(!td)return;
     selectRange(dragStart,getCellCoords(td));
+    syncHiddenClipValue();
   });
   // Right-click context menu on table body in select mode
   tb.addEventListener('contextmenu',e=>{
@@ -1702,15 +2071,16 @@ function initSelectionMouseEvents(){
       clearCellSelection();
       td.classList.add('cell-selected');selectedCells.add(td);updateSelectionInfoBar();
     }
+    syncHiddenClipValue();focusHiddenClip();
     showCtxMenu(e.clientX, e.clientY);
   });
-  document.addEventListener('mouseup',()=>{if(isDragging)isDragging=false;});
+  document.addEventListener('mouseup',()=>{if(isDragging){isDragging=false;syncHiddenClipValue();focusHiddenClip();}});
   document.addEventListener('keydown',e=>{
     if(!selectMode)return;
-    if(e.ctrlKey&&e.key==='c'){e.preventDefault();copySelectedCells();}
-    if(e.ctrlKey&&e.key==='v'){e.preventDefault();pasteToSelectedCells();}
-    if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSelectedCells();}
-    if(e.key==='Escape'){if(activeCtxMenu){closeCtxMenu();}else if(selectedCells.size>0){clearCellSelection();}else{toggleSelectMode();}}
+    if(e.ctrlKey&&(e.key==='c'||e.key==='C')){e.preventDefault();copySelectedCells();}
+    else if(e.ctrlKey&&(e.key==='v'||e.key==='V')){syncHiddenClipValue();focusHiddenClip();} // let the browser's native paste land on the hidden bridge
+    else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSelectedCells();}
+    else if(e.key==='Escape'){if(activeCtxMenu){closeCtxMenu();}else if(selectedCells.size>0){clearCellSelection();}else{toggleSelectMode();}}
   });
 }
 
@@ -1727,7 +2097,7 @@ window.addEventListener('beforeunload', () => {
    INIT
 ============================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
-  await checkBackend();
+  await backendReadyPromise;
 
   if (IS_MONTHLY) {
     const banner=document.getElementById('monthlyBanner'),bannerLabel=document.getElementById('monthlyBannerLabel'),bannerKey=document.getElementById('monthlyBannerKey');
@@ -1828,7 +2198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Try API first (works across computers)
     if (USE_API && authToken) {
       try {
-        const r = await fetch(`${API_BASE}/company-info`, { headers: apiHeaders() });
+        const r = await fetch(`${API_BASE}/company-info${APP_SYSTEM ? `?scope=${APP_SYSTEM}` : ''}`, { headers: apiHeaders() });
         if (r.ok) {
           const d = await r.json();
           if (d.data && d.data.companyName) {
@@ -1839,8 +2209,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       } catch(_) {}
     }
-    // 2. Fallback to localStorage
-    const keys=['vatCompanyInfo_Main','vatCompanyInfo_Client','vatCompanyInfo_SubAdmin'];
+    // 2. Fallback to localStorage (system-prefixed so Accounting/Bookkeeping
+    //    never fall back to reading each other's cached copy)
+    const keys=[`vatCompanyInfo_${SYS_PREFIX}Main`,`vatCompanyInfo_${SYS_PREFIX}Client`,`vatCompanyInfo_${SYS_PREFIX}SubAdmin`];
     for(const k of keys){
       const raw=localStorage.getItem(k);
       if(!raw)continue;
@@ -1888,19 +2259,72 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ── Live cross-tab sync from company_information.html ── */
   window.addEventListener('storage',function(e){
-    if(!['vatCompanyInfo_Main','vatCompanyInfo_Client','vatCompanyInfo_SubAdmin'].includes(e.key))return;
+    if(!([`vatCompanyInfo_${SYS_PREFIX}Main`,`vatCompanyInfo_${SYS_PREFIX}Client`,`vatCompanyInfo_${SYS_PREFIX}SubAdmin`].includes(e.key)))return;
     try{const d=JSON.parse(e.newValue);if(d&&d.companyName!==undefined){applyCompanyInfo(d);showToast('Company info updated','success');}}catch(err){}
   });
+
+  // Startup (session restore / default row seeding) is fully done at this
+  // point — tell the Undo/Redo module so it can start history fresh instead
+  // of counting our own startup bookkeeping as something the user could undo.
+  document.dispatchEvent(new CustomEvent('vatapp:ready'));
 });
 </script>
 
 <!-- ============================================================
-   UNDO / REDO
+   UNDO / REDO  (cell-level)
+   ------------------------------------------------------------
+   Every edit to a single table cell — or a single company-info
+   field — is tracked as its OWN, independent undo/redo step.
+   One Undo reverts exactly the one cell that changed and never
+   touches any other cell/row. Adding or deleting a row is also
+   tracked per-row (one action = one step). Only whole-table
+   operations (Clear Table, Load Data, Merge Files) — which by
+   definition replace every row at once — are tracked as a single
+   full-table step, since there is no single "cell" to point to.
 ============================================================ -->
 <script>
 (function(){
-  let undoStack=[],redoStack=[],isUndoingOrRedoing=false;
-  function captureSnapshot(){
+  const ROW_FIELDS=['date-input','invoice-number','invoice-type','payment-mode','tin-number','customer-name','address','gross-sales','zero-rated-sales','exempt-sales','sales-type','withholding-rate','remarks'];
+  const CURRENCY_FIELDS=['gross-sales','zero-rated-sales','exempt-sales'];
+  const COMPANY_FIELDS=['companyName','companyTIN','companyAddress','lineOfBusiness','telephone','reportDate','authorizedEmployee','email'];
+  const MAX_HISTORY=100;
+
+  let undoStack=[],redoStack=[],isApplying=false;
+
+  /* ---------------- field read/write helpers ---------------- */
+  function getFieldValue(el,field){
+    if(!el)return '';
+    if(CURRENCY_FIELDS.includes(field))return(el.dataset.raw!==undefined?el.dataset.raw:el.value||'').toString().replace(/,/g,'');
+    return el.value!==undefined?el.value:'';
+  }
+  function setFieldValue(row,field,value){
+    const el=row.querySelector('.'+field);
+    if(!el)return;
+    if(CURRENCY_FIELDS.includes(field)){el.dataset.raw=value||'';el.value=value?formatCurrency(value):'';}
+    else{el.value=value;}
+    if(typeof calcRow==='function')calcRow(row);
+    if(typeof updateRowColor==='function')updateRowColor(row);
+  }
+  function fieldOf(el){return el&&el.classList?ROW_FIELDS.find(f=>el.classList.contains(f))||null:null;}
+  function rowIndexOf(row){const tb=document.getElementById('tableBody');return tb?Array.from(tb.children).indexOf(row):-1;}
+  function insertRowsAtIndices(entries){
+    entries.slice().sort((a,b)=>a.index-b.index).forEach(({row,index})=>{
+      const tb=document.getElementById('tableBody');if(!tb)return;
+      const ref=tb.children[index]||null;
+      tb.insertBefore(row,ref);
+      row.style.opacity='';row.style.transform='';
+    });
+  }
+  function afterStructuralChange(){
+    if(typeof refreshSeqNumbers==='function')refreshSeqNumbers();
+    if(typeof currentPage!=='undefined'&&typeof getTotalPages==='function')currentPage=Math.min(Math.max(1,currentPage),getTotalPages());
+    if(typeof renderCurrentPage==='function')renderCurrentPage();
+    if(typeof updateAllStats==='function')updateAllStats();
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  }
+
+  /* ---------------- whole-table snapshot (bulk ops only) ---------------- */
+  function captureFullState(){
     const rows=document.querySelectorAll('#tableBody tr');
     const tableData=Array.from(rows).map(row=>({
       date:row.querySelector('.date-input')?.value||'',
@@ -1910,43 +2334,334 @@ document.addEventListener('DOMContentLoaded', async () => {
       tinNumber:row.querySelector('.tin-number')?.value||'',
       customerName:row.querySelector('.customer-name')?.value||'',
       address:row.querySelector('.address')?.value||'',
-      grossSales:(row.querySelector('.gross-sales')?.dataset.raw||row.querySelector('.gross-sales')?.value||'').replace(/,/g,''),
-      exemptSales:(row.querySelector('.exempt-sales')?.dataset.raw||row.querySelector('.exempt-sales')?.value||'').replace(/,/g,''),
+      grossSales:getFieldValue(row.querySelector('.gross-sales'),'gross-sales'),
+      zeroRatedSales:getFieldValue(row.querySelector('.zero-rated-sales'),'zero-rated-sales'),
+      exemptSales:getFieldValue(row.querySelector('.exempt-sales'),'exempt-sales'),
       salesType:row.querySelector('.sales-type')?.value||'',
       withholdingRate:row.querySelector('.withholding-rate')?.value||'0',
       remarks:row.querySelector('.remarks')?.value||''
     }));
-    const companyInfo={companyName:document.getElementById('companyName')?.value||'',companyTIN:document.getElementById('companyTIN')?.value||'',companyAddress:document.getElementById('companyAddress')?.value||'',lineOfBusiness:document.getElementById('lineOfBusiness')?.value||'',telephone:document.getElementById('telephone')?.value||'',reportDate:document.getElementById('reportDate')?.value||'',authorizedEmployee:document.getElementById('authorizedEmployee')?.value||'',email:document.getElementById('email')?.value||''};
+    const companyInfo={};COMPANY_FIELDS.forEach(id=>{const el=document.getElementById(id);companyInfo[id]=el?el.value:'';});
     return{tableData,companyInfo};
   }
-  function restoreSnapshot(snapshot){
+  function restoreFullState(snapshot){
     if(!snapshot)return;
-    isUndoingOrRedoing=true;
+    const pageBeforeRestore=(typeof currentPage!=='undefined')?currentPage:1;
     const tbody=document.getElementById('tableBody');
-    if(tbody&&snapshot.tableData){tbody.innerHTML='';snapshot.tableData.forEach(rd=>tbody.appendChild(createRow(rd)));if(!snapshot.tableData.length)addRow();if(typeof currentPage!=='undefined')currentPage=1;if(typeof renderCurrentPage==='function')renderCurrentPage();if(typeof updateAllStats==='function')updateAllStats();}
-    if(snapshot.companyInfo){const map={companyName:'companyName',companyTIN:'companyTIN',companyAddress:'companyAddress',lineOfBusiness:'lineOfBusiness',telephone:'telephone',reportDate:'reportDate',authorizedEmployee:'authorizedEmployee',email:'email'};for(const[prop,id]of Object.entries(map)){const el=document.getElementById(id);if(el&&snapshot.companyInfo[prop]!==undefined)el.value=snapshot.companyInfo[prop];}if(typeof saveCompanyInfo==='function')saveCompanyInfo();}
+    if(tbody&&snapshot.tableData){
+      tbody.innerHTML='';
+      snapshot.tableData.forEach(rd=>tbody.appendChild(createRow(rd)));
+      if(!snapshot.tableData.length)addRow();
+      if(typeof refreshSeqNumbers==='function')refreshSeqNumbers();
+      if(typeof getTotalPages==='function')currentPage=Math.min(Math.max(1,pageBeforeRestore),getTotalPages());
+      if(typeof renderCurrentPage==='function')renderCurrentPage();
+    }
+    if(snapshot.companyInfo){
+      COMPANY_FIELDS.forEach(id=>{const el=document.getElementById(id);if(el&&snapshot.companyInfo[id]!==undefined)el.value=snapshot.companyInfo[id];});
+      if(typeof saveCompanyInfo==='function')saveCompanyInfo();
+    }
     if(typeof renderCustomersList==='function')renderCustomersList();
     if(typeof updateAllStats==='function')updateAllStats();
     if(typeof scheduleAutoSave==='function')scheduleAutoSave();
-    setTimeout(()=>{isUndoingOrRedoing=false;},10);
   }
-  function pushToUndoStack(){if(isUndoingOrRedoing)return;redoStack=[];while(undoStack.length>50)undoStack.shift();undoStack.push(captureSnapshot());updateUndoRedoButtons();}
-  function performUndo(){if(!undoStack.length){showToast('Nothing to undo','info');return;}const current=captureSnapshot();const previous=undoStack.pop();if(previous){redoStack.push(current);while(redoStack.length>50)redoStack.shift();restoreSnapshot(previous);showToast('Undo successful','success');updateUndoRedoButtons();}}
-  function performRedo(){if(!redoStack.length){showToast('Nothing to redo','info');return;}const current=captureSnapshot();const next=redoStack.pop();if(next){undoStack.push(current);while(undoStack.length>50)undoStack.shift();restoreSnapshot(next);showToast('Redo successful','success');updateUndoRedoButtons();}}
+
+  /* ---------------- history stack ---------------- */
+  function pushEntry(entry){
+    if(isApplying)return;
+    redoStack=[];
+    undoStack.push(entry);
+    if(undoStack.length>MAX_HISTORY)undoStack.shift();
+    updateUndoRedoButtons();
+  }
+  // If a cell/company field is still focused (mid-edit, not yet blurred)
+  // when Undo/Redo runs, flushAllPending() commits it and its "before"
+  // baseline gets updated to that committed value. But the undo/redo itself
+  // then sets the field's live value directly (bypassing that baseline). If
+  // we didn't resync here, the next Undo/Redo would see a false mismatch
+  // between the stale baseline and the live value and treat it as a brand
+  // new edit -- flipping the cell back and forth every time Undo is pressed.
+  function resyncActiveEdits(){
+    if(activeCellEdit){
+      const{row,field}=activeCellEdit;
+      if(row&&row.isConnected)activeCellEdit.before=getFieldValue(row.querySelector('.'+field),field);
+      else activeCellEdit=null;
+    }
+    if(activeCompanyEdit){
+      const{el}=activeCompanyEdit;
+      if(el&&el.isConnected)activeCompanyEdit.before=el.value;
+      else activeCompanyEdit=null;
+    }
+  }
+  function performUndo(){
+    flushAllPending();
+    if(!undoStack.length){showToast('Nothing to undo','info');return;}
+    const entry=undoStack.pop();
+    isApplying=true;
+    if(entry.kind==='action'){entry.undo();redoStack.push(entry);}
+    else{const current=captureFullState();restoreFullState(entry.state);redoStack.push({kind:'snapshot',state:current});}
+    if(redoStack.length>MAX_HISTORY)redoStack.shift();
+    resyncActiveEdits();
+    showToast('Undo successful','success');
+    updateUndoRedoButtons();
+    setTimeout(()=>{isApplying=false;},0);
+  }
+  function performRedo(){
+    flushAllPending();
+    if(!redoStack.length){showToast('Nothing to redo','info');return;}
+    const entry=redoStack.pop();
+    isApplying=true;
+    if(entry.kind==='action'){entry.redo();undoStack.push(entry);}
+    else{const current=captureFullState();restoreFullState(entry.state);undoStack.push({kind:'snapshot',state:current});}
+    if(undoStack.length>MAX_HISTORY)undoStack.shift();
+    resyncActiveEdits();
+    showToast('Redo successful','success');
+    updateUndoRedoButtons();
+    setTimeout(()=>{isApplying=false;},0);
+  }
   function updateUndoRedoButtons(){const u=document.getElementById('globalUndoBtn'),r=document.getElementById('globalRedoBtn');if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;}
-  let changeTimer=null;
-  function recordChange(){if(isUndoingOrRedoing)return;if(changeTimer)clearTimeout(changeTimer);changeTimer=setTimeout(()=>{pushToUndoStack();changeTimer=null;},150);}
-  function addUndoRedoButtonsToUI(){const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('globalUndoBtn'))return;const undoBtn=document.createElement('button');undoBtn.id='globalUndoBtn';undoBtn.className='topbar-btn';undoBtn.innerHTML='<i class="fas fa-undo-alt"></i> Undo';undoBtn.title='Undo (Ctrl+Z)';undoBtn.addEventListener('click',performUndo);const redoBtn=document.createElement('button');redoBtn.id='globalRedoBtn';redoBtn.className='topbar-btn';redoBtn.innerHTML='<i class="fas fa-redo-alt"></i> Redo';redoBtn.title='Redo (Ctrl+Y)';redoBtn.addEventListener('click',performRedo);actions.insertBefore(undoBtn,actions.firstChild);actions.insertBefore(redoBtn,actions.firstChild);updateUndoRedoButtons();}
-  function setupListeners(){const tb=document.getElementById('tableBody');if(tb){tb.addEventListener('input',recordChange);tb.addEventListener('change',recordChange);}['companyName','companyTIN','companyAddress','lineOfBusiness','telephone','reportDate','authorizedEmployee','email'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',recordChange);el.addEventListener('change',recordChange);}});document.body.addEventListener('click',e=>{if(e.target.closest('.delete-btn')&&!isUndoingOrRedoing)pushToUndoStack();});['clearBtn','loadDataBtn','loadMultipleFilesBtn','clearInfoBtn','clearAllCustomersBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',()=>{if(!isUndoingOrRedoing)pushToUndoStack();});});const origAdd=window.addRow,origBatch=window.addBatchRows;if(origAdd)window.addRow=function(data){if(!isUndoingOrRedoing)pushToUndoStack();return origAdd(data);};if(origBatch)window.addBatchRows=function(count){if(!isUndoingOrRedoing)pushToUndoStack();return origBatch(count);};}
-  function init(){addUndoRedoButtonsToUI();setupListeners();window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();performUndo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();performRedo();}});if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>setTimeout(pushToUndoStack,600));}else setTimeout(pushToUndoStack,600);}
+
+  /* ---------------- per-cell edit sessions ---------------- */
+  // A "session" runs from focus-in on a field to the moment the value is
+  // finally committed (blur, or a select's change). Exactly one undo step
+  // is produced per session — no matter how many keystrokes happened in
+  // between — and it only ever touches THAT field on THAT row.
+  let activeCellEdit=null;    // {row,field,before}
+  let activeCompanyEdit=null; // {el,field,before}
+
+  function commitCellEdit(){
+    if(!activeCellEdit)return;
+    const {row,field,before}=activeCellEdit;
+    if(!row.isConnected)return;
+    const after=getFieldValue(row.querySelector('.'+field),field);
+    if(after!==before){
+      const rowId=row.id;
+      pushEntry({kind:'action',
+        undo:()=>{const r=document.getElementById(rowId);if(r)setFieldValue(r,field,before);},
+        redo:()=>{const r=document.getElementById(rowId);if(r)setFieldValue(r,field,after);}
+      });
+      activeCellEdit.before=after; // move baseline forward so a repeat commit (e.g. change+blur) is a no-op
+    }
+  }
+  function commitCompanyEdit(){
+    if(!activeCompanyEdit)return;
+    const {el,field,before}=activeCompanyEdit;
+    const after=el.value;
+    if(after!==before){
+      pushEntry({kind:'action',
+        undo:()=>{const e=document.getElementById(field);if(e){e.value=before;if(typeof saveCompanyInfo==='function')saveCompanyInfo();}},
+        redo:()=>{const e=document.getElementById(field);if(e){e.value=after;if(typeof saveCompanyInfo==='function')saveCompanyInfo();}}
+      });
+      activeCompanyEdit.before=after;
+    }
+  }
+  function flushAllPending(){commitCellEdit();commitCompanyEdit();}
+
+  function onCellFocusIn(e){
+    if(isApplying)return;
+    const field=fieldOf(e.target);if(!field)return;
+    const row=e.target.closest('tr');if(!row)return;
+    if(activeCellEdit&&(activeCellEdit.row!==row||activeCellEdit.field!==field))commitCellEdit();
+    activeCellEdit={row,field,before:getFieldValue(e.target,field)};
+  }
+  function onCellCommit(e){
+    if(isApplying)return;
+    const field=fieldOf(e.target);if(!field||!activeCellEdit)return;
+    const row=e.target.closest('tr');
+    if(!row||row!==activeCellEdit.row||field!==activeCellEdit.field)return;
+    commitCellEdit();
+  }
+  function onCompanyFocusIn(e){
+    if(isApplying)return;
+    const el=e.target;if(!COMPANY_FIELDS.includes(el.id))return;
+    if(activeCompanyEdit&&activeCompanyEdit.el!==el)commitCompanyEdit();
+    activeCompanyEdit={el,field:el.id,before:el.value};
+  }
+  function onCompanyCommit(e){
+    if(isApplying)return;
+    if(!activeCompanyEdit||activeCompanyEdit.el!==e.target)return;
+    commitCompanyEdit();
+  }
+
+  /* ---------------- row add / delete tracking ---------------- */
+  let suppressAutoPush=false,suppressReleaseTimer=null,pendingBulkBefore=null;
+  let burstActive=false,burstRows=[],burstTimer=null;
+
+  function noteAddedRow(row,index){
+    burstActive=true;
+    burstRows.push({row,index});
+    if(burstTimer)clearTimeout(burstTimer);
+    burstTimer=setTimeout(finishBurst,60);
+  }
+  function finishBurst(){
+    burstTimer=null;
+    const rows=burstRows;burstRows=[];burstActive=false;
+    if(!rows.length)return;
+    if(pendingBulkBefore){finalizeBulkIfPending();return;}
+    pushEntry({kind:'action',
+      undo:()=>{rows.forEach(({row})=>row.remove());afterStructuralChange();},
+      redo:()=>{insertRowsAtIndices(rows);afterStructuralChange();}
+    });
+  }
+  function finalizeBulkIfPending(){
+    if(!pendingBulkBefore)return;
+    const before=pendingBulkBefore;pendingBulkBefore=null;
+    suppressAutoPush=false;
+    if(suppressReleaseTimer){clearTimeout(suppressReleaseTimer);suppressReleaseTimer=null;}
+    const after=captureFullState();
+    if(JSON.stringify(before)!==JSON.stringify(after))pushEntry({kind:'snapshot',state:before});
+  }
+  function beginBulkAction(){
+    flushAllPending();
+    pendingBulkBefore=captureFullState();
+    suppressAutoPush=true;
+    if(suppressReleaseTimer)clearTimeout(suppressReleaseTimer);
+    // Safety valve: if the action never actually mutates the table (e.g. the
+    // user cancels a file picker), don't leave suppression stuck forever.
+    suppressReleaseTimer=setTimeout(()=>{if(!burstActive)finalizeBulkIfPending();},30000);
+  }
+
+  function wrapRowAdders(){
+    const origAdd=window.addRow,origBatch=window.addBatchRows;
+    if(origAdd){
+      window.addRow=function(data){
+        const row=origAdd(data);
+        if(!isApplying&&row)noteAddedRow(row,rowIndexOf(row));
+        return row;
+      };
+    }
+    if(origBatch){
+      window.addBatchRows=function(count){
+        const tb=document.getElementById('tableBody');
+        const startIndex=tb?tb.children.length:0;
+        const result=origBatch(count);
+        if(!isApplying&&tb){
+          Array.from(tb.children).slice(startIndex).forEach((row,i)=>noteAddedRow(row,startIndex+i));
+        }
+        return result;
+      };
+    }
+  }
+  function wrapRowDeleters(){
+    const origDelete=window.deleteRow;
+    if(origDelete){
+      window.deleteRow=function(rid){
+        const row=document.getElementById(rid);
+        if(!row)return origDelete(rid);
+        const index=rowIndexOf(row);
+        origDelete(rid);
+        setTimeout(()=>{
+          if(isApplying)return;
+          if(!row.isConnected){
+            pushEntry({kind:'action',
+              undo:()=>{insertRowsAtIndices([{row,index}]);afterStructuralChange();},
+              redo:()=>{row.remove();afterStructuralChange();}
+            });
+          }
+        },260);
+      };
+    }
+    const origDeleteSel=window.deleteSelectedRows;
+    if(origDeleteSel){
+      window.deleteSelectedRows=function(rows){
+        if(!rows||!rows.length)return origDeleteSel(rows);
+        const snap=rows.map(row=>({row,index:rowIndexOf(row)}));
+        origDeleteSel(rows);
+        setTimeout(()=>{
+          if(isApplying)return;
+          const removed=snap.filter(s=>!s.row.isConnected);
+          if(removed.length){
+            pushEntry({kind:'action',
+              undo:()=>{insertRowsAtIndices(removed);afterStructuralChange();},
+              redo:()=>{removed.forEach(s=>s.row.remove());afterStructuralChange();}
+            });
+          }
+        },320);
+      };
+    }
+  }
+
+  function wrapAsBulk(fn){
+    return function(...args){
+      if(isApplying)return fn.apply(this,args);
+      const hadPending=!!pendingBulkBefore;
+      if(!hadPending)pendingBulkBefore=captureFullState();
+      const result=fn.apply(this,args);
+      if(result&&typeof result.then==='function')return result.finally(finalizeBulkIfPending);
+      finalizeBulkIfPending();
+      return result;
+    };
+  }
+  function wrapBulkLoadFns(){
+    if(typeof window.bulkLoadRows==='function')window.bulkLoadRows=wrapAsBulk(window.bulkLoadRows);
+    if(typeof window.mergeIntoTable==='function')window.mergeIntoTable=wrapAsBulk(window.mergeIntoTable);
+  }
+
+  /* ---------------- wiring ---------------- */
+  function addUndoRedoButtonsToUI(){const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('globalUndoBtn'))return;const undoBtn=document.createElement('button');undoBtn.id='globalUndoBtn';undoBtn.className='topbar-btn';undoBtn.innerHTML='<i class="fas fa-undo-alt"></i> Undo';undoBtn.title='Undo (Ctrl+Z)';undoBtn.addEventListener('click',performUndo);const redoBtn=document.createElement('button');redoBtn.id='globalRedoBtn';redoBtn.className='topbar-btn';redoBtn.innerHTML='<i class="fas fa-redo-alt"></i> Redo';redoBtn.title='Redo (Ctrl+Y)';redoBtn.addEventListener('click',performRedo);actions.insertBefore(redoBtn,actions.firstChild);actions.insertBefore(undoBtn,actions.firstChild);updateUndoRedoButtons();}
+
+  function setupListeners(){
+    const tb=document.getElementById('tableBody');
+    if(tb){
+      tb.addEventListener('focusin',onCellFocusIn);
+      tb.addEventListener('focusout',onCellCommit);
+      tb.addEventListener('change',onCellCommit);
+    }
+    COMPANY_FIELDS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.addEventListener('focusin',onCompanyFocusIn);el.addEventListener('focusout',onCompanyCommit);el.addEventListener('change',onCompanyCommit);}
+    });
+    // Capture phase so we snapshot BEFORE the button's own handler mutates
+    // anything (clears/replaces the table, wipes company info, etc.).
+    document.addEventListener('click',e=>{
+      if(isApplying)return;
+      const simpleBtn=e.target.closest('#clearInfoBtn,#clearAllCustomersBtn');
+      const rowBtn=e.target.closest('#clearBtn,#loadDataBtn,#loadMultipleFilesBtn');
+      if(simpleBtn||rowBtn){
+        beginBulkAction();
+        if(simpleBtn)setTimeout(finalizeBulkIfPending,150);
+      }
+    },true);
+    wrapRowAdders();
+    wrapRowDeleters();
+    wrapBulkLoadFns();
+  }
+
+  function init(){
+    addUndoRedoButtonsToUI();
+    setupListeners();
+    window.addEventListener('keydown',e=>{
+      if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();performUndo();}
+      else if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();performRedo();}
+    });
+    // The app's own startup (session restore / default row seeding) runs
+    // asynchronously and mutates rows/fields directly — once it confirms
+    // it's actually done, wipe out any such startup noise so Undo/Redo only
+    // ever reflect real user edits.
+    document.addEventListener('vatapp:ready',()=>{undoStack=[];redoStack=[];updateUndoRedoButtons();});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
+
 
 <div class="save-submit-modal-overlay hidden" id="saveSubmitModalOverlay">
   <div class="submit-modal">
     <div class="submit-modal-title"><i class="fas fa-cloud-upload-alt" style="color:var(--blue-600)"></i>Save &amp; Submit Report</div>
     <div class="submit-modal-sub">Save a .vat file named by month/year and go to Submit Report in the portal.</div>
+
+    <!-- Company info validation error (hidden by default) -->
+    <div class="ss-compinfo-error hidden" id="ssCompInfoError">
+      <div class="ss-compinfo-error-header">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Company Information Incomplete</strong>
+      </div>
+      <p class="ss-compinfo-error-msg">Please fill in all required company fields before submitting:</p>
+      <ul class="ss-compinfo-error-list" id="ssCompInfoErrorList"></ul>
+      <button class="ss-compinfo-goto-btn" id="ssGotoCompInfoBtn">
+        <i class="fas fa-arrow-right"></i> Go to Company Info Panel
+      </button>
+    </div>
+
     <div class="submit-modal-file" id="saveSubmitFileInfo">
       <i class="fas fa-file-code" style="color:var(--blue-600);font-size:1.4rem"></i>
       <div>
@@ -1964,7 +2679,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 <script>
 /* ============================================================
    SAVE & SUBMIT — saves .vat named by tracking copy month/year
-   then navigates to index.html#submit-report
+   then navigates to bookkeeping.html#submit-report
 ============================================================ */
 function getTrackingMonthYear() {
   // Priority: monthly context → report date field → today
@@ -1984,15 +2699,49 @@ function getMonthName(n) {
 
 function openSaveAndSubmitModal() {
   if (APP_ROLE !== 'Client') return;
+
+  /* ── Required company-info fields ── */
+  const missing = checkRequiredCompanyFields();
+
+  const errorBox  = document.getElementById('ssCompInfoError');
+  const fileInfo  = document.getElementById('saveSubmitFileInfo');
+  const confirmBtn = document.getElementById('saveSubmitModalConfirmBtn');
+  const errorList = document.getElementById('ssCompInfoErrorList');
+
+  if (missing.length > 0) {
+    /* Show error, hide file preview, disable confirm */
+    errorList.innerHTML = missing.map(f =>
+      `<li><i class="fas fa-times-circle"></i>${f.label}</li>`
+    ).join('');
+    errorBox.classList.remove('hidden');
+    fileInfo.classList.add('hidden');
+    confirmBtn.disabled = true;
+    confirmBtn.style.opacity = '0.4';
+    confirmBtn.style.cursor = 'not-allowed';
+
+    /* "Go to Company Info" scrolls the right panel into view and highlights fields */
+    document.getElementById('ssGotoCompInfoBtn').onclick = function () {
+      document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
+      highlightMissingCompanyFields(missing);
+    };  } else {
+    /* All required fields filled — show normal file preview */
+    errorBox.classList.add('hidden');
+    fileInfo.classList.remove('hidden');
+    confirmBtn.disabled = false;
+    confirmBtn.style.opacity = '';
+    confirmBtn.style.cursor = '';
+  }
+
   const { year, month } = getTrackingMonthYear();
   const monthName = getMonthName(month);
   const filename  = `VAT_Report_${monthName}_${year}.vat`;
   document.getElementById('saveSubmitFileName').textContent = filename;
   document.getElementById('saveSubmitFileMeta').textContent =
-    `Period: ${monthName} ${year} · ${document.querySelectorAll('#tableBody tr').length} row(s)`;
+    `Period: ${monthName} ${year} · ${getRowCount()} row(s)`;
   document.getElementById('saveSubmitModalOverlay').classList.remove('hidden');
 
   document.getElementById('saveSubmitModalConfirmBtn').onclick = async function() {
+    if (this.disabled) return;
     // 1. Save current session
     await saveSession();
 
@@ -2022,7 +2771,7 @@ function openSaveAndSubmitModal() {
       sessionStorage.setItem('VAT_PENDING_REPORT_YEAR',  String(y));
       document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
       showToast('File saved — redirecting to Submit Report…', 'success');
-      setTimeout(() => { location.href = '../index.html#submit-report'; }, 700);
+      setTimeout(() => { location.href = '../bookkeeping.html#submit-report'; }, 700);
     };
     reader.readAsDataURL(blob);
   };

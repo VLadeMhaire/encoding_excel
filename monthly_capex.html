@@ -234,6 +234,10 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 .record-card-rows { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--gray-600); margin-top: 10px; }
 .record-card-rows i { color: var(--capex-600); font-size: 11px; }
 .record-card-gross { font-size: 13px; font-weight: 700; color: var(--gray-800); font-family: monospace; margin-top: 4px; }
+.record-card-totals { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px dashed var(--gray-200); }
+.record-card-total-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.rct-label { font-size: 10px; color: var(--gray-500); font-weight: 500; white-space: nowrap; }
+.rct-value { font-size: 12px; font-weight: 700; color: var(--gray-800); font-family: monospace; white-space: nowrap; }
 .record-card-date { font-size: 10px; color: var(--gray-400); margin-top: 6px; }
 .record-card-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; opacity: 0; transition: var(--tr); }
 .record-card:hover .record-card-actions { opacity: 1; }
@@ -357,7 +361,7 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../index.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
+    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="capex.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-gauge"></i> Dashboard</a>
@@ -514,18 +518,28 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    CONFIG & CONSTANTS
 ============================================================ */
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// Backend detection (mirrors index.html logic)
+// Backend detection (mirrors bookkeeping.html logic)
 const API_BASE = (() => {
   if (window.CAPEX_API_BASE) return window.CAPEX_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:9999/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:9999/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -620,6 +634,7 @@ async function saveMonthData(year, month, dataObj) {
   const meta = {
     year, month,
     rowCount:       td.length,
+    nonVatGross:    calcNonVatGross(td),
     totalGross:     calcTotalGross(td),
     netPurchases:   calcNetPurchases(td),
     inputTax:       calcInputTax(td),
@@ -641,7 +656,7 @@ async function saveMonthData(year, month, dataObj) {
 
   if (USE_API && authToken) {
     try {
-      await fetch(`${API_BASE}/monthly-capex`, {
+      await fetch(`${API_BASE}/monthly-capex?role=${encodeURIComponent(APP_ROLE)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ year, month, data: sessionBlob, meta }),
@@ -656,14 +671,20 @@ async function loadMonthData(year, month) {
   if (USE_API && authToken) {
     try {
       const r = await fetch(
-        `${API_BASE}/capex-monthly-records/${year}/${String(month).padStart(2,'0')}`,
+        `${API_BASE}/monthly-capex/${year}/${String(month).padStart(2,'0')}?role=${encodeURIComponent(APP_ROLE)}`,
         { headers: { 'Authorization': `Bearer ${authToken}` } }
       );
       if (r.ok) {
         const d = await r.json();
-        localStorage.setItem(makeStorageKey(year, month), JSON.stringify(d.data));
+        const sessionBlob = {
+          version:     '1.0',
+          timestamp:   d.saved_at || new Date().toISOString(),
+          tableData:   (d.data && d.data.table_data) || [],
+          companyInfo: (d.data && d.data.company_info) || {},
+        };
+        localStorage.setItem(makeStorageKey(year, month), JSON.stringify(sessionBlob));
         localStorage.setItem(makeMetaKey(year, month), JSON.stringify(d.meta));
-        return { data: d.data, meta: d.meta };
+        return { data: sessionBlob, meta: d.meta };
       }
     } catch(_) {}
   }
@@ -685,7 +706,7 @@ async function deleteMonthData(year, month) {
   localStorage.removeItem(makeMetaKey(year, month));
   if (USE_API && authToken) {
     try {
-      await fetch(`${API_BASE}/capex-monthly-records/${year}/${String(month).padStart(2,'0')}`, {
+      await fetch(`${API_BASE}/monthly-capex/${year}/${String(month).padStart(2,'0')}?role=${encodeURIComponent(APP_ROLE)}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
@@ -693,30 +714,80 @@ async function deleteMonthData(year, month) {
   }
 }
 
-/** Get metadata for all months of a given year. */
-async function getAllMonthMetaForYear(year) {
-  console.log('getAllMonthMetaForYear called for year:', year);
-  
-  // First, try to read from localStorage immediately
+/* ============================================================
+   META CACHE — short-lived (5s) in-memory cache so the several
+   render calls inside one updateAll() cycle don't each re-hit the
+   API, while still staying fresh enough to reflect a just-received
+   SSE update (the SSE handler busts this cache before re-rendering).
+============================================================ */
+let _metaRequestCache = new Map();
+
+function _localMonthMeta(year) {
   const result = [];
   for (let m = 1; m <= 12; m++) {
-    const metaKey = makeMetaKey(year, m);
-    const metaRaw = localStorage.getItem(metaKey);
+    const metaRaw = localStorage.getItem(makeMetaKey(year, m));
     if (metaRaw) {
-      try { 
-        const parsed = JSON.parse(metaRaw);
-        result.push(parsed);
-        console.log(`Found meta for ${year}-${m}:`, parsed.rowCount, 'rows, gross:', parsed.totalGross);
-      } catch(e) { 
-        result.push(null); 
-      } 
+      try { result.push(JSON.parse(metaRaw)); } catch(e) { result.push(null); }
     } else {
       result.push(null);
     }
   }
-  
-  console.log(`getAllMonthMetaForYear(${year}) returning:`, result.map(r => r ? {rows: r.rowCount, gross: r.totalGross} : null));
   return result;
+}
+
+/** Get metadata for all months of a given year. */
+async function getAllMonthMetaForYear(year) {
+  const cacheKey = `meta_${year}_${APP_ROLE}`;
+  const now      = Date.now();
+  const cached   = _metaRequestCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < 5000) return cached.data;
+
+  const localResult = _localMonthMeta(year);
+
+  // When online, the API is the source of truth FOR THE MONTHS IT HAS — this
+  // is what lets a save made in capex.html on a DIFFERENT browser/computer
+  // show up here. Any month the API doesn't have yet (e.g. saved locally
+  // while offline) still falls back to the local copy instead of disappearing.
+  if (USE_API && authToken) {
+    try {
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 5000);
+      const r = await fetch(`${API_BASE}/monthly-capex?year=${year}&role=${encodeURIComponent(APP_ROLE)}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (r.ok) {
+        const list = await r.json();
+        const merged = localResult.slice();
+        (list.records || list).forEach(rec => {
+          const m = parseInt(rec.month);
+          if (m >= 1 && m <= 12) {
+            const meta = rec.meta || rec;
+            merged[m - 1] = meta;
+            localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
+          }
+        });
+        _metaRequestCache.set(cacheKey, { data: merged, timestamp: now });
+        setTimeout(() => {
+          if (_metaRequestCache.get(cacheKey)?.timestamp === now) _metaRequestCache.delete(cacheKey);
+        }, 10000);
+        return merged;
+      }
+    } catch(_) {}
+  }
+
+  // Offline / API-unavailable — local data only.
+  _metaRequestCache.set(cacheKey, { data: localResult, timestamp: now });
+  setTimeout(() => {
+    if (_metaRequestCache.get(cacheKey)?.timestamp === now) _metaRequestCache.delete(cacheKey);
+  }, 5000);
+
+  return localResult;
 }
 
 /** Get all years that have any stored CAPEX data. */
@@ -752,9 +823,13 @@ function calcTotalGross(tableData) {
   if (!Array.isArray(tableData)) return 0;
   return tableData.reduce((s, r) => s + stripNum(r.nonVatGross) + stripNum(r.vatableGross), 0);
 }
+function calcNonVatGross(tableData) {
+  if (!Array.isArray(tableData)) return 0;
+  return tableData.reduce((s, r) => s + stripNum(r.nonVatGross), 0);
+}
 function calcNetPurchases(tableData) {
   if (!Array.isArray(tableData)) return 0;
-  return tableData.reduce((s, r) => s + stripNum(r.nonVatGross) + (stripNum(r.vatableGross) / 1.12), 0);
+  return tableData.reduce((s, r) => s + (stripNum(r.vatableGross) / 1.12), 0);
 }
 function calcInputTax(tableData) {
   if (!Array.isArray(tableData)) return 0;
@@ -977,7 +1052,16 @@ async function renderRecordsGrid() {
       <div class="record-card-month">${MONTHS[r.month-1]}</div>
       <div class="record-card-year">${r.year}</div>
       <div class="record-card-rows"><i class="fas fa-list"></i> ${r.meta.rowCount} entr${r.meta.rowCount===1?'y':'ies'}</div>
-      <div class="record-card-gross">${fmtPHP(r.meta.totalGross)}</div>
+      <div class="record-card-totals">
+        <div class="record-card-total-row">
+          <span class="rct-label">Non-VAT Gross</span>
+          <span class="rct-value">${fmtPHP(r.meta.nonVatGross || 0)}</span>
+        </div>
+        <div class="record-card-total-row">
+          <span class="rct-label">Net Purchases</span>
+          <span class="rct-value">${fmtPHP(r.meta.netPurchases || 0)}</span>
+        </div>
+      </div>
       <div class="record-card-date">Modified: ${fmtDate(r.meta.lastModified)}</div>
     </div>`;
   }).join('');
@@ -1319,17 +1403,126 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Initial render
   updateAll();
 
+  // ── Listen for same-browser live writes from capex.html
+  //    (fires when another tab in the same browser writes to localStorage)
+  window.addEventListener('storage', (e) => {
+    if (!e.key) return;
+    const metaPrefix = `CAPEX_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+    const dataPrefix = `CAPEX_MONTHLY_${APP_USER_ID}_${APP_ROLE}_`;
+    if (!e.key.startsWith(metaPrefix) && !e.key.startsWith(dataPrefix)) return;
+    _metaRequestCache.clear();
+    updateAll();
+  });
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       renderRecordsGrid();
       renderYearStats();
+      // Browsers close EventSource connections when a tab is backgrounded —
+      // reconnect so real-time updates keep flowing once it's visible again.
+      if (USE_API && !_sseSource) connectSSE();
     }
   });
   window.addEventListener('pageshow', (e) => {
     if (e.persisted || performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
       updateAll();
+      if (USE_API && !_sseSource) connectSSE();
     }
   });
+
+  // ── Start real-time SSE sync (only when API is online).
+  //    Wait a moment for the auth token to be fully available.
+  setTimeout(() => {
+    if (USE_API && authToken) {
+      connectSSE();
+    } else {
+      setTimeout(() => { if (USE_API && authToken) connectSSE(); }, 2000);
+    }
+  }, 500);
+});
+
+/* ============================================================
+   REAL-TIME SYNC — Server-Sent Events
+   Mirrors monthly_expenses.html's connectSSE/processSseUpdate so a save
+   made in capex.html on ANY computer (whenever it has a year+month
+   context and mirrors to /api/monthly-capex) instantly refreshes the
+   "All Monthly CAPEX Records" cards here — on every open tab, on every
+   browser, without anyone reopening the tracker.
+============================================================ */
+let _sseSource      = null;
+let _lastSseUpdate   = 0;
+let _sseUpdateTimer  = null;
+
+async function processSseUpdate(dataStr) {
+  try {
+    const data = JSON.parse(dataStr);
+
+    // Bust the short-lived meta cache for the affected year so the next
+    // render actually re-fetches from the API instead of reusing a cached copy.
+    _metaRequestCache.delete(`meta_${data.year}_${APP_ROLE}`);
+
+    if (data.year === selectedYear) {
+      await updateAll();
+    } else if (data.year) {
+      // Different year — still refresh stats/years list so switching to it shows fresh data
+      await renderYearStats();
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(`Updated: ${MONTHS[data.month-1]} ${data.year} (${data.rowCount} entries)`, 'success');
+    }
+  } catch(err) {
+    console.error('SSE: Failed to process CAPEX update', err);
+  }
+}
+
+function connectSSE() {
+  if (!USE_API) return;
+  if (!authToken) { setTimeout(() => connectSSE(), 2000); return; }
+
+  if (_sseSource) {
+    try { _sseSource.close(); } catch(e) {}
+    _sseSource = null;
+  }
+
+  const url = `${API_BASE}/monthly-capex/stream?token=${encodeURIComponent(authToken)}`;
+  console.log('SSE: Connecting to', url);
+  _sseSource = new EventSource(url);
+
+  _sseSource.addEventListener('connected', () => {
+    console.log('SSE: Connected successfully');
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) pill.className = 'backend-pill online';
+    if (text) text.textContent = 'Live Sync';
+  });
+
+  _sseSource.addEventListener('update', async (e) => {
+    console.log('SSE: Received update', e.data);
+    // Debounce — don't process more than one update per second
+    const now = Date.now();
+    if (now - _lastSseUpdate < 1000) {
+      if (_sseUpdateTimer) clearTimeout(_sseUpdateTimer);
+      _sseUpdateTimer = setTimeout(async () => {
+        _sseUpdateTimer = null;
+        await processSseUpdate(e.data);
+      }, 1000);
+      return;
+    }
+    _lastSseUpdate = now;
+    await processSseUpdate(e.data);
+  });
+
+  _sseSource.onerror = (err) => {
+    console.error('SSE: Connection error', err);
+    if (_sseSource) { try { _sseSource.close(); } catch(e) {} _sseSource = null; }
+    setTimeout(() => connectSSE(), 5000);
+  };
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_sseSource) { _sseSource.close(); _sseSource = null; }
+  if (_sseUpdateTimer) { clearTimeout(_sseUpdateTimer); _sseUpdateTimer = null; }
 });
 </script>
 

@@ -356,7 +356,7 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../index.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
+    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="non_vat_expenses.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-home"></i> Dashboard</a>
@@ -508,6 +508,16 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    CONFIG & CONSTANTS
 ============================================================ */
@@ -516,9 +526,9 @@ const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 
 const API_BASE = (() => {
   if (window.VAT_API_BASE) return window.VAT_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:9999/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:9999/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -607,7 +617,7 @@ async function saveMonthData(year, month, dataObj) {
 
   if (USE_API && authToken) {
     try {
-      await fetch(`${API_BASE}/monthly-nexp`, {
+      await fetch(`${API_BASE}/monthly-nexp?role=${APP_ROLE}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ year, month, data: dataObj, meta }),
@@ -620,7 +630,7 @@ async function saveMonthData(year, month, dataObj) {
 async function loadMonthData(year, month) {
   if (USE_API && authToken) {
     try {
-      const r = await fetch(`${API_BASE}/monthly-nexp/${year}/${String(month).padStart(2,'0')}`, {
+      const r = await fetch(`${API_BASE}/monthly-nexp/${year}/${String(month).padStart(2,'0')}?role=${APP_ROLE}`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (r.ok) {
@@ -643,56 +653,78 @@ async function deleteMonthData(year, month) {
   localStorage.removeItem(makeMetaKey(year, month));
   if (USE_API && authToken) {
     try {
-      await fetch(`${API_BASE}/monthly-nexp/${year}/${String(month).padStart(2,'0')}`, {
+      await fetch(`${API_BASE}/monthly-nexp/${year}/${String(month).padStart(2,'0')}?role=${APP_ROLE}`, {
         method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` }
       });
     } catch(_) {}
   }
 }
 
+let _nexpMetaRequestCache = new Map();
+
 async function getAllMonthMetaForYear(year) {
-  // First, try to read from localStorage immediately (faster, more reliable)
-  const result = [];
+  const cacheKey = `meta_${year}_${APP_ROLE}`;
+  const now      = Date.now();
+  const cached   = _nexpMetaRequestCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < 5000) return cached.data;
+
+  // Local fallback: read straight from localStorage so we never show a
+  // blank grid while the API call is in flight or if it's unreachable.
+  const localResult = [];
   for (let m = 1; m <= 12; m++) {
     const metaRaw = localStorage.getItem(makeMetaKey(year, m));
-    if (metaRaw) { 
-      try { 
-        const parsed = JSON.parse(metaRaw);
-        result.push(parsed);
-      } catch(e) { 
-        result.push(null); 
-      } 
+    if (metaRaw) {
+      try { localResult.push(JSON.parse(metaRaw)); } catch(e) { localResult.push(null); }
     } else {
-      result.push(null);
+      localResult.push(null);
     }
   }
-  
-  // Check if we have any data from localStorage
-  const hasLocalData = result.some(r => r !== null);
-  
-  // Only call API if we have NO local data AND API is available
-  // This prevents API from overriding our freshly saved data
-  if (USE_API && authToken && !hasLocalData) {
+
+  // When online, the API is the source of truth FOR THE MONTHS IT HAS —
+  // this is what lets a save made on a different browser/computer show up
+  // here. Any month the API doesn't have yet still falls back to the
+  // local copy instead of disappearing.
+  if (USE_API && authToken) {
     try {
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 5000);
       const r = await fetch(`${API_BASE}/monthly-nexp?year=${year}&role=${APP_ROLE}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+        cache: 'no-store',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (r.ok) {
         const list = await r.json();
+        const merged = localResult.slice();
         (list.records || list).forEach(rec => {
           const m = parseInt(rec.month);
           if (m >= 1 && m <= 12) {
             const meta = rec.meta || rec;
-            result[m - 1] = meta;
-            localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
+            merged[m - 1] = meta;
+            if (!rec.role || rec.role === APP_ROLE) {
+              localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
+            }
           }
         });
+        _nexpMetaRequestCache.set(cacheKey, { data: merged, timestamp: now });
+        setTimeout(() => {
+          if (_nexpMetaRequestCache.get(cacheKey)?.timestamp === now) _nexpMetaRequestCache.delete(cacheKey);
+        }, 10000);
+        return merged;
       }
     } catch(_) {}
   }
-  
-  console.log(`getAllMonthMetaForYear(${year}) returning:`, result);
-  return result;
+
+  // Offline / API-unavailable — local data only.
+  _nexpMetaRequestCache.set(cacheKey, { data: localResult, timestamp: now });
+  setTimeout(() => {
+    if (_nexpMetaRequestCache.get(cacheKey)?.timestamp === now) _nexpMetaRequestCache.delete(cacheKey);
+  }, 5000);
+  return localResult;
 }
 
 async function getAllStoredYears() {
@@ -1271,22 +1303,132 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      renderRecordsGrid();
-      renderYearStats();
-    }
-  });
-  window.addEventListener('pageshow', (e) => {
-    if (e.persisted || performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
       updateAll();
+      // Browsers close EventSource connections when a tab is backgrounded —
+      // reconnect so real-time updates keep flowing once it's visible again.
+      if (USE_API && !_nexpSseSource) connectNexpSSE();
     }
   });
+  window.addEventListener('pageshow', async (e) => {
+    if (e.persisted || performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
+      await checkReturnFromTracker();
+      await updateAll();
+      if (USE_API && !_nexpSseSource) connectNexpSSE();
+    }
+  });
+
+  // ── Listen for same-browser live writes from non_vat_expenses.html
+  //    (fires when another tab in the same browser writes to localStorage)
+  window.addEventListener('storage', (e) => {
+    if (!e.key) return;
+    const metaPrefix = `NEXP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+    const dataPrefix = `NEXP_MONTHLY_${APP_USER_ID}_${APP_ROLE}_`;
+    if (!e.key.startsWith(metaPrefix) && !e.key.startsWith(dataPrefix)) return;
+    _nexpMetaRequestCache.clear();
+    updateAll();
+  });
+
+  // ── Start real-time SSE sync (only when API is online).
+  //    Wait a moment for the auth token to be fully available.
+  setTimeout(() => {
+    if (USE_API && authToken) {
+      connectNexpSSE();
+    } else {
+      setTimeout(() => { if (USE_API && authToken) connectNexpSSE(); }, 2000);
+    }
+  }, 500);
+});
+
+/* ============================================================
+   REAL-TIME SYNC — Server-Sent Events
+   Mirrors monthly_expenses.html's connectSSE/processSseUpdate so a save
+   made in non_vat_expenses.html on ANY computer (whenever it has a
+   year+month context and mirrors to /api/monthly-nexp) instantly
+   refreshes the "All Monthly Non-VAT Expenses Records" cards here — on
+   every open tab, on every browser, without anyone reopening the tracker.
+============================================================ */
+let _nexpSseSource     = null;
+let _lastNexpSseUpdate = 0;
+let _nexpSseUpdateTimer = null;
+
+async function processNexpSseUpdate(dataStr) {
+  try {
+    const data = JSON.parse(dataStr);
+
+    // Bust the short-lived meta cache for the affected year so the next
+    // render actually re-fetches from the API instead of reusing a cached copy.
+    _nexpMetaRequestCache.delete(`meta_${data.year}_${APP_ROLE}`);
+
+    if (data.year === selectedYear) {
+      await updateAll();
+    } else if (data.year) {
+      // Different year — still refresh stats/years list so switching to it shows fresh data
+      await renderYearStats();
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(`Updated: ${MONTHS[data.month-1]} ${data.year} (${data.rowCount} entries)`, 'success');
+    }
+  } catch(err) {
+    console.error('SSE: Failed to process non-VAT expenses update', err);
+  }
+}
+
+function connectNexpSSE() {
+  if (!USE_API) return;
+  if (!authToken) { setTimeout(() => connectNexpSSE(), 2000); return; }
+
+  if (_nexpSseSource) {
+    try { _nexpSseSource.close(); } catch(e) {}
+    _nexpSseSource = null;
+  }
+
+  const url = `${API_BASE}/monthly-nexp/stream?token=${encodeURIComponent(authToken)}`;
+  console.log('SSE: Connecting to', url);
+  _nexpSseSource = new EventSource(url);
+
+  _nexpSseSource.addEventListener('connected', () => {
+    console.log('SSE: Connected successfully');
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) pill.className = 'backend-pill online';
+    if (text) text.textContent = 'Live Sync';
+  });
+
+  _nexpSseSource.addEventListener('update', async (e) => {
+    console.log('SSE: Received update', e.data);
+    // Debounce — don't process more than one update per second
+    const now = Date.now();
+    if (now - _lastNexpSseUpdate < 1000) {
+      if (_nexpSseUpdateTimer) clearTimeout(_nexpSseUpdateTimer);
+      _nexpSseUpdateTimer = setTimeout(async () => {
+        _nexpSseUpdateTimer = null;
+        await processNexpSseUpdate(e.data);
+      }, 1000);
+      return;
+    }
+    _lastNexpSseUpdate = now;
+    await processNexpSseUpdate(e.data);
+  });
+
+  _nexpSseSource.onerror = (err) => {
+    console.error('SSE: Connection error', err);
+    if (_nexpSseSource) { try { _nexpSseSource.close(); } catch(e) {} _nexpSseSource = null; }
+    setTimeout(() => connectNexpSSE(), 5000);
+  };
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_nexpSseSource) { _nexpSseSource.close(); _nexpSseSource = null; }
+  if (_nexpSseUpdateTimer) { clearTimeout(_nexpSseUpdateTimer); _nexpSseUpdateTimer = null; }
 });
 
 /* ============================================================
    FASTAPI CONTRACT (Non-VAT Expenses monthly)
-   POST   /api/monthly-nexp          → { year, month, data, meta }
+   POST   /api/monthly-nexp           → { year, month, data, meta }
    GET    /api/monthly-nexp/:year/:mm → { data, meta }
    DELETE /api/monthly-nexp/:year/:mm
+   GET    /api/monthly-nexp/stream    → SSE: connected | ping | update
 
    SQLite schema:
      CREATE TABLE IF NOT EXISTS monthly_nexp (

@@ -359,7 +359,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <button class="nav-btn" id="showAllBtn"><i class="fas fa-eye"></i>Show All Sections</button>
     <button class="nav-btn" id="tableFocusBtn"><i class="fas fa-expand"></i>Table Focus Mode</button>
     <div class="nav-divider"></div>
-    <a href="../index.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
+    <a href="../bookkeeping.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
   </div>
   <div class="sidebar-footer">
     <div>MGAA Purchase Returns v2.0</div>
@@ -407,6 +407,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <table id="purchaseReturnsTable">
       <thead>
         <tr>
+          <th data-col="seq" style="width:42px;text-align:center">#</th>
           <th data-col="returnDate">Return Date</th>
           <th data-col="returnNumber">Return Number</th>
           <th data-col="originalInvoice">Original Invoice No.</th>
@@ -516,15 +517,25 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
 </div><!-- /layout -->
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ── Tailscale / FastAPI base URL ──────────────────────────────────────────
    Same server as vatable_sales.html (port 8000).
    Override at runtime:  window.RETURNS_API_BASE = 'http://100.x.x.x:8000/api'
 ─────────────────────────────────────────────────────────────────────────── */
 const API_BASE=(()=>{
   if(window.RETURNS_API_BASE) return window.RETURNS_API_BASE;
-  if(window.__TAURI__)        return 'http://localhost:8000/api';
+  if(window.__TAURI__)        return 'http://localhost:8001/api';
   return (window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1')
-    ? `${window.location.protocol}//${window.location.hostname}:8000/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -624,9 +635,9 @@ function makeStorageKey(year, month) {
 }
 
 const STORAGE_NS={
-  Client:  {SESSION:`RETURNS_SESSION_TABLE_${APP_USER_ID}_Client`,  COMPANY:`returnsCompanyInfo_${APP_USER_ID}_Client`,  COL_VIS:`returnsColVis_${APP_USER_ID}_Client`,  VIS:`returnsVisStates_${APP_USER_ID}_Client`},
-  SubAdmin:{SESSION:`RETURNS_SESSION_TABLE_SubAdmin`, COMPANY:`returnsCompanyInfo_SubAdmin`, COL_VIS:`returnsColVis_SubAdmin`, VIS:`returnsVisStates_SubAdmin`},
-  Main:    {SESSION:`RETURNS_SESSION_TABLE_Main`,     COMPANY:`returnsCompanyInfo_Main`,     COL_VIS:`returnsColVis_Main`,    VIS:`returnsVisStates_Main`},
+  Client:  {SESSION:`RETURNS_SESSION_TABLE_${APP_USER_ID}_Client`,   COMPANY:`returnsCompanyInfo_${APP_USER_ID}_Client`,   COL_VIS:`returnsColVis_${APP_USER_ID}_Client`,   VIS:`returnsVisStates_${APP_USER_ID}_Client`},
+  SubAdmin:{SESSION:`RETURNS_SESSION_TABLE_${APP_USER_ID}_SubAdmin`, COMPANY:`returnsCompanyInfo_${APP_USER_ID}_SubAdmin`, COL_VIS:`returnsColVis_${APP_USER_ID}_SubAdmin`, VIS:`returnsVisStates_${APP_USER_ID}_SubAdmin`},
+  Main:    {SESSION:`RETURNS_SESSION_TABLE_${APP_USER_ID}_Main`,     COMPANY:`returnsCompanyInfo_${APP_USER_ID}_Main`,     COL_VIS:`returnsColVis_${APP_USER_ID}_Main`,     VIS:`returnsVisStates_${APP_USER_ID}_Main`},
 };
 const NS=STORAGE_NS[APP_ROLE];
 
@@ -706,7 +717,7 @@ async function ensureMonthlyRecordExists() {
   try {
     // Check if record exists
     const checkRes = await fetch(
-      `${API_BASE}/returns-monthly-records/${MONTHLY_CTX.year}/${MONTHLY_CTX.month}?role=${APP_ROLE}`,
+      `${API_BASE}/returns-monthly-records/${MONTHLY_CTX.year}/${MONTHLY_CTX.month}?role=${APP_ROLE}&client_id=${APP_USER_ID}`,
       { headers: apiHeaders() }
     );
     
@@ -731,7 +742,7 @@ async function ensureMonthlyRecordExists() {
         }
       };
       
-      await fetch(`${API_BASE}/returns-monthly-records?role=${APP_ROLE}`, {
+      await fetch(`${API_BASE}/returns-monthly-records?role=${APP_ROLE}&client_id=${APP_USER_ID}`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify(payload),
@@ -798,13 +809,13 @@ function scheduleAutoSave(){
 
 /* ============================================================
    SUB-ADMIN: LOAD FILE FROM PORTAL
-   Reads the RETURNS_MONTHLY_* localStorage key that index.html
+   Reads the RETURNS_MONTHLY_* localStorage key that bookkeeping.html
    sets when "Open in Tracker" is clicked on a .rpurch report.
 ============================================================ */
 function checkPortalFileOnLoad(){
   if(APP_ROLE!=='SubAdmin') return false;
   try{
-    // index.html stores the parsed JSON into the monthly localStorage key
+    // bookkeeping.html stores the parsed JSON into the monthly localStorage key
     // and sets RETURNS_MONTHLY_CONTEXT_* in sessionStorage
     const ctxKey   = sessionStorage.getItem('RETURNS_MONTHLY_CONTEXT_KEY');
     const ctxYear  = sessionStorage.getItem('RETURNS_MONTHLY_CONTEXT_YEAR');
@@ -873,10 +884,26 @@ function clearCompanyInfo(){
    CROSS-TAB COMPANY INFO SYNC
    Watches localStorage for changes written by company_information.html
    and immediately reflects them in the sidebar fields.
+
+   company_information.html writes user-scoped keys:
+     purchaseReturnsCompanyInfo_${APP_USER_ID}
+   We must watch that exact key so each account (Sub-Admin or Client)
+   only picks up its own company data — multiple clients under one
+   Sub-Admin account will never cross-contaminate each other.
    Note: reportDate is stored as YYYY-MM-DD and displayed as MM/DD/YYYY.
 ============================================================ */
 (function(){
-  const WATCH_KEY = 'purchaseReturnsCompanyInfo';
+  // The scoped key company_information.html writes for Purchase Returns.
+  // APP_USER_ID is already resolved above (from VAT_SESSION, etc.)
+  const WATCH_KEY = `purchaseReturnsCompanyInfo_${APP_USER_ID}`;
+  // Also watch the three role-suffixed keys for completeness (written by
+  // the same scoped COMPANY_KEYS array in company_information.html)
+  const WATCH_KEYS = [
+    WATCH_KEY,
+    `returnsCompanyInfo_${APP_USER_ID}_Main`,
+    `returnsCompanyInfo_${APP_USER_ID}_Client`,
+    `returnsCompanyInfo_${APP_USER_ID}_SubAdmin`,
+  ];
 
   function applyCompanyInfo(data) {
     if (!data || typeof data !== 'object') return;
@@ -895,23 +922,25 @@ function clearCompanyInfo(){
     });
   }
 
-  // On load: if sidebar is empty after loadCompanyInfo, pull from watched key
+  // On load: if sidebar is empty after loadCompanyInfo, pull from any watched key
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       const own = document.getElementById('companyName');
       if (own && own.value.trim()) return;
-      const raw = localStorage.getItem(WATCH_KEY);
-      if (!raw) return;
-      try {
-        const data = JSON.parse(raw);
-        if (data && typeof data === 'object' && data.companyName) applyCompanyInfo(data);
-      } catch(e) {}
+      for (const k of WATCH_KEYS) {
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        try {
+          const data = JSON.parse(raw);
+          if (data && typeof data === 'object' && data.companyName) { applyCompanyInfo(data); break; }
+        } catch(e) {}
+      }
     }, 300);
   });
 
   // Cross-tab: fire when company_information.html saves in another tab/window
   window.addEventListener('storage', (e) => {
-    if (e.key !== WATCH_KEY) return;
+    if (!WATCH_KEYS.includes(e.key)) return;
     if (!e.newValue) return;
     try {
       const data = JSON.parse(e.newValue);
@@ -934,6 +963,7 @@ function formatTIN(input){
    COLUMN VISIBILITY
 ============================================================ */
 const COLS=[
+  {key:'seq',name:'#'},
   {key:'returnDate',name:'Return Date'},{key:'returnNumber',name:'Return Number'},
   {key:'originalInvoice',name:'Original Invoice No.'},{key:'returnMode',name:'Mode of Return'},
   {key:'grossReturns',name:'Gross Returns'},{key:'netReturns',name:'Net Returns'},
@@ -1018,6 +1048,14 @@ function getTableDate(){
   return document.getElementById('reportDate')?.value || getTodayDisplayDate();
 }
 
+function refreshSeqNumbers(){
+  const rows=document.getElementById('tableBody').children;
+  for(let i=0,len=rows.length;i<len;i++){
+    const seqEl=rows[i].querySelector('.seq-num');
+    if(seqEl)seqEl.textContent=i+1;
+  }
+}
+
 function createRow(data={}){
   const rid='r'+(Date.now()+'').slice(-8)+'_'+Math.floor(Math.random()*1000);
   const tr=document.createElement('tr'); tr.id=rid;
@@ -1025,6 +1063,7 @@ function createRow(data={}){
   const returnModes=['Cash Refund','Credit Memo','Exchange','Store Credit','Others'];
   const modeOpts=returnModes.map(m=>`<option value="${m}"${data.returnMode===m?' selected':''}>${m}</option>`).join('');
   tr.innerHTML=`
+    <td style="text-align:center;width:42px;color:var(--gray-400);font-size:11px;font-weight:600;user-select:none;"><span class="seq-num">0</span></td>
     <td><input type="text" value="${data.returnDate||today}" class="return-date" placeholder="MM/DD/YYYY" maxlength="10" autocomplete="off" style="font-family:var(--font-mono);letter-spacing:0.3px"></td>
     <td><input type="text" value="${escH(data.returnNumber||'')}" class="return-number" placeholder="RTN-001"></td>
     <td><input type="text" value="${escH(data.originalInvoice||'')}" class="original-invoice" placeholder="INV-001"></td>
@@ -1069,6 +1108,7 @@ function attachRowListeners(row){
 function addRow(data={}){
   const tb=document.getElementById('tableBody');
   const row=createRow(data); tb.appendChild(row);
+  refreshSeqNumbers();
   currentPage=Math.ceil(tb.children.length/rowsPerPage);
   renderCurrentPage(); scheduleStats();
 }
@@ -1077,6 +1117,7 @@ function addBatchRows(count){
   const frag=document.createDocumentFragment();
   for(let i=0;i<count;i++) frag.appendChild(createRow());
   tb.appendChild(frag);
+  refreshSeqNumbers();
   currentPage=Math.ceil(tb.children.length/rowsPerPage);
   renderCurrentPage(); scheduleStats();
 }
@@ -1084,7 +1125,7 @@ window.deleteRow=function(rid){
   const row=document.getElementById(rid);
   if(!row||!confirm('Delete this row?')) return;
   row.style.transition='opacity .2s,transform .2s'; row.style.opacity='0'; row.style.transform='translateX(-10px)';
-  setTimeout(()=>{ row.remove(); if(currentPage>getTotalPages()) currentPage=Math.max(1,getTotalPages()); renderCurrentPage(); scheduleStats(); },200);
+  setTimeout(()=>{ row.remove(); refreshSeqNumbers(); if(currentPage>getTotalPages()) currentPage=Math.max(1,getTotalPages()); renderCurrentPage(); scheduleStats(); },200);
 };
 
 /* ============================================================
@@ -1126,32 +1167,70 @@ window.updateAllStats=function(){
     set('tallyCreditCount',(rows.length?Array.from(rows).filter(r=>r.querySelector('.return-mode')?.value==='Credit Memo').length:0)+' transactions');
     set('tallyTotal',gross.toFixed(2)); set('tallyTotalCount',cnt+' total transaction'+(cnt!==1?'s':''));
     const ec=document.getElementById('entryCount'); if(ec){ec.textContent=cnt;ec.classList.add('pulse');setTimeout(()=>ec.classList.remove('pulse'),300);}
-    rebuildSummaryRow(gross,net,tax);
+    rebuildSummaryRow();
   });
 };
 
-function rebuildSummaryRow(gross,net,tax){
-  const foot=document.getElementById('summaryRow'); if(!foot) return;
-  if(gross===undefined){
-    gross=0;net=0;tax=0;
-    document.querySelectorAll('#tableBody tr').forEach(r=>{
-      gross+=parseFloat(r.querySelector('.gross-returns')?.value)||0;
-      net+=parseFloat(r.querySelector('.net-returns')?.textContent)||0;
-      tax+=parseFloat(r.querySelector('.input-tax')?.textContent)||0;
-    });
-  }
-  const ths=document.querySelectorAll('#purchaseReturnsTable thead th');
-  let cells=''; let first=true;
-  ths.forEach((th,i)=>{
-    if(th.classList.contains('hidden-column')) return;
-    let c='';
-    if(first){c='<span class="sum-label">TOTALS</span>';first=false;}
-    else if(i===4) c='<span class="sum-value">'+gross.toFixed(2)+'</span>';
-    else if(i===5) c='<span class="sum-value">'+net.toFixed(2)+'</span>';
-    else if(i===6) c='<span class="sum-value">'+tax.toFixed(2)+'</span>';
-    cells+=`<td>${c}</td>`;
+function rebuildSummaryRow() {
+  const foot = document.getElementById('summaryRow');
+  if (!foot) return;
+
+  // 1. Compute totals from all rows
+  let grossTotal = 0, netTotal = 0, taxTotal = 0;
+  document.querySelectorAll('#tableBody tr').forEach(r => {
+    const gross = parseFloat(r.querySelector('.gross-returns')?.value) || 0;
+    const net = parseFloat(r.querySelector('.net-returns')?.textContent) || 0;
+    const tax = parseFloat(r.querySelector('.input-tax')?.textContent) || 0;
+    grossTotal += gross;
+    netTotal += net;
+    taxTotal += tax;
   });
-  foot.innerHTML='<tr>'+cells+'</tr>';
+
+  // 2. Map numeric keys to totals
+  const totals = {
+    grossReturns: grossTotal,
+    netReturns: netTotal,
+    inputTax: taxTotal,
+  };
+
+  // 3. Build cells for every visible column
+  let cells = '';
+  let labelPlaced = false;
+  const visibleCols = COLS.filter(col => !colVis[col.key]); // visible columns in order
+
+  // If the first visible column is 'seq', put label in the second visible column
+  // otherwise put it in the first visible column.
+  const firstKey = visibleCols[0]?.key;
+  const labelIndex = (firstKey === 'seq') ? 1 : 0;
+
+  visibleCols.forEach((col, index) => {
+    const key = col.key;
+    let content = '';
+
+    // Place "TOTALS" label at the determined index
+    if (index === labelIndex) {
+      content = '<span class="sum-label">TOTALS</span>';
+      labelPlaced = true;
+    } else if (totals.hasOwnProperty(key)) {
+      // Numeric column – show formatted total
+      content = `<span class="sum-value">${totals[key].toFixed(2)}</span>`;
+    } else {
+      // Non-numeric columns – leave empty
+      content = '';
+    }
+    cells += `<td${content ? '' : ' style="background:transparent"'}>${content}</td>`;
+  });
+
+  // Fallback: if label not placed (should not happen), put it in the first cell
+  if (!labelPlaced && cells) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `<tr>${cells}</tr>`;
+    const firstTd = tempDiv.querySelector('td');
+    if (firstTd) firstTd.innerHTML = '<span class="sum-label">TOTALS</span>';
+    foot.innerHTML = tempDiv.innerHTML;
+  } else {
+    foot.innerHTML = `<tr>${cells}</tr>`;
+  }
 }
 
 /* ============================================================
@@ -1176,7 +1255,52 @@ function getTableData(){
     remarks:r.querySelector('.remarks')?.value||''
   }));
 }
+/* ── Company-info validation ───────────────────────────────────────────── */
+function getCompanyInfoMissingFields(){
+  const required=[
+    {id:'companyName',        label:'Company Name'},
+    {id:'companyTIN',         label:'TIN Number'},
+    {id:'companyAddress',     label:'Address'},
+    {id:'lineOfBusiness',     label:'Line of Business'},
+    {id:'authorizedEmployee', label:'Authorized Employee'}
+  ];
+  return required.filter(f=>!document.getElementById(f.id)?.value?.trim()).map(f=>f.label);
+}
+function checkCompanyInfoAndWarn(){
+  const missing=getCompanyInfoMissingFields();
+  if(!missing.length) return true;
+  const panel=document.getElementById('rightPanel');
+  if(panel){
+    panel.style.transition='box-shadow .2s';
+    panel.style.boxShadow='0 0 0 3px var(--red-500,#ef4444)';
+    setTimeout(()=>{ panel.style.boxShadow=''; },2000);
+  }
+  const fieldMap=[
+    {id:'companyName',label:'Company Name'},
+    {id:'companyTIN',label:'TIN Number'},
+    {id:'companyAddress',label:'Address'},
+    {id:'lineOfBusiness',label:'Line of Business'},
+    {id:'authorizedEmployee',label:'Authorized Employee'}
+  ];
+  missing.forEach(label=>{
+    const f=fieldMap.find(r=>r.label===label);
+    if(f){
+      const el=document.getElementById(f.id);
+      if(el){
+        el.style.transition='border-color .2s,box-shadow .2s';
+        el.style.borderColor='var(--red-500,#ef4444)';
+        el.style.boxShadow='0 0 0 2px rgba(239,68,68,.25)';
+        setTimeout(()=>{ el.style.borderColor=''; el.style.boxShadow=''; },2500);
+      }
+    }
+  });
+  showToast('Please fill in required Company Information fields: '+missing.join(', '),'error');
+  return false;
+}
+/* ── End company-info validation ───────────────────────────────────────── */
+
 function saveDataToFile(){
+  if(!checkCompanyInfoAndWarn()) return;
   const blob=new Blob([JSON.stringify({version:'1.0',type:'purchase-returns',timestamp:new Date().toISOString(),companyInfo:getCompanyData(),tableData:getTableData()},null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='Purchase_Returns_'+new Date().toISOString().split('T')[0]+'.rpurch';
@@ -1619,7 +1743,7 @@ if(session && session.tableData && session.tableData.length){
     if(submitBtn){ submitBtn.classList.remove('hidden');
       submitBtn.addEventListener('click',function(e){ e.preventDefault(); document.getElementById('submitModalOverlay').classList.remove('hidden'); });
     }
-    document.getElementById('submitModalConfirmBtn').addEventListener('click',function(){ showToast('Navigating to portal…','success'); document.getElementById('submitModalOverlay').classList.add('hidden'); setTimeout(()=>{ location.href='../index.html'; },400); });
+    document.getElementById('submitModalConfirmBtn').addEventListener('click',function(){ showToast('Navigating to portal…','success'); document.getElementById('submitModalOverlay').classList.add('hidden'); setTimeout(()=>{ location.href='../bookkeeping.html'; },400); });
     document.getElementById('submitModalCancelBtn').addEventListener('click',()=>document.getElementById('submitModalOverlay').classList.add('hidden'));
     document.getElementById('submitModalOverlay').addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
   }
@@ -1630,7 +1754,7 @@ if(session && session.tableData && session.tableData.length){
 
 /* ============================================================
    SAVE & SUBMIT — saves .rpurch file named by tracking month/year
-   then navigates to index.html#submit-report
+   then navigates to bookkeeping.html#submit-report
 ============================================================ */
 function getTrackingMonthYearForReturns() {
   // Priority: monthly context → report date field → today
@@ -1650,6 +1774,7 @@ function getMonthNameForReturns(n) {
 
 function openSaveAndSubmitModalForReturns() {
   if (APP_ROLE !== 'Client') return;
+  if (!checkCompanyInfoAndWarn()) return;
   const { year, month } = getTrackingMonthYearForReturns();
   const monthName = getMonthNameForReturns(month);
   const filename = `Purchase_Returns_${monthName}_${year}.rpurch`;
@@ -1691,7 +1816,7 @@ function openSaveAndSubmitModalForReturns() {
       sessionStorage.setItem('VAT_PENDING_REPORT_TYPE', 'purchase-returns');
       document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
       showToast('File saved — redirecting to Submit Report…', 'success');
-      setTimeout(() => { location.href = '../index.html#submit-report'; }, 700);
+      setTimeout(() => { location.href = '../bookkeeping.html#submit-report'; }, 700);
     };
     reader.readAsDataURL(blob);
   };

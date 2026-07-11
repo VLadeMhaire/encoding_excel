@@ -350,7 +350,7 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../index.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
+    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="taxes_licenses.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-gauge"></i> Dashboard</a>
@@ -506,6 +506,16 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    CONFIG & CONSTANTS
 ============================================================ */
@@ -514,9 +524,9 @@ const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 
 const API_BASE = (() => {
   if (window.TAXES_API_BASE) return window.TAXES_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:8000/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:8000/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -587,12 +597,11 @@ const APP_USER_ID = (function(){
   
   // LAST RESORT: Generate a persistent ID stored in localStorage
   // This ensures each browser profile gets a unique ID, not shared across clients
-  const PERSISTENT_KEY = `TAXES_MONTHLY_PERSISTENT_ID`;
-  let persistentId = localStorage.getItem(PERSISTENT_KEY);
-  if (!persistentId) {
-    // Include a timestamp to make it unique, but store it persistently
-    persistentId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-    localStorage.setItem(PERSISTENT_KEY, persistentId);
+  const PERSISTENT_KEY = 'TAXES_PERMANENT_CLIENT_ID';
+let persistentId = localStorage.getItem(PERSISTENT_KEY);
+if (!persistentId) {
+  persistentId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+  localStorage.setItem(PERSISTENT_KEY, persistentId);
     console.log('[monthly_taxes] Generated new persistent ID:', persistentId);
   } else {
     console.log('[monthly_taxes] Using existing persistent ID:', persistentId);
@@ -636,8 +645,10 @@ async function checkBackend() {
       USE_API = true;
       pill.className = 'backend-pill online';
       text.textContent = 'API Online';
-      const session = sessionStorage.getItem('TAXES_SESSION');
-      if (session) { try { const s = JSON.parse(session); authToken = s.token || null; } catch(e){} }
+      // Re-use the shared VAT session token (same FastAPI server, same JWT) —
+      // this is the same key taxes_licenses.html reads from.
+      const session = sessionStorage.getItem('VAT_SESSION');
+      if (session) { try { const s = JSON.parse(session); authToken = s._token || s.token || null; } catch(e){} }
       return;
     }
   } catch(_) {}
@@ -785,6 +796,55 @@ function getAllStoredYears() {
     if (m) years.add(parseInt(m[1]));
   }
   return Array.from(years).sort((a,b) => b - a);
+}
+
+/* ============================================================
+   REAL-TIME SYNC — pull from API into the localStorage cache
+   that all the render*() functions read from. This is what lets
+   a save made in taxes_licenses.html on ANY computer show up here
+   on every open tab/browser/computer.
+============================================================ */
+async function syncYearFromAPI(year) {
+  if (!(USE_API && authToken)) return;
+  try {
+    const params = new URLSearchParams();
+    params.append('year', year);
+    params.append('role', APP_ROLE);
+    params.append('client_id', APP_USER_ID);
+    const r = await fetch(`${API_BASE}/taxes-monthly-records?${params.toString()}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+    (d.records || []).forEach(rec => {
+      const meta = Object.assign({ year: rec.year, month: rec.month }, rec.meta || {});
+      const metaKey = makeMetaKey(rec.year, rec.month);
+      // Guard: never let a stale server copy clobber a newer local edit.
+      // Compare lastModified timestamps and only overwrite if the server
+      // record is actually newer (or nothing local exists yet).
+      let localIsNewer = false;
+      try {
+        const existingRaw = localStorage.getItem(metaKey);
+        if (existingRaw) {
+          const existing = JSON.parse(existingRaw);
+          const localTime   = existing?.lastModified ? Date.parse(existing.lastModified) : 0;
+          const serverTime  = meta?.lastModified ? Date.parse(meta.lastModified) : 0;
+          if (localTime && serverTime && localTime > serverTime) localIsNewer = true;
+        }
+      } catch(e) {}
+      if (localIsNewer) {
+        console.log('[monthly_taxes] Skipping server overwrite for', rec.year, rec.month, '— local copy is newer');
+        return;
+      }
+      localStorage.setItem(metaKey, JSON.stringify(meta));
+      localStorage.setItem(makeStorageKey(rec.year, rec.month), JSON.stringify({
+        tableData:   rec.table_data   || [],
+        companyInfo: rec.company_info || {}
+      }));
+    });
+  } catch(err) {
+    console.error('[monthly_taxes] syncYearFromAPI error:', err);
+  }
 }
 
 /* ─── Formatting helpers ─── */
@@ -1138,6 +1198,7 @@ function checkReturnFromTracker() {
 ============================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   await checkBackend();
+  await syncYearFromAPI(selectedYear);
 
   /* ── Identity badges ─────────────────────────────────────────
      Rules (strict, no cross-contamination):
@@ -1232,8 +1293,135 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('confirmModal').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeOpenOverlay(); closeConfirm(); } });
 
+  // ── Listen for same-browser live writes from taxes_licenses.html
+  //    (fires when another tab in the same browser writes to localStorage)
+  window.addEventListener('storage', (e) => {
+    if (!e.key) return;
+    const metaPrefix = `TAXES_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+    const dataPrefix = `TAXES_MONTHLY_${APP_USER_ID}_${APP_ROLE}_`;
+    if (!e.key.startsWith(metaPrefix) && !e.key.startsWith(dataPrefix)) return;
+    updateAll();
+  });
+
+  // Update when the page becomes visible again (e.g., returning from another tab)
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      await syncYearFromAPI(selectedYear);
+      updateAll();
+      // Browsers close EventSource connections when a tab is backgrounded —
+      // reconnect so real-time updates keep flowing once it's visible again.
+      if (USE_API && !_sseSource) connectSSE();
+    }
+  });
+
+  // Update when the page is restored from the back/forward cache
+  window.addEventListener('pageshow', async (event) => {
+    if (event.persisted) {
+      checkReturnFromTracker();
+      await syncYearFromAPI(selectedYear);
+      updateAll();
+      if (USE_API && !_sseSource) connectSSE();
+    }
+  });
+
+  // ── Start real-time SSE sync (only when API is online). Wait a moment
+  //    for the auth token to be fully available.
+  setTimeout(() => {
+    if (USE_API && authToken) {
+      connectSSE();
+    } else {
+      setTimeout(() => { if (USE_API && authToken) connectSSE(); }, 2000);
+    }
+  }, 500);
+
   updateAll();
 });
+
+/* ============================================================
+   REAL-TIME SYNC — Server-Sent Events
+   Mirrors monthly_expenses.html's connectSSE/processSseUpdate so a save
+   made in taxes_licenses.html on ANY computer (whenever it has a year+month
+   context and mirrors to /api/taxes-monthly-records) instantly refreshes
+   the "All Monthly Taxes & Licenses Records" cards here — on every open
+   tab, on every browser, without anyone reopening the tracker.
+============================================================ */
+let _sseSource     = null;
+let _lastSseUpdate = 0;
+let _sseUpdateTimer = null;
+
+async function processSseUpdate(dataStr) {
+  try {
+    const data = JSON.parse(dataStr);
+
+    if (data.year === selectedYear) {
+      await syncYearFromAPI(selectedYear);
+      updateAll();
+    } else if (data.year) {
+      // Different year — still pull it in so switching to it shows fresh data
+      await syncYearFromAPI(data.year);
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(`Updated: ${MONTHS[data.month-1]} ${data.year} (${data.rowCount} entr${data.rowCount===1?'y':'ies'})`, 'success');
+    }
+  } catch(err) {
+    console.error('SSE: Failed to process taxes update', err);
+  }
+}
+
+function connectSSE() {
+  if (!USE_API) return;
+  if (!authToken) { setTimeout(() => connectSSE(), 2000); return; }
+
+  if (_sseSource) {
+    try { _sseSource.close(); } catch(e) {}
+    _sseSource = null;
+  }
+
+  const params = new URLSearchParams();
+  params.append('role', APP_ROLE);
+  params.append('client_id', APP_USER_ID);
+  params.append('token', authToken);
+  const url = `${API_BASE}/taxes-monthly-records/stream?${params.toString()}`;
+  console.log('SSE: Connecting to', url);
+  _sseSource = new EventSource(url);
+
+  _sseSource.addEventListener('connected', () => {
+    console.log('SSE: Connected successfully');
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) pill.className = 'backend-pill online';
+    if (text) text.textContent = 'Live Sync';
+  });
+
+  _sseSource.addEventListener('update', async (e) => {
+    console.log('SSE: Received update', e.data);
+    // Debounce — don't process more than one update per second
+    const now = Date.now();
+    if (now - _lastSseUpdate < 1000) {
+      if (_sseUpdateTimer) clearTimeout(_sseUpdateTimer);
+      _sseUpdateTimer = setTimeout(async () => {
+        _sseUpdateTimer = null;
+        await processSseUpdate(e.data);
+      }, 1000);
+      return;
+    }
+    _lastSseUpdate = now;
+    await processSseUpdate(e.data);
+  });
+
+  _sseSource.onerror = (err) => {
+    console.error('SSE: Connection error', err);
+    if (_sseSource) { try { _sseSource.close(); } catch(e) {} _sseSource = null; }
+    setTimeout(() => connectSSE(), 5000);
+  };
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_sseSource) { _sseSource.close(); _sseSource = null; }
+  if (_sseUpdateTimer) { clearTimeout(_sseUpdateTimer); _sseUpdateTimer = null; }
+});
+
 </script>
 
 <!-- TAXES INTEGRATION NOTE:

@@ -354,7 +354,7 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../index.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
+    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="vatable_purchases.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-home"></i> Dashboard</a>
@@ -511,6 +511,16 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    CONFIG & CONSTANTS
 ============================================================ */
@@ -519,9 +529,9 @@ const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 
 const API_BASE = (() => {
   if (window.VAT_API_BASE) return window.VAT_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:9999/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:9999/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -565,12 +575,78 @@ function makeMetaKey(year, month) {
 }
 
 /* ============================================================
+   LOCAL META SYNC
+   vatable_purchases.html writes the raw data key (PURCH_MONTHLY_<Role>_YYYY_MM)
+   every time it autosaves or on beforeunload — but it may not always have
+   written the meta key (PURCH_MONTHLY_META_*) that monthly_purchases.html
+   reads for counts. This function scans all matching raw-data keys in
+   localStorage, rebuilds the meta from the actual tableData, and writes it
+   so the month-grid indicators always show the real entry count — even
+   without navigating back through the session-handshake flow.
+
+   Called:
+     • On DOMContentLoaded (catches data written before this page opened)
+     • On the window 'storage' event (catches same-browser live writes)
+     • From the SSE 'update' handler / local fallback (cross-computer path
+       already has fresh data pushed via API, but local cache also needs
+       the meta rebuilt)
+============================================================ */
+function syncAllLocalMeta() {
+  const prefix     = `PURCH_MONTHLY_${APP_USER_ID}_${APP_ROLE}_`;
+  const metaPrefix = `PURCH_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+  let changed = false;
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(prefix) || k.startsWith(metaPrefix)) continue;
+
+    // Key shape: PURCH_MONTHLY_<uid>_<Role>_<YYYY>_<MM>
+    const suffix = k.slice(prefix.length); // e.g. "2026_05"
+    const parts  = suffix.split('_');
+    if (parts.length !== 2) continue;
+    const year  = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    if (!year || !month || month < 1 || month > 12) continue;
+
+    // Read raw data written by vatable_purchases.html
+    let raw;
+    try { raw = JSON.parse(localStorage.getItem(k)); } catch(e) { continue; }
+    if (!raw || !Array.isArray(raw.tableData)) continue;
+
+    // Check if meta is missing or has a different rowCount (stale)
+    const metaKey = makeMetaKey(year, month);
+    let existingMeta = null;
+    try { existingMeta = JSON.parse(localStorage.getItem(metaKey)); } catch(e) {}
+
+    const freshRowCount = raw.tableData.length;
+    if (existingMeta && existingMeta.rowCount === freshRowCount) continue; // already up to date
+
+    // Rebuild meta from actual table data
+    const meta = {
+      year, month,
+      rowCount:     freshRowCount,
+      grossPurch:   calcGross(raw.tableData),
+      netPurch:     calcNet(raw.tableData),
+      inputTax:     calcTax(raw.tableData),
+      withholding:  calcWT(raw.tableData),
+      lastModified: raw.timestamp || new Date().toISOString(),
+      companyName:  raw.companyInfo?.companyName || raw.companyInfo?.name || '',
+      reportDate:   raw.companyInfo?.reportDate  || raw.companyInfo?.date || '',
+    };
+    localStorage.setItem(metaKey, JSON.stringify(meta));
+    changed = true;
+  }
+  return changed; // caller can decide whether to re-render
+}
+
+/* ============================================================
    STATE
 ============================================================ */
 let selectedYear  = new Date().getFullYear();
 let selectedMonth = new Date().getMonth() + 1;
 let newestFirst   = true;
 let showAllYears  = false;
+const _metaRequestCache = new Map();
 
 /* ============================================================
    BACKEND HEALTH
@@ -592,6 +668,36 @@ async function checkBackend() {
   USE_API = false;
   pill.className = 'backend-pill offline';
   text.textContent = 'Local Mode';
+}
+
+/* ============================================================
+   VAT PURCHASES → MONTHLY AUTO-SYNC
+   Called on every page load (after checkBackend sets authToken).
+   Asks the backend to promote any vatable_purchases.html entries that
+   carry a year+month into the monthly-purchases table so they show
+   up in "All Purchases Records" without ever needing to open the VAT
+   Purchases Tracker page-by-page — mirrors monthly_record.html's
+   syncVatToMonthly() for sales.
+============================================================ */
+async function syncPurchasesToMonthly() {
+  if (!USE_API || !authToken) return;
+  try {
+    const r = await fetch(
+      `${API_BASE}/monthly-purchases/sync-from-vat?role=${APP_ROLE}`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}` },
+      }
+    );
+    if (r.ok) {
+      const d = await r.json();
+      if (d.synced > 0) {
+        console.log(`[sync-from-vat] Synced ${d.synced} month(s) from VAT Purchases Tracker.`);
+      }
+    }
+  } catch (e) {
+    console.warn('[sync-from-vat] Sync skipped (backend unavailable):', e);
+  }
 }
 
 /* ============================================================
@@ -649,6 +755,7 @@ async function loadMonthData(year, month) {
 async function deleteMonthData(year, month) {
   localStorage.removeItem(makeStorageKey(year, month));
   localStorage.removeItem(makeMetaKey(year, month));
+  _metaRequestCache.delete(`meta_${year}_${APP_ROLE}`);
   if (USE_API && authToken) {
     try {
       await fetch(`${API_BASE}/monthly-purchases/${year}/${String(month).padStart(2,'0')}`, {
@@ -659,66 +766,79 @@ async function deleteMonthData(year, month) {
 }
 
 async function getAllMonthMetaForYear(year) {
-  // FIRST: Always try to read from localStorage for the current role (most reliable)
-  const localResult = [];
-  for (let m = 1; m <= 12; m++) {
-    const metaRaw = localStorage.getItem(makeMetaKey(year, m));
-    if (metaRaw) { 
-      try { 
-        localResult.push(JSON.parse(metaRaw));
-        console.log(`Found localStorage meta for ${year}-${m}:`, JSON.parse(metaRaw));
-      } catch(e) { 
-        localResult.push(null); 
-      }
-    } else {
-      localResult.push(null);
-    }
+  // Short-lived cache so rapid repeated calls (renderHero + renderYearStats +
+  // renderMonthGrid etc. all in the same updateAll() pass) don't refetch.
+  const cacheKey = `meta_${year}_${APP_ROLE}`;
+  const now = Date.now();
+  const cached = _metaRequestCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < 5000) {
+    return cached.data;
   }
-  
-  // Check if we have any local data
-  const hasLocalData = localResult.some(m => m !== null);
-  
-  // If we have local data, use it immediately (don't wait for API)
-  if (hasLocalData) {
-    console.log('Returning localStorage data for year:', year);
-    return localResult;
-  }
-  
-  // Only try API if we have NO local data at all (first time loading)
+
+  // Always prefer a fresh API read when online — this is what lets a card
+  // saved from another browser/computer show up here without re-opening
+  // vatable_purchases.html on this device.
   if (USE_API && authToken) {
     try {
-      console.log('No local data, fetching from API for year:', year);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       const r = await fetch(`${API_BASE}/monthly-purchases?year=${year}&role=${APP_ROLE}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        },
+        cache: 'no-store',
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       if (r.ok) {
         const list = await r.json();
-        const apiResult = Array(12).fill(null);
+        const result = Array(12).fill(null);
         (list.records || list).forEach(rec => {
           const m = parseInt(rec.month);
           if (m >= 1 && m <= 12) {
             const meta = rec.meta || rec;
-            apiResult[m - 1] = meta;
-            // Only update localStorage if the role matches exactly
-            if (rec.role === APP_ROLE) {
-              localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
-            }
+            result[m - 1] = meta;
+            localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
           }
         });
-        // Merge: prefer local data if it exists (it shouldn't if we got here)
-        for (let i = 0; i < 12; i++) {
-          if (localResult[i] !== null) {
-            apiResult[i] = localResult[i];
+        // Defensive fallback: if a month was just saved locally (e.g. right
+        // after returning from the tracker) but the API response above
+        // doesn't include it yet, don't let it vanish from the grid —
+        // fall back to the freshly-cached local meta for that month only.
+        for (let m = 1; m <= 12; m++) {
+          if (!result[m - 1]) {
+            const localMetaRaw = localStorage.getItem(makeMetaKey(year, m));
+            if (localMetaRaw) {
+              try { result[m - 1] = JSON.parse(localMetaRaw); } catch(e) {}
+            }
           }
         }
-        return apiResult;
+        _metaRequestCache.set(cacheKey, { data: result, timestamp: now });
+        setTimeout(() => {
+          if (_metaRequestCache.get(cacheKey)?.timestamp === now) {
+            _metaRequestCache.delete(cacheKey);
+          }
+        }, 10000);
+        return result;
       }
     } catch(e) {
       console.error('API fetch failed:', e);
     }
   }
-  
-  // Return whatever we have from localStorage (including nulls)
+
+  // Offline / API unreachable fallback: read whatever we have locally.
+  syncAllLocalMeta();
+  const localResult = [];
+  for (let m = 1; m <= 12; m++) {
+    const metaRaw = localStorage.getItem(makeMetaKey(year, m));
+    if (metaRaw) {
+      try { localResult.push(JSON.parse(metaRaw)); }
+      catch(e) { localResult.push(null); }
+    } else {
+      localResult.push(null);
+    }
+  }
   return localResult;
 }
 
@@ -1103,15 +1223,23 @@ function showToast(msg, type = 'info') {
    When returning from vatable_purchases.html, read back the
    session data from the monthly-specific key and save metadata.
 ============================================================ */
-function checkReturnFromTracker() {
+async function checkReturnFromTracker() {
   const key  = sessionStorage.getItem('PURCH_MONTHLY_CONTEXT_KEY');
   const yr   = sessionStorage.getItem('PURCH_MONTHLY_CONTEXT_YEAR');
   const mo   = sessionStorage.getItem('PURCH_MONTHLY_CONTEXT_MONTH');
   const role = sessionStorage.getItem('PURCH_MONTHLY_CONTEXT_ROLE');
 
-  if (!key || !yr || !mo) return;
+  if (!key || !yr || !mo) {
+    // Even without a context key, sync any data vatable_purchases.html
+    // may have written directly to localStorage (e.g. autosave on another tab)
+    syncAllLocalMeta();
+    return;
+  }
   // Allow sub-admin returning from bridge (client) mode
   if (role && role !== APP_ROLE && !(APP_ROLE === 'SubAdmin' && role === 'Client')) return;
+
+  // Sync all local meta first — this covers the data written to the monthly key
+  syncAllLocalMeta();
 
   // Read from the per-user monthly-specific purchases key
   const rawSession = localStorage.getItem(key);
@@ -1120,7 +1248,7 @@ function checkReturnFromTracker() {
     try {
       const session = JSON.parse(rawSession);
       if (session && session.tableData) {
-        saveMonthData(parseInt(yr), parseInt(mo), {
+        await saveMonthData(parseInt(yr), parseInt(mo), {
           tableData:   session.tableData,
           companyInfo: session.companyInfo || {}
         });
@@ -1148,7 +1276,8 @@ function checkReturnFromTracker() {
 ============================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   await checkBackend();
-  checkReturnFromTracker();
+  await syncPurchasesToMonthly();
+  await checkReturnFromTracker();
 
   /* ── Identity badges ─────────────────────────────────────────
      Rules (strict, no cross-contamination):
@@ -1253,20 +1382,135 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') { closeOpenOverlay(); closeConfirm(); }
   });
 
+  // ── Sync any raw session data vatable_purchases.html wrote to localStorage
+  //    before this page opened (meta keys may be missing or stale)
+  syncAllLocalMeta();
+
+  // ── Listen for same-browser live writes from vatable_purchases.html
+  //    (fires when another tab in the same browser writes to localStorage)
+  window.addEventListener('storage', (e) => {
+    if (!e.key) return;
+    const prefix = `PURCH_MONTHLY_${APP_USER_ID}_${APP_ROLE}_`;
+    const metaPrefix = `PURCH_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+    // Only react to data keys, not meta keys (avoid infinite loop)
+    if (!e.key.startsWith(prefix) || e.key.startsWith(metaPrefix)) return;
+    const changed = syncAllLocalMeta();
+    if (changed) {
+      updateAll();
+    }
+  });
+
   updateAll();
+
+  // ── Start real-time SSE sync (only when API is online) so a card saved
+  //    from another browser/computer appears here without a manual reload.
+  setTimeout(() => {
+    if (USE_API && authToken) {
+      connectPurchasesSSE();
+    } else {
+      setTimeout(() => { if (USE_API && authToken) connectPurchasesSSE(); }, 2000);
+    }
+  }, 500);
 
   // Refresh grid whenever tab becomes visible (picks up changes from other computers)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       renderRecordsGrid();
       renderYearStats();
+      // Browsers close EventSource connections when a tab is backgrounded —
+      // reconnect so live updates keep flowing once the tab is active again.
+      if (USE_API && !_purchasesSseSource) connectPurchasesSSE();
     }
   });
   window.addEventListener('pageshow', (e) => {
     if (e.persisted || performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
       updateAll();
+      if (USE_API && !_purchasesSseSource) connectPurchasesSSE();
     }
   });
+});
+
+/* ============================================================
+   REAL-TIME SYNC — Server-Sent Events
+   Mirrors monthly_record.html's SSE client so a card saved from
+   vatable_purchases.html on another browser/computer shows up
+   here automatically, with no manual refresh needed.
+============================================================ */
+let _purchasesSseSource = null;
+let _lastPurchasesSseUpdate = 0;
+let _purchasesSseUpdateTimer = null;
+
+async function processPurchasesSseUpdate(dataStr) {
+  try {
+    const data = JSON.parse(dataStr);
+
+    // Force a fresh fetch next time this year's meta is requested.
+    _metaRequestCache.delete(`meta_${data.year}_${APP_ROLE}`);
+
+    await updateAll();
+
+    showToast(`Updated: ${MONTHS[data.month-1]} ${data.year} (${data.rowCount} entries)`, 'success');
+  } catch(err) {
+    console.error('SSE: Failed to process purchases update', err);
+  }
+}
+
+function connectPurchasesSSE() {
+  if (!USE_API) return;
+
+  if (!authToken) {
+    setTimeout(() => connectPurchasesSSE(), 2000);
+    return;
+  }
+
+  if (_purchasesSseSource) {
+    try { _purchasesSseSource.close(); } catch(e) {}
+    _purchasesSseSource = null;
+  }
+
+  const url = `${API_BASE}/monthly-purchases/stream?token=${encodeURIComponent(authToken)}`;
+  _purchasesSseSource = new EventSource(url);
+
+  _purchasesSseSource.addEventListener('connected', () => {
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) pill.className = 'backend-pill online';
+    if (text) text.textContent = 'Live Sync';
+  });
+
+  _purchasesSseSource.addEventListener('update', async (e) => {
+    // Debounce — don't process more than one update per second.
+    const now = Date.now();
+    if (now - _lastPurchasesSseUpdate < 1000) {
+      if (_purchasesSseUpdateTimer) clearTimeout(_purchasesSseUpdateTimer);
+      _purchasesSseUpdateTimer = setTimeout(async () => {
+        _purchasesSseUpdateTimer = null;
+        await processPurchasesSseUpdate(e.data);
+      }, 1000);
+      return;
+    }
+    _lastPurchasesSseUpdate = now;
+    await processPurchasesSseUpdate(e.data);
+  });
+
+  _purchasesSseSource.onerror = () => {
+    if (_purchasesSseSource) {
+      try { _purchasesSseSource.close(); } catch(e) {}
+      _purchasesSseSource = null;
+    }
+    setTimeout(() => connectPurchasesSSE(), 5000);
+  };
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_purchasesSseSource) {
+    _purchasesSseSource.close();
+    _purchasesSseSource = null;
+  }
+  if (_purchasesSseUpdateTimer) {
+    clearTimeout(_purchasesSseUpdateTimer);
+    _purchasesSseUpdateTimer = null;
+  }
 });
 
 /* ============================================================

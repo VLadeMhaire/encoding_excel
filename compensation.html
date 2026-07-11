@@ -1089,6 +1089,32 @@ th[data-shortened="true"]:hover::after {
     background: var(--gray-200);
     margin: 0 4px;
 }
+
+/* ── Utility ── */
+.hidden { display: none !important; }
+
+/* ── Backend pill ── */
+.backend-pill { display: flex; align-items: center; gap: 5px; font-size: 10px; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,.15); }
+.backend-pill.online  { background: rgba(34,197,94,.15);  color: #86efac; }
+.backend-pill.offline { background: rgba(239,68,68,.15);  color: #fca5a5; }
+.backend-pill.checking{ background: rgba(251,191,36,.15); color: #fde68a; }
+.bp-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.online  .bp-dot { background: #22c55e; animation: bpulse 2s infinite; }
+.offline .bp-dot { background: #ef4444; }
+.checking .bp-dot { background: #fbbf24; animation: bpulse 1s infinite; }
+@keyframes bpulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* ── Monthly context badge ── */
+.monthly-context-badge { display: flex; align-items: center; gap: 6px; background: rgba(251,191,36,.2); border: 1px solid rgba(251,191,36,.4); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: #fde68a; font-weight: 600; }
+.monthly-context-badge i { font-size: 11px; }
+
+/* ── Identity badges ── */
+.identity-strip { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.id-badge { display: flex; align-items: center; gap: 6px; border-radius: 20px; padding: 5px 13px; font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.id-badge i { font-size: 11px; flex-shrink: 0; }
+.id-badge-subadmin { background: rgba(139,92,246,.2); border: 1px solid rgba(139,92,246,.45); color: #c4b5fd; }
+.id-badge-client   { background: rgba(34,197,94,.18);  border: 1px solid rgba(34,197,94,.4);  color: #86efac; }
+.id-badge-sep { font-size: 11px; color: rgba(255,255,255,.3); flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -1104,6 +1130,7 @@ th[data-shortened="true"]:hover::after {
         <div class="sidebar-content">
             <nav class="sidebar-nav">
                 <!-- Dashboard Link -->
+                 <a href="monthly_compensation.html" class="sidebar-btn"><i class="fas fa-calendar-alt"></i>Monthly Compensation</a>
                 <a href="index2.html" class="sidebar-btn">
                     <i class="fas fa-home"></i>
                     <span class="sidebar-btn-text">Dashboard</span>
@@ -1316,6 +1343,19 @@ th[data-shortened="true"]:hover::after {
                     <i class="fas fa-cloud" style="font-size:0.7rem;"></i>
                     <span id="autosaveStatus">Saved</span>
                 </div>
+
+                <!-- Backend pill -->
+                <div class="backend-pill checking" id="backendPill"><div class="bp-dot"></div><span id="backendPillText">Connecting…</span></div>
+
+                <!-- Monthly context badge -->
+                <div id="monthlyContextBadge" class="monthly-context-badge hidden"><i class="fas fa-calendar-alt"></i><span id="monthlyContextLabel">—</span></div>
+
+                <!-- Identity strip -->
+                <div class="identity-strip hidden" id="identityStrip">
+                  <div class="id-badge id-badge-subadmin hidden" id="subAdminBadge"><i class="fas fa-user-shield"></i><span id="subAdminBadgeLabel">—</span></div>
+                  <span class="id-badge-sep hidden" id="identitySep">›</span>
+                  <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
+                </div>
             </div>
         </header>
         
@@ -1430,9 +1470,328 @@ th[data-shortened="true"]:hover::after {
     </div>
 
     <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+    <script>
 // ============================================================================
 // COMPENSATION DATA TRACKER - COMPLETE JAVASCRIPT
 // ============================================================================
+
+/* ============================================================
+   ROLE & MONTHLY CONTEXT  (mirrors vatable_sales.html / monthly_record.html)
+============================================================ */
+const APP_ROLE = (function(){
+  const p = window.location.pathname;
+  if (p.includes('/Client/'))    return 'Client';
+  if (p.includes('/Sub-Admin/')) return 'SubAdmin';
+  return 'Main';
+})();
+
+const APP_USER_ID = (function(){
+  try {
+    const s = sessionStorage.getItem('VAT_SESSION');
+    if (s) {
+      const parsed = JSON.parse(s);
+      return parsed.id || parsed.sub || parsed.user_id || 'anon';
+    }
+  } catch(e) {}
+  return 'anon';
+})();
+
+// Read the context keys set by monthly_compensation.html before navigating here
+const MONTHLY_CTX = {
+  key:   sessionStorage.getItem('COMP_MONTHLY_CONTEXT_KEY')   || null,
+  year:  sessionStorage.getItem('COMP_MONTHLY_CONTEXT_YEAR')  || null,
+  month: sessionStorage.getItem('COMP_MONTHLY_CONTEXT_MONTH') || null,
+  label: sessionStorage.getItem('COMP_MONTHLY_CONTEXT_LABEL') || null,
+  role:  sessionStorage.getItem('COMP_MONTHLY_CONTEXT_ROLE')  || null,
+};
+const IS_MONTHLY = !!(MONTHLY_CTX.key && MONTHLY_CTX.year && MONTHLY_CTX.month);
+
+/* ============================================================
+   DYNAMIC STORAGE KEYS
+   When opened from monthly_compensation.html these are scoped to the
+   specific month/year/user/role so each month stores independently.
+   Falls back to static keys when opened standalone (no context).
+============================================================ */
+function getActiveTableKey() {
+  if (IS_MONTHLY) return MONTHLY_CTX.key;                        // e.g. COMP_MONTHLY_anon_Main_2026_05
+  return 'compensationTableData';
+}
+function getActiveCompanyKey() {
+  if (IS_MONTHLY) return `${MONTHLY_CTX.key}_COMPANY`;
+  return 'companyInfo';
+}
+
+/* ============================================================
+   BACKEND CONFIG  (mirrors monthly_compensation.html)
+============================================================ */
+const API_BASE = (() => {
+  if (window.VAT_API_BASE) return window.VAT_API_BASE;
+  if (window.__TAURI__) return 'http://localhost:8001/api';
+  return (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
+    : '/api';
+})();
+
+let USE_API   = false;
+let authToken = null;
+
+function apiHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (authToken) h['Authorization'] = `Bearer ${authToken}`;
+  return h;
+}
+
+async function checkBackend() {
+  const pill = document.getElementById('backendPill');
+  const text = document.getElementById('backendPillText');
+  try {
+    const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      USE_API = true;
+      if (pill) pill.className = 'backend-pill online';
+      if (text) text.textContent = 'API Online';
+      const session = sessionStorage.getItem('VAT_SESSION');
+      if (session) {
+        try {
+          const s = JSON.parse(session);
+          authToken = s.token || s.access_token || s._token || null;
+        } catch(e) {}
+      }
+      return;
+    }
+  } catch(_) {}
+  USE_API = false;
+  if (pill) pill.className = 'backend-pill offline';
+  if (text) text.textContent = 'Local Mode';
+}
+
+/* ============================================================
+   IDENTITY BADGES  (mirrors monthly_compensation.html)
+============================================================ */
+function initIdentityBadges() {
+  try {
+    const s = sessionStorage.getItem('VAT_SESSION');
+    if (!s) return;
+    const sess = JSON.parse(s);
+    const role     = sess.role     || '';
+    const username = sess.username || '';
+
+    const strip     = document.getElementById('identityStrip');
+    const subBadge  = document.getElementById('subAdminBadge');
+    const subLabel  = document.getElementById('subAdminBadgeLabel');
+    const clBadge   = document.getElementById('clientBadge');
+    const clLabel   = document.getElementById('clientBadgeLabel');
+    const sep       = document.getElementById('identitySep');
+
+    if (role === 'subadmin' || role === 'admin') {
+      strip.classList.remove('hidden');
+      subBadge.classList.remove('hidden');
+      subLabel.textContent = username;
+      const viewingClient = sessionStorage.getItem('VAT_TRACKER_VIEWING_CLIENT');
+      if (viewingClient) {
+        sep.classList.remove('hidden');
+        clBadge.classList.remove('hidden');
+        clLabel.textContent = viewingClient;
+      }
+    } else if (role === 'client') {
+      strip.classList.remove('hidden');
+      clBadge.classList.remove('hidden');
+      clLabel.textContent = username;
+    }
+  } catch(e) {}
+}
+
+/* ============================================================
+   API DATA SYNC  (save/load monthly record to/from API)
+============================================================ */
+// Helper: resolve year/month/role for API calls
+function _apiYear()  { return IS_MONTHLY ? parseInt(MONTHLY_CTX.year)  : 0; }
+function _apiMonth() { return IS_MONTHLY ? parseInt(MONTHLY_CTX.month) : 0; }
+function _apiRole()  { return (IS_MONTHLY && MONTHLY_CTX.role) ? MONTHLY_CTX.role : 'Main'; }
+
+async function syncToApi(tableData, companyInfo) {
+  if (!USE_API || !authToken) return;
+  const year  = _apiYear();
+  const month = _apiMonth();
+  const role  = _apiRole();
+
+  // Compute totals from the table data
+  const totalComp = tableData.reduce((sum, row) => sum + (parseFloat(row.totalCompensation) || 0), 0);
+  const totalDeductions = tableData.reduce((sum, row) => sum + (parseFloat(row.totalDeduction) || 0), 0);
+  const totalTaxable = tableData.reduce((sum, row) => sum + (parseFloat(row.taxableCompensation) || 0), 0);
+
+  try {
+    await fetch(`${API_BASE}/monthly-compensation?role=${encodeURIComponent(role)}`, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({
+        year, month,
+        data: { tableData, companyInfo },
+        meta: {
+          year, month,
+          rowCount: tableData.length,
+          totalComp,
+          totalDeductions,
+          totalTaxable,
+          lastModified: new Date().toISOString(),
+          companyName: companyInfo?.companyName || '',
+          payrollPeriod: companyInfo?.payrollPeriod || '',
+        },
+      }),
+    });
+  } catch(_) { /* local fallback already done */ }
+}
+
+async function loadFromApi() {
+  if (!USE_API || !authToken) return null;
+  const year  = _apiYear();
+  const month = _apiMonth();
+  const role  = _apiRole();
+  try {
+    const r = await fetch(
+      `${API_BASE}/monthly-compensation/${year}/${String(month).padStart(2,'0')}?role=${encodeURIComponent(role)}`,
+      { headers: apiHeaders() }
+    );
+    if (r.ok) {
+      const d = await r.json();
+      if (d.data) {
+        const tableData   = d.data.tableData   || d.data.table_data   || [];
+        const companyInfo = d.data.companyInfo || d.data.company_info || {};
+        localStorage.setItem(getActiveTableKey(),   JSON.stringify(tableData));
+        localStorage.setItem(getActiveCompanyKey(), JSON.stringify(companyInfo));
+        return { tableData, companyInfo };
+      }
+    }
+  } catch(_) {}
+  return null;
+}
+
+/* ============================================================
+   LIVE SYNC: SSE (instant) + polling fallback (every 8 s)
+   On startup: tries SSE first. If SSE returns 404 (old server
+   build), falls back to polling automatically. The backend pill
+   shows 'Live Sync' (SSE) or 'Auto-Sync' (polling).
+============================================================ */
+let _sseSource  = null;
+let _pollTimer  = null;
+let _pollActive = false;
+let _lastSavedAt = null;
+
+async function _applyFreshData(fresh) {
+  if (!fresh || !fresh.tableData) return;
+  const tableBody = document.getElementById('tableBody');
+  if (!tableBody) return;
+  tableBody.innerHTML = '';
+  (fresh.tableData || []).forEach(rowData => {
+    addNewRow();
+    const row = tableBody.lastElementChild;
+    if (!row) return;
+    const set = (sel, val) => { const el = row.querySelector(sel); if (el) el.value = val ?? ''; };
+    set('.employee-tin',     rowData.tin);
+    set('.last-name',        rowData.lastName);
+    set('.first-name',       rowData.firstName);
+    set('.middle-name',      rowData.middleName);
+    set('.daily-rate',       rowData.dailyRate);
+    set('.basic-salary',     rowData.basicSalary);
+    set('.allowances',       rowData.allowances);
+    set('.de-minimis',       rowData.deMinimis);
+    set('.thirteenth-month', rowData.thirteenthMonth);
+    set('.sss-share',        rowData.sssShare);
+    set('.philhealth-share', rowData.philhealthShare);
+    set('.pagibig-share',    rowData.pagibigShare);
+    set('.exemption-amount', rowData.exemptionAmount);
+    updateCalculations(row);
+  });
+  updateRowCount(); updateTotals(); updateSummaryRow(); renderCurrentPage();
+  loadCompanyInfo();
+}
+
+// ---- SSE (instant push when server supports it) ----
+function connectSSE() {
+  if (!USE_API || !authToken) return;
+  if (_sseSource) { try { _sseSource.close(); } catch(e) {} _sseSource = null; }
+  const url = `${API_BASE}/monthly-compensation/stream`
+            + `?token=${encodeURIComponent(authToken)}`
+            + `&role=${encodeURIComponent(_apiRole())}`;
+  _sseSource = new EventSource(url);
+  _sseSource.addEventListener('connected', () => {
+    stopPolling();
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) pill.className = 'backend-pill online';
+    if (text) text.textContent = 'Live Sync';
+  });
+  _sseSource.addEventListener('update', async (e) => {
+    try {
+      const evt = JSON.parse(e.data);
+      if (evt.year !== _apiYear() || evt.month !== _apiMonth()) return;
+      const fresh = await loadFromApi();
+      if (!fresh) return;
+      await _applyFreshData(fresh);
+    } catch(err) { console.error('SSE update error', err); }
+  });
+  _sseSource.onerror = () => {
+    try { _sseSource.close(); } catch(e) {}
+    _sseSource = null;
+    if (!_pollActive) startPolling();   // SSE failed -> fall back to polling
+    setTimeout(connectSSE, 30000);       // retry SSE after 30 s
+  };
+}
+
+// ---- Polling fallback (every 8 s, checks saved_at for changes) ----
+async function _pollTick() {
+  if (!USE_API || !authToken) return;
+  try {
+    const r = await fetch(
+      `${API_BASE}/monthly-compensation/${_apiYear()}/${String(_apiMonth()).padStart(2,'0')}`
+      + `?role=${encodeURIComponent(_apiRole())}`,
+      { headers: apiHeaders() }
+    );
+    if (!r.ok) return;
+    const d = await r.json();
+    const savedAt = d.saved_at || d.savedAt || null;
+    if (savedAt && savedAt !== _lastSavedAt) {
+      const wasNull = (_lastSavedAt === null);
+      _lastSavedAt = savedAt;
+      if (!wasNull) {  // skip reload on very first tick (already loaded)
+        const fresh = await loadFromApi();
+        if (fresh) {
+          await _applyFreshData(fresh);
+        }
+      }
+    }
+  } catch(_) {}
+}
+
+function startPolling() {
+  if (_pollTimer) return;
+  _pollActive = true;
+  const pill = document.getElementById('backendPill');
+  const text = document.getElementById('backendPillText');
+  if (pill) pill.className = 'backend-pill online';
+  if (text) text.textContent = 'Auto-Sync';
+  _pollTick();
+  _pollTimer = setInterval(_pollTick, 8000);
+}
+
+function stopPolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+  _pollActive = false;
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_sseSource) { try { _sseSource.close(); } catch(e) {} }
+  stopPolling();
+});
 
 // ===== LONG PRESS FUNCTIONALITY =====
 let longPressTimer = null;
@@ -1694,8 +2053,8 @@ function initEntryCounterLongPress() {
 
 // ===== COMPANY INFO FUNCTIONS =====
 function loadCompanyInfo() {
-    // Load company info from localStorage
-    const savedInfo = localStorage.getItem('companyInfo');
+    // Load company info from localStorage (key scoped per month when monthly context is active)
+    const savedInfo = localStorage.getItem(getActiveCompanyKey());
     if (savedInfo) {
         const companyInfo = JSON.parse(savedInfo);
         document.getElementById('companyName').value = companyInfo.companyName || '';
@@ -1720,7 +2079,7 @@ function saveCompanyInfo() {
         authorizedEmployee: document.getElementById('authorizedEmployee').value,
         email: document.getElementById('email').value
     };
-    localStorage.setItem('companyInfo', JSON.stringify(companyInfo));
+    localStorage.setItem(getActiveCompanyKey(), JSON.stringify(companyInfo));
 }
 
 // Add auto-save functionality
@@ -1738,7 +2097,35 @@ function initCompanyInfoAutoSave() {
 }
 
 // ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Backend health check + auth token
+    await checkBackend();
+
+    // Identity badges (sub-admin / client)
+    initIdentityBadges();
+
+    // Monthly context badge + subtitle
+    if (IS_MONTHLY) {
+      const ctxBadge = document.getElementById('monthlyContextBadge');
+      const ctxLabel = document.getElementById('monthlyContextLabel');
+      if (ctxBadge) { ctxBadge.classList.remove('hidden'); }
+      if (ctxLabel) { ctxLabel.textContent = MONTHLY_CTX.label || `${MONTHLY_CTX.month}/${MONTHLY_CTX.year}`; }
+      const headerP = document.querySelector('.header-text p');
+      if (headerP) headerP.textContent = `Monthly Record — ${MONTHLY_CTX.label || ''}`;
+
+      // Try to load from API first; if available it will repopulate localStorage
+      await loadFromApi();
+      // Seed _lastSavedAt so polling skips a spurious reload on first tick
+      try {
+        const _s = await fetch(
+          `${API_BASE}/monthly-compensation/${_apiYear()}/${String(_apiMonth()).padStart(2,'0')}`
+          + `?role=${encodeURIComponent(_apiRole())}`,
+          { headers: apiHeaders() }
+        );
+        if (_s.ok) { const _sd = await _s.json(); _lastSavedAt = _sd.saved_at || null; }
+      } catch(_) {}
+    }
+
     // Set default date for payroll
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('payrollDate').value = today;
@@ -2068,37 +2455,62 @@ function clearAllData() {
         updateTotals();
         updateSummaryRow();
     }
-    localStorage.removeItem('compensationTableData');
+    localStorage.removeItem(getActiveTableKey());
     renderCurrentPage();
     showToast('All employee data cleared', 'success');
 }
 
 // ===== TABLE AUTOSAVE / AUTOLOAD =====
+// COMP_TABLE_KEY is now dynamic — always call getActiveTableKey() instead of using this const.
+// Kept as a fallback for any legacy references.
 const COMP_TABLE_KEY = 'compensationTableData';
 let autoSaveTimer = null;
 
 function getTableData() {
     const rows = document.querySelectorAll('#tableBody tr');
-    return Array.from(rows).map(row => ({
-        tin:           row.querySelector('.employee-tin')?.value         || '',
-        lastName:      row.querySelector('.last-name')?.value            || '',
-        firstName:     row.querySelector('.first-name')?.value           || '',
-        middleName:    row.querySelector('.middle-name')?.value          || '',
-        dailyRate:     row.querySelector('.daily-rate')?.value           || '',
-        basicSalary:   row.querySelector('.basic-salary')?.value         || '',
-        allowances:    row.querySelector('.allowances')?.value           || '',
-        deMinimis:     row.querySelector('.de-minimis')?.value           || '',
-        thirteenthMonth: row.querySelector('.thirteenth-month')?.value   || '',
-        sssShare:      row.querySelector('.sss-share')?.value            || '',
-        philhealthShare: row.querySelector('.philhealth-share')?.value   || '',
-        pagibigShare:  row.querySelector('.pagibig-share')?.value        || '',
-        exemptionAmount: row.querySelector('.exemption-amount')?.value   || ''
-    }));
+    return Array.from(rows).map(row => {
+        const basicSalary     = parseFloat(row.querySelector('.basic-salary')?.value)     || 0;
+        const allowances      = parseFloat(row.querySelector('.allowances')?.value)       || 0;
+        const deMinimis       = parseFloat(row.querySelector('.de-minimis')?.value)       || 0;
+        const thirteenthMonth = parseFloat(row.querySelector('.thirteenth-month')?.value) || 0;
+        const sssShare        = parseFloat(row.querySelector('.sss-share')?.value)        || 0;
+        const philhealthShare = parseFloat(row.querySelector('.philhealth-share')?.value) || 0;
+        const pagibigShare    = parseFloat(row.querySelector('.pagibig-share')?.value)    || 0;
+        const exemptionAmount = parseFloat(row.querySelector('.exemption-amount')?.value) || 0;
+
+        // Computed totals (mirrors updateCalculations logic)
+        const totalCompensation  = basicSalary + allowances + deMinimis + thirteenthMonth;
+        const totalContributions = sssShare + philhealthShare + pagibigShare;
+        const totalDeduction     = totalContributions;
+        const taxableCompensation = totalCompensation - totalDeduction - exemptionAmount;
+
+        return {
+            tin:              row.querySelector('.employee-tin')?.value       || '',
+            lastName:         row.querySelector('.last-name')?.value          || '',
+            firstName:        row.querySelector('.first-name')?.value         || '',
+            middleName:       row.querySelector('.middle-name')?.value        || '',
+            dailyRate:        row.querySelector('.daily-rate')?.value         || '',
+            basicSalary:      String(basicSalary),
+            allowances:       String(allowances),
+            deMinimis:        String(deMinimis),
+            thirteenthMonth:  String(thirteenthMonth),
+            sssShare:         String(sssShare),
+            philhealthShare:  String(philhealthShare),
+            pagibigShare:     String(pagibigShare),
+            exemptionAmount:  String(exemptionAmount),
+            // Computed — read by monthly_compensation.html calcTotalComp/calcTotalDeductions/calcTotalTaxable
+            totalCompensation:         totalCompensation,
+            totalContributions:        totalContributions,
+            totalDeduction:            totalDeduction,
+            taxableCompensation:       taxableCompensation,
+        };
+    });
 }
 
 function saveTableData() {
     try {
-        localStorage.setItem(COMP_TABLE_KEY, JSON.stringify(getTableData()));
+        const tableData = getTableData();
+        localStorage.setItem(getActiveTableKey(), JSON.stringify(tableData));
         const s = document.getElementById('autosaveStatus');
         const i = document.getElementById('autosaveIndicator');
         if (s) { s.textContent = 'Saved'; }
@@ -2106,6 +2518,10 @@ function saveTableData() {
         setTimeout(() => {
             if (i) i.style.color = 'rgba(255,255,255,.7)';
         }, 1500);
+        // Mirror to API if monthly context is active
+        const companyRaw = localStorage.getItem(getActiveCompanyKey());
+        const companyInfo = companyRaw ? JSON.parse(companyRaw) : {};
+        syncToApi(tableData, companyInfo);
     } catch(e) { /* storage full — fail silently */ }
 }
 
@@ -2119,7 +2535,7 @@ function scheduleAutoSave() {
 }
 
 function loadTableData() {
-    const raw = localStorage.getItem(COMP_TABLE_KEY);
+    const raw = localStorage.getItem(getActiveTableKey());
     if (!raw) return false;
     let rows;
     try { rows = JSON.parse(raw); } catch(e) { return false; }
@@ -2186,7 +2602,7 @@ function updateCalculations(row) {
     if (totalContributionsEl) totalContributionsEl.textContent = totalContributions.toFixed(2);
     
     // Calculate Total Deduction: Total Contributions - De Minimis - 13th Month Pay
-    const totalDeduction = totalContributions - deMinimis - thirteenthMonth;
+    const totalDeduction = totalContributions + deMinimis + thirteenthMonth;
     const totalDeductionEl = row.querySelector('.total-deduction');
     if (totalDeductionEl) totalDeductionEl.textContent = totalDeduction.toFixed(2);
     
@@ -2974,7 +3390,7 @@ function initButtonListeners() {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });
-        localStorage.removeItem('companyInfo');
+        localStorage.removeItem(getActiveCompanyKey());
         showToast('Company information cleared', 'success');
     }
 

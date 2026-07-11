@@ -505,125 +505,118 @@
     <a class="back-link" href="monthly_journal.html"><i class="fas fa-arrow-left"></i> Back to Records</a>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER (shown when VAT sales data found) ─── -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after Sales was auto-filled) ─── -->
 <div class="autofetch-banner hidden" id="autofetchBanner">
-    <i class="fas fa-bolt"></i>
+    <i class="fas fa-check-circle"></i>
     <div>
-        <strong>VAT data available</strong> for <span id="fetchPeriodLabel">—</span> —
+        <strong>Sales auto-filled</strong> for <span id="fetchPeriodLabel">—</span> —
         <span id="fetchSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn btn-amber" id="autoFetchBtn"><i class="fas fa-download"></i> Auto-Fill Sales</button>
         <button class="btn btn-ghost" id="dismissFetchBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER for Purchases (shown when purch data found) ─ -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after Purchases was auto-filled) ─ -->
 <div class="autofetch-banner hidden" id="autofetchPurchBanner" style="background:linear-gradient(135deg,#1a4057,#1e6080);border-bottom-color:#60bffa;">
-    <i class="fas fa-cart-shopping" style="color:#60bffa;"></i>
+    <i class="fas fa-check-circle" style="color:#60bffa;"></i>
     <div>
-        <strong>Purchases data available</strong> for <span id="fetchPurchPeriodLabel">—</span> —
+        <strong>Purchases auto-filled</strong> for <span id="fetchPurchPeriodLabel">—</span> —
         <span id="fetchPurchSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn btn-primary" id="autoFetchPurchBtn" style="background:#1e6080;border-color:#155070;"><i class="fas fa-download"></i> Auto-Fill Purchases</button>
         <button class="btn btn-ghost" id="dismissFetchPurchBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER for Expenses (shown when exp data found) ─── -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after Expenses was auto-filled) ─── -->
 <div class="autofetch-banner hidden" id="autofetchExpBanner" style="background:linear-gradient(135deg,#1a4a2e,#1d6b40);border-bottom-color:#4ade80;">
-    <i class="fas fa-receipt" style="color:#4ade80;"></i>
+    <i class="fas fa-check-circle" style="color:#4ade80;"></i>
     <div>
-        <strong>Expenses data available</strong> for <span id="fetchExpPeriodLabel">—</span> —
+        <strong>Expenses auto-filled</strong> for <span id="fetchExpPeriodLabel">—</span> —
         <span id="fetchExpSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn btn-teal" id="autoFetchExpBtn" style="background:#1d6b40;border-color:#155e33;"><i class="fas fa-download"></i> Auto-Fill Expenses</button>
         <button class="btn btn-ghost" id="dismissFetchExpBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER for CAPEX (shown when capex data found) ─── -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after CAPEX was auto-filled) ─── -->
 <div class="autofetch-banner hidden" id="autofetchCapexBanner" style="background:linear-gradient(135deg,#164e63,#0891b2);border-bottom-color:#67e8f9;">
-    <i class="fas fa-building" style="color:#67e8f9;"></i>
+    <i class="fas fa-check-circle" style="color:#67e8f9;"></i>
     <div>
-        <strong>CAPEX data available</strong> for <span id="fetchCapexPeriodLabel">—</span> —
+        <strong>CAPEX auto-filled</strong> for <span id="fetchCapexPeriodLabel">—</span> —
         <span id="fetchCapexSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn btn-primary" id="autoFetchCapexBtn" style="background:#0891b2;border-color:#0e7490;"><i class="fas fa-download"></i> Auto-Fill CAPEX</button>
         <button class="btn btn-ghost" id="dismissFetchCapexBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER for Taxes & Licenses (shown when taxes data found) ─── -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after Taxes & Licenses was auto-filled) ─── -->
 <div class="autofetch-banner hidden" id="autofetchTaxesBanner" style="background:linear-gradient(135deg,#1e3a5f,#2c5f8a);border-bottom-color:#60a5fa;">
-    <i class="fas fa-landmark" style="color:#60a5fa;"></i>
+    <i class="fas fa-check-circle" style="color:#60a5fa;"></i>
     <div>
-        <strong>Taxes & Licenses data available</strong> for <span id="fetchTaxesPeriodLabel">—</span> —
+        <strong>Taxes & Licenses auto-filled</strong> for <span id="fetchTaxesPeriodLabel">—</span> —
         <span id="fetchTaxesSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn btn-primary" id="autoFetchTaxesBtn" style="background:#2c5f8a;border-color:#1e3a5f;"><i class="fas fa-download"></i> Auto-Fill Taxes & Licenses</button>
         <button class="btn btn-ghost" id="dismissFetchTaxesBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER for Non-VAT Purchases (shown when non-vat purch data found) ─── -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after Non-VAT Purchases was auto-filled) ─── -->
 <div class="autofetch-banner hidden" id="autofetchNonVatPurchBanner" style="background:linear-gradient(135deg,#4c1d95,#6d28d9);border-bottom-color:#a78bfa;">
-    <i class="fas fa-receipt" style="color:#c4b5fd;"></i>
+    <i class="fas fa-check-circle" style="color:#c4b5fd;"></i>
     <div>
-        <strong>Non-VAT Purchases data available</strong> for <span id="fetchNonVatPurchPeriodLabel">—</span> —
+        <strong>Non-VAT Purchases auto-filled</strong> for <span id="fetchNonVatPurchPeriodLabel">—</span> —
         <span id="fetchNonVatPurchSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn" id="autoFetchNonVatPurchBtn" style="background:#1e1b4b;border-color:#312e81;color:white;font-weight:500;"><i class="fas fa-download"></i> Auto-Fill Non-VAT Purchases</button>
         <button class="btn btn-ghost" id="dismissFetchNonVatPurchBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;color:#e9d5ff;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER for Non-VAT Expenses (shown when non-vat exp data found) ─── -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after Non-VAT Expenses was auto-filled) ─── -->
 <div class="autofetch-banner hidden" id="autofetchNonVatExpBanner" style="background:linear-gradient(135deg,#831843,#be185d);border-bottom-color:#f472b6;">
-    <i class="fas fa-receipt" style="color:#f9a8d4;"></i>
+    <i class="fas fa-check-circle" style="color:#f9a8d4;"></i>
     <div>
-        <strong>Non-VAT Expenses data available</strong> for <span id="fetchNonVatExpPeriodLabel">—</span> —
+        <strong>Non-VAT Expenses auto-filled</strong> for <span id="fetchNonVatExpPeriodLabel">—</span> —
         <span id="fetchNonVatExpSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn" id="autoFetchNonVatExpBtn" style="background:#9d174d;border-color:#831843;color:white;font-weight:500;"><i class="fas fa-download"></i> Auto-Fill Non-VAT Expenses</button>
         <button class="btn btn-ghost" id="dismissFetchNonVatExpBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;color:#fce7f3;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<!-- ─── AUTO-FETCH BANNER for Purchase Returns (shown when returns data found) ─── -->
+<!-- ─── AUTO-FETCH CONFIRMATION (shown after Purchase Returns was auto-filled) ─── -->
 <div class="autofetch-banner hidden" id="autofetchReturnsBanner" style="background:linear-gradient(135deg,#065f46,#0d9488);border-bottom-color:#5eead4;">
-    <i class="fas fa-undo-alt" style="color:#5eead4;"></i>
+    <i class="fas fa-check-circle" style="color:#5eead4;"></i>
     <div>
-        <strong>Purchase Returns data available</strong> for <span id="fetchReturnsPeriodLabel">—</span> —
+        <strong>Purchase Returns auto-filled</strong> for <span id="fetchReturnsPeriodLabel">—</span> —
         <span id="fetchReturnsSummaryText">found in database</span>
     </div>
     <div class="fetch-actions">
-        <button class="btn" id="autoFetchReturnsBtn" style="background:#0f766e;border-color:#0d9488;color:white;font-weight:500;"><i class="fas fa-download"></i> Auto-Fill Purchase Returns</button>
         <button class="btn btn-ghost" id="dismissFetchReturnsBtn" style="border-color:rgba(255,255,255,.25);font-size:.7rem;padding:4px 8px;">
             <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
+
 
 <!-- ─── TOOLBAR ──────────────────────────────────────────────── -->
 <div class="toolbar">
@@ -753,6 +746,16 @@
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ================================================================
    GENERAL JOURNAL — Full Backend Integration
    ─────────────────────────────────────────────────────────────────
@@ -773,10 +776,10 @@
 /* ── 1. BACKEND CONFIG ───────────────────────────────────────── */
 const API_BASE = (() => {
     if (window.VAT_API_BASE) return window.VAT_API_BASE;
-    if (window.__TAURI__)    return 'http://localhost:9999/api';
+    if (window.__TAURI__)    return 'http://localhost:8001/api';
     const h = window.location.hostname;
     return (h === 'localhost' || h === '127.0.0.1')
-        ? `${window.location.protocol}//${h}:9999/api`
+        ? `${window.location.protocol}//${h}:8001/api`
         : '/api';
 })();
 
@@ -1372,6 +1375,12 @@ function getPurchaseReturnsApiId() {
     return `returns_${APP_USER_ID}_${APP_ROLE}_general`;
 }
 
+/* ── 23e0. AUTO-FETCH HELPER: fade out a confirmation banner ───── */
+function autoHideBanner(banner, delay = 4500) {
+    if (!banner) return;
+    setTimeout(() => { banner.classList.add('hidden'); }, delay);
+}
+
 /* ── 23e. AUTO-FETCH: TAXES & LICENSES ─────────────────────────── */
 async function checkAutoFetchTaxes() {
     if (srcOf['Taxes and Licenses'] !== 'none') return;
@@ -1385,30 +1394,26 @@ async function checkAutoFetchTaxes() {
     const totalAmount = tableData.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
     const period = IS_MONTHLY ? MONTHLY_CTX.label : 'current session';
     
+    // Apply immediately — no button press required
+    applyTaxesData(tableData, source);
+    showToast(`✔ Taxes & Licenses section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
+    
     let banner = document.getElementById('autofetchTaxesBanner');
-    if (!banner) {
-        // Banner must be added to HTML first
-        return;
-    }
+    if (!banner) return;
     
     document.getElementById('fetchTaxesPeriodLabel').textContent = period;
     document.getElementById('fetchTaxesSummaryText').innerHTML = 
-        `${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · total ₱${fmt(totalAmount)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
+        `Auto-filled — ${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · total ₱${fmt(totalAmount)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
     
     banner.classList.remove('hidden');
-    
     document.getElementById('dismissFetchTaxesBtn').onclick = () => banner.classList.add('hidden');
-    document.getElementById('autoFetchTaxesBtn').onclick = () => {
-        banner.classList.add('hidden');
-        applyTaxesData(tableData, source);
-        showToast(`✔ Taxes & Licenses section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
-    };
+    autoHideBanner(banner);
 }
 
 /* ── 23f. AUTO-FETCH: NON-VAT PURCHASES ─────────────────────────── */
 async function checkAutoFetchNonVatPurchases() {
-    if (srcOf['Purchases'] !== 'none') return;
-    
+    // Guarded by the orchestrator (autoFetchPurchasesAndReturns) so this can
+    // stack on top of VAT Purchases within the same auto-fetch pass.
     const result = await apiLoadNonVatPurchases();
     if (!result) return;
     
@@ -1418,21 +1423,20 @@ async function checkAutoFetchNonVatPurchases() {
     const totalGross = tableData.reduce((s, r) => s + (parseFloat(r.grossPurchases) || 0), 0);
     const period = IS_MONTHLY ? MONTHLY_CTX.label : 'current session';
     
+    // Apply immediately — no button press required
+    applyNonVatPurchasesData(tableData, source);
+    showToast(`✔ Non-VAT Purchases section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
+    
     let banner = document.getElementById('autofetchNonVatPurchBanner');
     if (!banner) return;
     
     document.getElementById('fetchNonVatPurchPeriodLabel').textContent = period;
     document.getElementById('fetchNonVatPurchSummaryText').innerHTML = 
-        `${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
+        `Auto-filled — ${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
     
     banner.classList.remove('hidden');
-    
     document.getElementById('dismissFetchNonVatPurchBtn').onclick = () => banner.classList.add('hidden');
-    document.getElementById('autoFetchNonVatPurchBtn').onclick = () => {
-        banner.classList.add('hidden');
-        applyNonVatPurchasesData(tableData, source);
-        showToast(`✔ Non-VAT Purchases section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
-    };
+    autoHideBanner(banner);
 }
 
 /* ── Apply Non-VAT Purchases data to the Purchases section ─────── */
@@ -1454,8 +1458,8 @@ function applyNonVatPurchasesData(tableData, source) {
 
 /* ── 23g. AUTO-FETCH: NON-VAT EXPENSES ─────────────────────────── */
 async function checkAutoFetchNonVatExpenses() {
-    if (srcOf['Expenses'] !== 'none') return;
-    
+    // Guarded by the orchestrator (autoFetchExpensesGroup) so this can
+    // stack on top of Vatable Expenses within the same auto-fetch pass.
     const result = await apiLoadNonVatExpenses();
     if (!result) return;
     
@@ -1465,21 +1469,20 @@ async function checkAutoFetchNonVatExpenses() {
     const totalGross = tableData.reduce((s, r) => s + (parseFloat(r.grossAmount) || 0), 0);
     const period = IS_MONTHLY ? MONTHLY_CTX.label : 'current session';
     
+    // Apply immediately — no button press required
+    applyNonVatExpensesData(tableData, source);
+    showToast(`✔ Non-VAT Expenses section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
+    
     let banner = document.getElementById('autofetchNonVatExpBanner');
     if (!banner) return;
     
     document.getElementById('fetchNonVatExpPeriodLabel').textContent = period;
     document.getElementById('fetchNonVatExpSummaryText').innerHTML = 
-        `${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
+        `Auto-filled — ${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
     
     banner.classList.remove('hidden');
-    
     document.getElementById('dismissFetchNonVatExpBtn').onclick = () => banner.classList.add('hidden');
-    document.getElementById('autoFetchNonVatExpBtn').onclick = () => {
-        banner.classList.add('hidden');
-        applyNonVatExpensesData(tableData, source);
-        showToast(`✔ Non-VAT Expenses section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
-    };
+    autoHideBanner(banner);
 }
 
 /* ── Apply Non-VAT Expenses data to the Expenses section ─────── */
@@ -1507,8 +1510,8 @@ function applyNonVatExpensesData(tableData, source) {
 
 /* ── 23h. AUTO-FETCH: PURCHASE RETURNS ─────────────────────────── */
 async function checkAutoFetchPurchaseReturns() {
-    if (srcOf['Purchases'] !== 'none') return;
-    
+    // Guarded by the orchestrator (autoFetchPurchasesAndReturns) so this can
+    // stack on top of VAT/Non-VAT Purchases within the same auto-fetch pass.
     const result = await apiLoadPurchaseReturns();
     if (!result) return;
     
@@ -1518,21 +1521,20 @@ async function checkAutoFetchPurchaseReturns() {
     const totalGross = tableData.reduce((s, r) => s + (parseFloat(r.grossReturns) || 0), 0);
     const period = IS_MONTHLY ? MONTHLY_CTX.label : 'current session';
     
+    // Apply immediately — no button press required
+    applyPurchaseReturnsData(tableData, source);
+    showToast(`✔ Purchase Returns section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
+    
     let banner = document.getElementById('autofetchReturnsBanner');
     if (!banner) return;
     
     document.getElementById('fetchReturnsPeriodLabel').textContent = period;
     document.getElementById('fetchReturnsSummaryText').innerHTML = 
-        `${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross returns ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
+        `Auto-filled — ${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross returns ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
     
     banner.classList.remove('hidden');
-    
     document.getElementById('dismissFetchReturnsBtn').onclick = () => banner.classList.add('hidden');
-    document.getElementById('autoFetchReturnsBtn').onclick = () => {
-        banner.classList.add('hidden');
-        applyPurchaseReturnsData(tableData, source);
-        showToast(`✔ Purchase Returns section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
-    };
+    autoHideBanner(banner);
 }
 
 /* ── Apply Purchase Returns data to the Purchases section ─────── */
@@ -2065,19 +2067,17 @@ async function checkAutoFetch(){
     const grossTotal=tableData.reduce((s,r)=>s+(parseFloat(r.grossSales)||0),0);
     const period=IS_MONTHLY?MONTHLY_CTX.label:'current session';
 
-    document.getElementById('fetchPeriodLabel').textContent=period;
-    document.getElementById('fetchSummaryText').textContent=
-        `${tableData.length} transaction${tableData.length!==1?'s':''} · gross ₱${fmt(grossTotal)} · from ${source==='api'?'SQLite/API':'localStorage'}`;
+    // Apply immediately — no button press required
+    applySalesData(tableData,source);
+    showToast(`✔ Sales section auto-filled from ${source==='api'?'API/SQLite':'localStorage'} (${tableData.length} rows)`,'t-success');
 
     const banner=document.getElementById('autofetchBanner');
+    document.getElementById('fetchPeriodLabel').textContent=period;
+    document.getElementById('fetchSummaryText').textContent=
+        `Auto-filled — ${tableData.length} transaction${tableData.length!==1?'s':''} · gross ₱${fmt(grossTotal)} · from ${source==='api'?'SQLite/API':'localStorage'}`;
     banner.classList.remove('hidden');
-
     document.getElementById('dismissFetchBtn').onclick=()=>banner.classList.add('hidden');
-    document.getElementById('autoFetchBtn').onclick=()=>{
-        banner.classList.add('hidden');
-        applySalesData(tableData,source);
-        showToast(`✔ Sales section auto-filled from ${source==='api'?'API/SQLite':'localStorage'} (${tableData.length} rows)`,'t-success');
-    };
+    autoHideBanner(banner);
 }
 
 /* ── 23b. AUTO-FETCH: Purchases ──────────────────────────────── */
@@ -2091,19 +2091,17 @@ async function checkAutoFetchPurchases(){
     const grossTotal=tableData.reduce((s,r)=>s+(parseFloat(r.grossPurchases)||0),0);
     const period=IS_MONTHLY?MONTHLY_CTX.label:'current session';
 
-    document.getElementById('fetchPurchPeriodLabel').textContent=period;
-    document.getElementById('fetchPurchSummaryText').textContent=
-        `${tableData.length} transaction${tableData.length!==1?'s':''} · gross ₱${fmt(grossTotal)} · from ${source==='api'?'SQLite/API':'localStorage'}`;
+    // Apply immediately — no button press required
+    applyPurchasesAutoData(tableData, source);
+    showToast(`✔ Purchases section auto-filled from ${source==='api'?'API/SQLite':'localStorage'} (${tableData.length} rows)`,'t-success');
 
     const banner=document.getElementById('autofetchPurchBanner');
+    document.getElementById('fetchPurchPeriodLabel').textContent=period;
+    document.getElementById('fetchPurchSummaryText').textContent=
+        `Auto-filled — ${tableData.length} transaction${tableData.length!==1?'s':''} · gross ₱${fmt(grossTotal)} · from ${source==='api'?'SQLite/API':'localStorage'}`;
     banner.classList.remove('hidden');
-
     document.getElementById('dismissFetchPurchBtn').onclick=()=>banner.classList.add('hidden');
-    document.getElementById('autoFetchPurchBtn').onclick=()=>{
-        banner.classList.add('hidden');
-        applyPurchasesAutoData(tableData, source);
-        showToast(`✔ Purchases section auto-filled from ${source==='api'?'API/SQLite':'localStorage'} (${tableData.length} rows)`,'t-success');
-    };
+    autoHideBanner(banner);
 }
 
 /* Compute purchase journal entries from raw vatable_purchases tableData rows. */
@@ -2140,22 +2138,20 @@ async function checkAutoFetchExpenses(){
     const grossTotal=validRows.reduce((s,r)=>s+(parseFloat(r.grossAmount)||0),0);
     const period=IS_MONTHLY?MONTHLY_CTX.label:'current session';
 
-    document.getElementById('fetchExpPeriodLabel').textContent=period;
-    document.getElementById('fetchExpSummaryText').textContent=
-        `${validRows.length} expense${validRows.length!==1?'s':''} · gross ₱${fmt(grossTotal)} · from ${source==='api'?'SQLite/API':'localStorage'}`;
+    // Apply immediately — no button press required
+    applyExpensesAutoData(validRows, source);
+    showToast(
+        `✔ Expenses section auto-filled from ${source==='api'?'API/SQLite':'localStorage'} (${validRows.length} rows)`,
+        't-success'
+    );
 
     const banner=document.getElementById('autofetchExpBanner');
+    document.getElementById('fetchExpPeriodLabel').textContent=period;
+    document.getElementById('fetchExpSummaryText').textContent=
+        `Auto-filled — ${validRows.length} expense${validRows.length!==1?'s':''} · gross ₱${fmt(grossTotal)} · from ${source==='api'?'SQLite/API':'localStorage'}`;
     banner.classList.remove('hidden');
-
     document.getElementById('dismissFetchExpBtn').onclick=()=>banner.classList.add('hidden');
-    document.getElementById('autoFetchExpBtn').onclick=()=>{
-        banner.classList.add('hidden');
-        applyExpensesAutoData(validRows, source);
-        showToast(
-            `✔ Expenses section auto-filled from ${source==='api'?'API/SQLite':'localStorage'} (${validRows.length} rows)`,
-            't-success'
-        );
-    };
+    autoHideBanner(banner);
 }
 
 /* ── 23d. AUTO-FETCH: CAPEX ────────────────────────────────── */
@@ -2172,25 +2168,39 @@ async function checkAutoFetchCapex() {
         (parseFloat(r.nonVatGross) || 0) + (parseFloat(r.vatableGross) || 0), 0);
     const period = IS_MONTHLY ? MONTHLY_CTX.label : 'current session';
     
-    // Create banner elements if not exist (add to HTML first)
     let banner = document.getElementById('autofetchCapexBanner');
-    if (!banner) {
-        // Banner will be added via HTML - see step 4
-        return;
-    }
+    if (!banner) return;
+    
+    // Apply immediately — no button press required
+    applyCapexData(tableData, source);
+    showToast(`✔ CAPEX section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
     
     document.getElementById('fetchCapexPeriodLabel').textContent = period;
     document.getElementById('fetchCapexSummaryText').innerHTML = 
-        `${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
+        `Auto-filled — ${tableData.length} transaction${tableData.length !== 1 ? 's' : ''} · gross ₱${fmt(totalGross)} · from ${source === 'api' ? 'SQLite/API' : 'localStorage'}`;
     
     banner.classList.remove('hidden');
-    
     document.getElementById('dismissFetchCapexBtn').onclick = () => banner.classList.add('hidden');
-    document.getElementById('autoFetchCapexBtn').onclick = () => {
-        banner.classList.add('hidden');
-        applyCapexData(tableData, source);
-        showToast(`✔ CAPEX section auto-filled from ${source === 'api' ? 'API/SQLite' : 'localStorage'} (${tableData.length} rows)`, 't-success');
-    };
+    autoHideBanner(banner);
+}
+
+/* ── 23i. AUTO-FETCH ORCHESTRATORS ─────────────────────────────
+   Purchases (VAT + Non-VAT + Returns) and Expenses (Vatable + Non-VAT)
+   each share a single section, so the sub-checks below are grouped
+   behind one guard and run back-to-back, stacking on top of each
+   other exactly like manually clicking each "Load" button in turn —
+   except it now happens automatically, with no clicks needed.       */
+async function autoFetchPurchasesAndReturns(){
+    if(srcOf['Purchases']!=='none') return;
+    await checkAutoFetchPurchases();        // VAT Purchases
+    await checkAutoFetchNonVatPurchases();  // Non-VAT Purchases (stacks)
+    await checkAutoFetchPurchaseReturns();  // Purchase Returns (stacks)
+}
+
+async function autoFetchExpensesGroup(){
+    if(srcOf['Expenses']!=='none') return;
+    await checkAutoFetchExpenses();         // Vatable Expenses
+    await checkAutoFetchNonVatExpenses();   // Non-VAT Expenses (stacks)
 }
 
 /* Convert raw vatable_expenses tableData rows into the format expected by
@@ -2233,8 +2243,9 @@ function initDropdowns(){
             else if(t==='returns') handleReturns();
             else if(t==='all')     handleLoadAll();
             else if (t === 'autofetch') {
-    // Check VAT Purchases, Non-VAT Purchases, AND Purchase Returns
-    Promise.all([checkAutoFetchPurchases(), checkAutoFetchNonVatPurchases(), checkAutoFetchPurchaseReturns()]).then(() => {
+    // Re-check VAT Purchases, Non-VAT Purchases, AND Purchase Returns
+    // (covers data that became available after the initial page load)
+    autoFetchPurchasesAndReturns().then(() => {
         if (srcOf['Purchases'] === 'none')
             showToast('No Purchases data found for this period.', 't-warning');
     });
@@ -2248,8 +2259,9 @@ function initDropdowns(){
             if(t==='vatable')        pickFile('.exp,.json', f=>processExpenses(f,'vatable'));
             else if(t==='nonvat')    pickFile('.nexp,.json',f=>processExpenses(f,'nonvat'));
             else if (t === 'autofetch') {
-    // Check both Vatable and Non-VAT expenses
-    Promise.all([checkAutoFetchExpenses(), checkAutoFetchNonVatExpenses()]).then(() => {
+    // Re-check both Vatable and Non-VAT expenses
+    // (covers data that became available after the initial page load)
+    autoFetchExpensesGroup().then(() => {
         if (srcOf['Expenses'] === 'none')
             showToast('No Expenses data found for this period.', 't-warning');
     });
@@ -2276,15 +2288,14 @@ window.addEventListener('beforeunload',()=>{
     if(!restored){ recalc(); renderTable(); updateSourceUI(); }
     else if(IS_MONTHLY) showToast(`Loaded journal for ${MONTHLY_CTX.label}`,'t-success');
 
-    /* Step 4: check if VAT sales, purchases AND expenses data exist for this period */
-    await checkAutoFetch();
-    await checkAutoFetchPurchases();
-    await checkAutoFetchExpenses();
+    /* Step 4: auto-fetch and apply available data for this period — fully
+       automatic, no button presses. Each section is skipped if it already
+       has data (manual load or a prior auto-fetch pass). */
+    await checkAutoFetch();               // Sales
+    await autoFetchPurchasesAndReturns(); // Purchases: VAT + Non-VAT + Returns (stacked)
+    await autoFetchExpensesGroup();       // Expenses: Vatable + Non-VAT (stacked)
     await checkAutoFetchCapex();
     await checkAutoFetchTaxes();
-    await checkAutoFetchNonVatPurchases();
-    await checkAutoFetchNonVatExpenses();
-    await checkAutoFetchPurchaseReturns();
 
     /* Step 5: wire up all buttons */
     initDropdowns();

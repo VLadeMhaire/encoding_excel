@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Compensation Records — MGAA System</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue-50:  #EFF6FF; --blue-100: #DBEAFE; --blue-200: #BFDBFE;
+  --blue-300: #93C5FD; --blue-400: #60A5FA; --blue-500: #3B82F6;
+  --blue-600: #2563EB; --blue-700: #1D4ED8; --blue-800: #1E40AF;
+  --blue-900: #1E3A8A; --blue-950: #172554;
+  --gray-50: #F9FAFB;  --gray-100: #F3F4F6; --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB; --gray-400: #9CA3AF; --gray-500: #6B7280;
+  --gray-600: #4B5563; --gray-700: #374151; --gray-800: #1F2937;
+  --gray-900: #111827;
+  --green-50: #F0FDF4; --green-400: #4ADE80; --green-500: #22C55E; --green-700: #15803D;
+  --amber-50: #FFFBEB; --amber-400: #FBBF24; --amber-600: #D97706;
+  --red-50: #FEF2F2; --red-400: #F87171; --red-500: #EF4444;
+  --purple-500: #8B5CF6; --purple-700: #6D28D9;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+  --shadow:    0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,.08), 0 4px 6px rgba(0,0,0,.05);
+  --shadow-xl: 0 20px 40px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.06);
+  --font: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Syne', sans-serif;
+  --tr: 0.22s cubic-bezier(.4,0,.2,1);
+  --topbar-h: 56px;
+}
+
+html, body { height: 100%; overflow: hidden; }
+body { font-family: var(--font); background: var(--gray-100); color: var(--gray-800); display: flex; flex-direction: column; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--gray-100); }
+::-webkit-scrollbar-thumb { background: var(--blue-300); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--blue-500); }
+
+/* ─── TOPBAR ─── */
+.topbar {
+  height: var(--topbar-h); background: var(--blue-900);
+  display: flex; align-items: center; gap: 12px; padding: 0 20px;
+  flex-shrink: 0; box-shadow: var(--shadow-md); z-index: 100;
+}
+.topbar-logo { width: 36px; height: 36px; background: var(--blue-600); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: white; flex-shrink: 0; }
+.topbar-brand { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: white; flex: 1; }
+.topbar-brand span { color: var(--blue-300); }
+.topbar-sub { font-size: 11px; color: var(--blue-300); font-weight: 400; display: block; margin-top: 1px; }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+.topbar-btn { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); border-radius: 7px; padding: 6px 13px; font-size: 12px; color: white; cursor: pointer; transition: var(--tr); font-family: var(--font); text-decoration: none; }
+.topbar-btn:hover { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.3); }
+.topbar-btn i { font-size: 11px; opacity: .85; }
+
+/* ── Backend pill ── */
+.backend-pill { display: flex; align-items: center; gap: 5px; font-size: 10px; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,.15); }
+.backend-pill.online  { background: rgba(34,197,94,.15); color: #86efac; }
+.backend-pill.offline { background: rgba(239,68,68,.15); color: #fca5a5; }
+.backend-pill.checking{ background: rgba(251,191,36,.15); color: #fde68a; }
+.bp-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.online  .bp-dot { background: #22c55e; animation: bpulse 2s infinite; }
+.offline .bp-dot { background: #ef4444; }
+.checking .bp-dot { background: #fbbf24; animation: bpulse 1s infinite; }
+@keyframes bpulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* ── Identity badges (same as vatable_sales.html) ── */
+.identity-strip { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.id-badge { display: flex; align-items: center; gap: 6px; border-radius: 20px; padding: 5px 13px; font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.id-badge i { font-size: 11px; flex-shrink: 0; }
+.id-badge-subadmin { background: rgba(139,92,246,.2); border: 1px solid rgba(139,92,246,.45); color: #c4b5fd; }
+.id-badge-client   { background: rgba(34,197,94,.18);  border: 1px solid rgba(34,197,94,.4);  color: #86efac; }
+.id-badge-sep { font-size: 11px; color: rgba(255,255,255,.3); flex-shrink: 0; }
+
+/* ── Monthly context badge (same as vatable_sales.html) ── */
+.monthly-context-badge { display: flex; align-items: center; gap: 6px; background: rgba(251,191,36,.2); border: 1px solid rgba(251,191,36,.4); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: #fde68a; font-weight: 600; }
+.monthly-context-badge i { font-size: 11px; }
+
+/* ─── LAYOUT ─── */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ─── LEFT PANEL ─── */
+.left-panel {
+  width: 300px; background: white; border-right: 1px solid var(--gray-200);
+  display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+}
+.left-panel-header {
+  padding: 16px 20px 14px; border-bottom: 1px solid var(--gray-100);
+  background: var(--blue-50);
+}
+.left-panel-header h3 {
+  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  color: var(--blue-800); text-transform: uppercase; letter-spacing: 1px;
+  display: flex; align-items: center; gap: 8px;
+}
+.left-panel-header h3 i { color: var(--blue-600); }
+.left-panel-body { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* ─── YEAR NAVIGATOR ─── */
+.year-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--blue-900); color: white; border-radius: 10px; padding: 10px 14px;
+}
+.year-display { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.year-sub { font-size: 10px; color: var(--blue-300); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+.year-btns { display: flex; gap: 6px; }
+.year-nav-btn {
+  width: 30px; height: 30px; background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2); border-radius: 6px;
+  color: white; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; transition: var(--tr);
+}
+.year-nav-btn:hover { background: rgba(255,255,255,.25); }
+
+/* ─── MONTH GRID ─── */
+.month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.month-btn {
+  padding: 10px 6px; border: 1.5px solid var(--gray-100); border-radius: 8px;
+  background: white; cursor: pointer; text-align: center; transition: var(--tr);
+  font-family: var(--font); position: relative; overflow: hidden;
+}
+.month-btn:hover { border-color: var(--blue-300); background: var(--blue-50); transform: translateY(-1px); box-shadow: var(--shadow); }
+.month-btn.selected { border-color: var(--blue-500); background: var(--blue-600); color: white; box-shadow: var(--shadow-md); }
+.month-btn.current-month { border-color: var(--amber-400); }
+.month-btn.has-data::after {
+  content: ''; position: absolute; top: 6px; right: 6px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green-500);
+}
+.month-btn.selected.has-data::after { background: rgba(255,255,255,.9); }
+.month-btn-name { font-size: 12px; font-weight: 600; color: inherit; }
+.month-btn.selected .month-btn-name { color: white; }
+.month-btn-count { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+.month-btn.selected .month-btn-count { color: rgba(255,255,255,.7); }
+
+/* ─── QUICK STATS ─── */
+.quick-stats { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 10px; padding: 12px 14px; }
+.qs-title { font-size: 10px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.qs-title i { color: var(--blue-500); }
+.qs-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; }
+.qs-label { color: var(--gray-500); }
+.qs-value { font-weight: 700; color: var(--gray-800); font-family: monospace; }
+.qs-divider { height: 1px; background: var(--gray-200); margin: 8px 0; }
+
+/* ─── SEARCH ─── */
+.search-box { position: relative; }
+.search-box input { width: 100%; padding: 8px 10px 8px 32px; border: 1.5px solid var(--gray-200); border-radius: 7px; font-family: var(--font); font-size: 12px; color: var(--gray-800); transition: var(--tr); background: var(--gray-50); }
+.search-box input:focus { outline: none; border-color: var(--blue-400); box-shadow: 0 0 0 3px rgba(59,130,246,.1); background: white; }
+.search-box i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 11px; pointer-events: none; }
+
+/* ─── MAIN ─── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+.content-header {
+  background: white; border-bottom: 1px solid var(--gray-200);
+  padding: 14px 24px; display: flex; align-items: center;
+  justify-content: space-between; flex-shrink: 0; box-shadow: var(--shadow-sm);
+}
+.content-header-left h2 { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--blue-900); }
+.content-header-left p { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+.header-actions { display: flex; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; transition: var(--tr); border: 1px solid transparent; white-space: nowrap; text-decoration: none; }
+.btn i { font-size: 11px; }
+.btn-primary { background: var(--blue-600); color: white; border-color: var(--blue-600); }
+.btn-primary:hover { background: var(--blue-700); box-shadow: var(--shadow); }
+.btn-secondary { background: white; color: var(--gray-700); border-color: var(--gray-200); }
+.btn-secondary:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.btn-danger-soft { background: var(--red-50); color: var(--red-500); border-color: #FECACA; }
+.btn-danger-soft:hover { background: #FECACA; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.comp-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(139,92,246,.15); border: 1px solid rgba(139,92,246,.3); color: #c4b5fd; white-space: nowrap; }
+
+.content-body { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ─── MONTH HERO ─── */
+.month-hero {
+  background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-700) 100%);
+  border-radius: 14px; padding: 28px 32px; position: relative; overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+.month-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.month-hero-orb {
+  position: absolute; border-radius: 50%; filter: blur(50px); opacity: .2;
+  width: 280px; height: 280px; background: var(--blue-300); right: -80px; top: -80px;
+  animation: orbDrift 12s ease-in-out infinite;
+}
+@keyframes orbDrift { 0%,100%{transform:translate(0,0)} 50%{transform:translate(15px,20px)} }
+.month-hero-content { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.month-hero-badge { font-size: 10px; font-weight: 700; color: var(--blue-300); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.month-hero-title { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; color: white; line-height: 1; letter-spacing: -1px; margin-bottom: 6px; }
+.month-hero-sub { font-size: 13px; color: rgba(255,255,255,.6); }
+.month-hero-stats { display: flex; gap: 24px; }
+.hero-stat { text-align: right; }
+.hero-stat-value { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: white; }
+.hero-stat-label { font-size: 10px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .8px; margin-top: 2px; }
+.month-hero-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hero-open-btn {
+  background: white; color: var(--blue-800); border: none;
+  border-radius: 9px; padding: 11px 24px; font-family: var(--font-display);
+  font-size: 14px; font-weight: 800; cursor: pointer; transition: var(--tr);
+  display: flex; align-items: center; gap: 8px; letter-spacing: -.2px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+.hero-open-btn:hover { background: var(--blue-50); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.hero-open-btn i { color: var(--blue-600); }
+.hero-export-btn {
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  color: white; border-radius: 9px; padding: 10px 18px;
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: var(--tr); display: flex; align-items: center; gap: 7px;
+}
+.hero-export-btn:hover { background: rgba(255,255,255,.22); }
+
+/* ─── STATUS BADGE ─── */
+.status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+.status-active { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+.status-empty  { background: rgba(255,255,255,.1); color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.15); }
+
+/* ─── RECORDS GRID ─── */
+.section-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+.section-title i { color: var(--blue-500); }
+.records-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.record-card {
+  background: white; border: 1.5px solid var(--gray-200); border-radius: 11px;
+  padding: 16px; cursor: pointer; transition: var(--tr); position: relative;
+}
+.record-card:hover { border-color: var(--blue-300); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.record-card.selected-card { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+.record-card.has-data-card { border-left: 4px solid var(--green-500); }
+.record-card.empty-card { border-left: 4px solid var(--gray-200); opacity: .7; }
+.record-card.empty-card:hover { opacity: 1; }
+.record-card-month { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--blue-900); margin-bottom: 4px; }
+.record-card-year { font-size: 11px; color: var(--gray-400); font-weight: 500; }
+.record-card-rows { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--gray-600); margin-top: 10px; }
+.record-card-rows i { color: var(--blue-400); font-size: 11px; }
+.record-card-gross { font-size: 13px; font-weight: 700; color: var(--gray-800); font-family: monospace; margin-top: 4px; }
+.record-card-amounts { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; }
+.record-card-basic { font-size: 11px; color: var(--gray-500); font-family: monospace; display: flex; justify-content: space-between; gap: 8px; }
+.record-card-basic .rc-amt-label { color: var(--gray-400); font-family: var(--font); }
+.record-card-gross-row { font-size: 13px; font-weight: 700; color: var(--gray-800); font-family: monospace; display: flex; justify-content: space-between; gap: 8px; }
+.record-card-gross-row .rc-amt-label { font-size: 11px; font-weight: 500; color: var(--gray-400); font-family: var(--font); }
+.record-card-date { font-size: 10px; color: var(--gray-400); margin-top: 6px; }
+.record-card-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; transition: var(--tr); z-index: 10; pointer-events: none; }
+.record-card:hover .record-card-actions { opacity: 1; pointer-events: all; }
+.record-card.has-data-card .record-card-actions { opacity: 0.35; pointer-events: all; }
+.record-card.has-data-card:hover .record-card-actions { opacity: 1; }
+.rc-action-btn { background: white; border: 1px solid var(--gray-200); border-radius: 5px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--gray-500); transition: var(--tr); }
+.rc-action-btn:hover { background: var(--red-50); border-color: #FECACA; color: var(--red-500); }
+.rc-action-btn.open-btn:hover { background: var(--blue-50); border-color: var(--blue-200); color: var(--blue-600); }
+.record-card-new { border-style: dashed; border-color: var(--blue-200); background: var(--blue-50); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 110px; }
+.record-card-new i { font-size: 20px; color: var(--blue-300); margin-bottom: 6px; }
+.record-card-new span { font-size: 12px; color: var(--blue-500); font-weight: 500; }
+
+/* ─── YEAR TIMELINE ─── */
+.timeline-row { display: flex; gap: 4px; align-items: stretch; overflow-x: auto; padding-bottom: 4px; }
+.timeline-month {
+  flex-shrink: 0; width: 56px; border-radius: 8px; padding: 8px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; transition: var(--tr); border: 1.5px solid var(--gray-200);
+  background: white; position: relative;
+}
+.timeline-month:hover { border-color: var(--blue-400); transform: translateY(-2px); box-shadow: var(--shadow); }
+.timeline-month.tm-selected { border-color: var(--blue-500); background: var(--blue-600); }
+.timeline-month.tm-has-data { border-bottom: 3px solid var(--green-500); }
+.timeline-month.tm-selected.tm-has-data { border-bottom-color: rgba(255,255,255,.6); }
+.tm-abbr { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); }
+.timeline-month.tm-selected .tm-abbr { color: rgba(255,255,255,.7); }
+.tm-bar { width: 6px; border-radius: 3px; background: var(--gray-200); min-height: 20px; max-height: 50px; transition: var(--tr); }
+.timeline-month.tm-has-data .tm-bar { background: var(--green-400); }
+.timeline-month.tm-selected .tm-bar { background: rgba(255,255,255,.3); }
+.timeline-month.tm-selected.tm-has-data .tm-bar { background: rgba(255,255,255,.7); }
+.tm-label { font-size: 9px; color: var(--gray-400); text-align: center; }
+.timeline-month.tm-selected .tm-label { color: rgba(255,255,255,.6); }
+
+/* ─── EMPTY STATE ─── */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+.empty-state i { font-size: 3rem; display: block; margin-bottom: 14px; opacity: .3; }
+.empty-state h3 { font-family: var(--font-display); font-size: 1.1rem; color: var(--gray-500); margin-bottom: 6px; }
+.empty-state p { font-size: 13px; }
+
+/* ─── TOAST ─── */
+.toast { position: fixed; bottom: 20px; right: 20px; background: white; border: 1px solid var(--gray-200); border-left: 4px solid var(--blue-500); border-radius: 8px; padding: 10px 16px; font-size: 13px; color: var(--gray-700); box-shadow: var(--shadow-lg); z-index: 9999; animation: toastIn .2s ease; pointer-events: none; }
+.toast.success { border-left-color: var(--green-500); }
+.toast.error   { border-left-color: var(--red-500); }
+.toast.warning { border-left-color: var(--amber-400); }
+@keyframes toastIn { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
+.toast.out { opacity: 0; transform: translateY(8px); transition: .25s; }
+
+/* ─── CONFIRM MODAL ─── */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 9000; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.modal-backdrop.show { opacity: 1; pointer-events: all; }
+.modal { background: white; border-radius: 14px; width: 90%; max-width: 400px; box-shadow: var(--shadow-xl); transform: translateY(20px) scale(.97); transition: transform .2s; overflow: hidden; }
+.modal-backdrop.show .modal { transform: translateY(0) scale(1); }
+.modal-header { padding: 20px 24px 0; }
+.modal-header h3 { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--gray-900); display: flex; align-items: center; gap: 8px; }
+.modal-body { padding: 12px 24px; font-size: 13px; color: var(--gray-600); }
+.modal-footer { padding: 16px 24px 20px; display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ─── OPEN OVERLAY ─── */
+.open-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9500; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.open-overlay.show { opacity: 1; pointer-events: all; }
+.open-card { background: white; border-radius: 16px; padding: 32px; max-width: 420px; width: 92%; box-shadow: var(--shadow-xl); transform: scale(.95); transition: transform .25s; text-align: center; }
+.open-overlay.show .open-card { transform: scale(1); }
+.open-icon { width: 64px; height: 64px; background: var(--blue-50); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.open-icon i { font-size: 28px; color: var(--blue-600); }
+.open-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--blue-900); margin-bottom: 8px; }
+.open-sub { font-size: 13px; color: var(--gray-500); margin-bottom: 20px; line-height: 1.5; }
+.open-meta { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; text-align: left; }
+.open-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; }
+.open-meta-row:last-child { margin-bottom: 0; }
+.open-meta-label { color: var(--gray-500); font-weight: 500; }
+.open-meta-value { color: var(--gray-800); font-weight: 700; font-family: monospace; }
+.open-actions { display: flex; gap: 10px; justify-content: center; }
+.open-cancel-btn { background: white; color: var(--gray-600); border: 1px solid var(--gray-200); border-radius: 8px; padding: 9px 18px; font-size: 13px; cursor: pointer; font-family: var(--font); transition: var(--tr); display: flex; align-items: center; gap: 6px; }
+.open-cancel-btn:hover { background: var(--gray-50); }
+.open-go-btn { background: var(--blue-600); color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: var(--tr); display: flex; align-items: center; gap: 6px; }
+.open-go-btn:hover { background: var(--blue-700); box-shadow: var(--shadow); }
+
+/* ─── FOOTER ─── */
+.footer { background: var(--blue-900); color: var(--blue-300); text-align: center; padding: 10px 20px; font-size: 11px; flex-shrink: 0; }
+
+@media(max-width: 900px) {
+  .left-panel { position: fixed; left: 0; top: var(--topbar-h); bottom: 0; transform: translateX(-100%); z-index: 200; box-shadow: var(--shadow-lg); transition: transform .25s; width: 280px; }
+  .left-panel.mobile-open { transform: translateX(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo"><i class="fas fa-money-check-alt"></i></div>
+  <div>
+    <div class="topbar-brand">Monthly <span>Compensation</span> Records</div>
+    <span class="topbar-sub" id="topbarSub">Employee Payroll History &amp; Archives</span>
+  </div>
+  <div class="topbar-actions">
+    <div class="backend-pill checking" id="backendPill"><div class="bp-dot"></div><span id="backendPillText">Connecting…</span></div>
+    <!-- Monthly context badge (mirrors vatable_sales.html) -->
+    <div id="monthlyContextBadge" class="monthly-context-badge hidden" style="display:none"><i class="fas fa-calendar-alt"></i><span id="monthlyContextLabel">—</span></div>
+    <!-- Identity strip (same badges as vatable_sales.html) -->
+    <div class="identity-strip" id="identityStrip" style="display:none">
+      <div class="id-badge id-badge-subadmin hidden" id="subAdminBadge"><i class="fas fa-user-shield"></i><span id="subAdminBadgeLabel">—</span></div>
+      <span class="id-badge-sep hidden" id="identitySep">›</span>
+      <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
+    </div>
+    <a href="index2.html" class="topbar-btn"><i class="fas fa-home"></i> Dashboard</a>
+  </div>
+</div>
+
+<div class="layout">
+
+<!-- LEFT PANEL -->
+<div class="left-panel" id="leftPanel">
+  <div class="left-panel-header">
+    <h3><i class="fas fa-sliders"></i> Controls</h3>
+  </div>
+  <div class="left-panel-body">
+
+    <!-- Year Navigator -->
+    <div class="year-nav">
+      <div>
+        <div class="year-display" id="yearDisplay">2026</div>
+        <div class="year-sub">Fiscal Year</div>
+      </div>
+      <div class="year-btns">
+        <button class="year-nav-btn" id="yearPrevBtn" title="Previous year"><i class="fas fa-chevron-left"></i></button>
+        <button class="year-nav-btn" id="yearTodayBtn" title="Current year"><i class="fas fa-crosshairs"></i></button>
+        <button class="year-nav-btn" id="yearNextBtn" title="Next year"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Month Grid -->
+    <div class="month-grid" id="monthGrid"></div>
+
+    <!-- Quick Stats (compensation-specific) -->
+    <div class="quick-stats">
+      <div class="qs-title"><i class="fas fa-chart-bar"></i> Year Summary</div>
+      <div class="qs-row"><span class="qs-label">Months with data</span><span class="qs-value" id="qsActiveMonths">—</span></div>
+      <div class="qs-row"><span class="qs-label">Total employees</span><span class="qs-value" id="qsTotalEntries">—</span></div>
+      <div class="qs-divider"></div>
+      <div class="qs-row"><span class="qs-label">Total Compensation (YTD)</span><span class="qs-value" id="qsGross">—</span></div>
+      <div class="qs-row"><span class="qs-label">Total Deductions (YTD)</span><span class="qs-value" id="qsNet">—</span></div>
+      <div class="qs-row"><span class="qs-label">Total Taxable (YTD)</span><span class="qs-value" id="qsTax">—</span></div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" placeholder="Search month or year…">
+    </div>
+
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="content-header">
+    <div class="content-header-left">
+      <h2 id="contentTitle">Monthly Compensation Records</h2>
+      <p id="contentSub">Select a month to view or open its Compensation Tracker</p>
+    </div>
+    <div class="header-actions">
+      <span class="comp-badge"><i class="fas fa-money-check-alt"></i> Payroll Data</span>
+      <button class="btn btn-secondary" id="exportYearBtn"><i class="fas fa-download"></i> Export Year</button>
+      <button class="btn btn-primary" id="openSelectedBtn" disabled><i class="fas fa-external-link-alt"></i> Open Selected</button>
+    </div>
+  </div>
+
+  <div class="content-body" id="contentBody">
+
+    <!-- Month Hero -->
+    <div id="monthHeroWrap" style="display:none">
+      <div class="month-hero">
+        <div class="month-hero-orb"></div>
+        <div class="month-hero-content">
+          <div class="month-hero-left">
+            <div class="month-hero-badge"><i class="fas fa-calendar-check"></i> Selected Period</div>
+            <div class="month-hero-title" id="heroMonthTitle">—</div>
+            <div class="month-hero-sub" id="heroMonthSub">No payroll data yet for this period</div>
+            <div style="margin-top:12px">
+              <span class="status-badge" id="heroStatusBadge">
+                <i class="fas fa-circle" style="font-size:7px"></i> <span>Empty</span>
+              </span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px;align-items:flex-end">
+            <div class="month-hero-stats" id="heroStats">
+              <div class="hero-stat"><div class="hero-stat-value" id="heroRows">0</div><div class="hero-stat-label">Employees</div></div>
+              <div class="hero-stat"><div class="hero-stat-value" id="heroGross">₱0</div><div class="hero-stat-label">Total Comp.</div></div>
+              <div class="hero-stat"><div class="hero-stat-value" id="heroTax">₱0</div><div class="hero-stat-label">Taxable</div></div>
+            </div>
+            <div class="month-hero-actions">
+              <button class="hero-export-btn" id="heroExportBtn"><i class="fas fa-file-excel"></i> Export Month</button>
+              <button class="hero-open-btn" id="heroOpenBtn">
+                <i class="fas fa-external-link-alt"></i> Open in Compensation Tracker
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Bar -->
+    <div>
+      <div class="section-title" style="margin-bottom:10px"><i class="fas fa-chart-gantt"></i> Year Timeline — <span id="timelineYear">2026</span></div>
+      <div class="timeline-row" id="timelineRow"></div>
+    </div>
+
+    <!-- Records Grid -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="section-title"><i class="fas fa-folder-open"></i> All Compensation Records</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-secondary" id="viewAllYearsBtn"><i class="fas fa-layer-group"></i> All Years</button>
+          <button class="btn btn-sm btn-secondary" id="sortBtn"><i class="fas fa-sort"></i> Newest First</button>
+        </div>
+      </div>
+      <div class="records-grid" id="recordsGrid"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">© 2026 MGAA Monthly Compensation Records &nbsp;·&nbsp; Professional Employee Payroll Tracking System</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-backdrop" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header"><h3><i class="fas fa-exclamation-triangle" style="color:var(--red-500)"></i> Confirm Action</h3></div>
+    <div class="modal-body" id="confirmModalBody">Are you sure?</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="window.closeConfirm()">Cancel</button>
+      <button class="btn btn-danger-soft" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- OPEN MONTH OVERLAY -->
+<div class="open-overlay" id="openOverlay">
+  <div class="open-card">
+    <div class="open-icon"><i class="fas fa-folder-open"></i></div>
+    <div class="open-title" id="overlayTitle">Open Compensation Tracker</div>
+    <div class="open-sub">You are about to open the Compensation Tracker for this period. Your existing payroll data for this month will be loaded automatically.</div>
+    <div class="open-meta">
+      <div class="open-meta-row"><span class="open-meta-label">Period</span><span class="open-meta-value" id="overlayPeriod">—</span></div>
+      <div class="open-meta-row"><span class="open-meta-label">Employees</span><span class="open-meta-value" id="overlayEntries">—</span></div>
+      <div class="open-meta-row"><span class="open-meta-label">Storage Key</span><span class="open-meta-value" id="overlayKey" style="font-size:10px">—</span></div>
+    </div>
+    <div class="open-actions">
+      <button class="open-cancel-btn" onclick="closeOpenOverlay()"><i class="fas fa-times"></i> Cancel</button>
+      <button class="open-go-btn" id="overlayGoBtn"><i class="fas fa-external-link-alt"></i> Open Tracker</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
+'use strict';
+/* ============================================================
+   MONTHS
+============================================================ */
+const MONTHS      = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ============================================================
+   BACKEND CONFIG  (mirrors vatable_sales.html / monthly_record.html)
+============================================================ */
+const API_BASE = (() => {
+  if (window.VAT_API_BASE) return window.VAT_API_BASE;
+  if (window.__TAURI__) return 'http://localhost:8001/api';
+  return (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
+    : '/api';
+})();
+
+let USE_API = false;
+let authToken = null;
+
+/* ============================================================
+   ROLE & USER ID
+============================================================ */
+const APP_ROLE = (function(){
+  const p = window.location.pathname;
+  if (p.includes('/Client/'))    return 'Client';
+  if (p.includes('/Sub-Admin/')) return 'SubAdmin';
+  return 'Main';
+})();
+
+const APP_USER_ID = (function(){
+  try {
+    const s = sessionStorage.getItem('VAT_SESSION');
+    if (s) {
+      const parsed = JSON.parse(s);
+      return parsed.id || parsed.sub || parsed.user_id || 'anon';
+    }
+  } catch(e) {}
+  return 'anon';
+})();
+
+/* ============================================================
+   STORAGE KEY HELPERS
+   Key format mirrors monthly_record.html so cross-page data is consistent.
+   Prefix: COMP_MONTHLY_  (distinct from VAT_MONTHLY_ to avoid collisions)
+============================================================ */
+function makeStorageKey(year, month) {
+  const m = String(month).padStart(2, '0');
+  return `COMP_MONTHLY_${APP_USER_ID}_${APP_ROLE}_${year}_${m}`;
+}
+function makeMetaKey(year, month) {
+  const m = String(month).padStart(2, '0');
+  return `COMP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_${year}_${m}`;
+}
+
+/* ============================================================
+   IDENTITY / BADGE SETUP  (mirrors vatable_sales.html topbar badges)
+============================================================ */
+function initIdentityBadges() {
+  try {
+    const s = sessionStorage.getItem('VAT_SESSION');
+    if (!s) return;
+    const sess = JSON.parse(s);
+    const role = sess.role || '';
+    const username = sess.username || '';
+
+    const strip = document.getElementById('identityStrip');
+    const subBadge  = document.getElementById('subAdminBadge');
+    const subLabel  = document.getElementById('subAdminBadgeLabel');
+    const clientBadge = document.getElementById('clientBadge');
+    const clientLabel = document.getElementById('clientBadgeLabel');
+    const sep = document.getElementById('identitySep');
+
+    if (role === 'subadmin' || role === 'admin') {
+      strip.style.display = 'flex';
+      subBadge.classList.remove('hidden');
+      subLabel.textContent = username;
+
+      // Check if viewing a client
+      const viewingClient = sessionStorage.getItem('VAT_TRACKER_VIEWING_CLIENT');
+      if (viewingClient) {
+        sep.classList.remove('hidden');
+        clientBadge.classList.remove('hidden');
+        clientLabel.textContent = viewingClient;
+      }
+    } else if (role === 'client') {
+      strip.style.display = 'flex';
+      clientBadge.classList.remove('hidden');
+      clientLabel.textContent = username;
+    }
+  } catch(e) {}
+}
+
+/* ============================================================
+   BACKEND HEALTH
+============================================================ */
+async function checkBackend() {
+  const pill = document.getElementById('backendPill');
+  const text = document.getElementById('backendPillText');
+  try {
+    const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      USE_API = true;
+      pill.className = 'backend-pill online';
+      text.textContent = 'API Online';
+      const session = sessionStorage.getItem('VAT_SESSION');
+      if (session) {
+        try {
+          const s = JSON.parse(session);
+          authToken = s.token || s.access_token || s._token || null;
+        } catch(e) {}
+      }
+      return;
+    }
+  } catch(_) {}
+  USE_API = false;
+  pill.className = 'backend-pill offline';
+  text.textContent = 'Local Mode';
+}
+
+function apiHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (authToken) h['Authorization'] = `Bearer ${authToken}`;
+  return h;
+}
+
+/* ============================================================
+   COMPENSATION META CALCULATIONS
+   Reads tableData from compensation.html's autosave format.
+   Falls back to computing from raw input fields for data saved
+   before the totalCompensation field was added.
+============================================================ */
+function calcTotalComp(tableData) {
+  if (!Array.isArray(tableData)) return 0;
+  return tableData.reduce((s, r) => {
+    const saved = parseFloat(r.totalCompensation) || parseFloat(r.total_compensation) || 0;
+    if (saved) return s + saved;
+    // Fallback: compute from raw fields
+    return s + (parseFloat(r.basicSalary)||0) + (parseFloat(r.allowances)||0)
+             + (parseFloat(r.deMinimis)||0) + (parseFloat(r.thirteenthMonth)||0);
+  }, 0);
+}
+function calcTotalBasic(tableData) {
+  if (!Array.isArray(tableData)) return 0;
+  return tableData.reduce((s, r) => s + (parseFloat(r.basicSalary) || 0), 0);
+}
+function calcTotalDeductions(tableData) {
+  if (!Array.isArray(tableData)) return 0;
+  return tableData.reduce((s, r) => {
+    const saved = parseFloat(r.totalDeduction) || parseFloat(r.total_deduction) || 0;
+    if (saved) return s + saved;
+    // Fallback: compute from raw contribution fields
+    return s + (parseFloat(r.sssShare)||0) + (parseFloat(r.philhealthShare)||0) + (parseFloat(r.pagibigShare)||0);
+  }, 0);
+}
+function calcTotalTaxable(tableData) {
+  if (!Array.isArray(tableData)) return 0;
+  return tableData.reduce((s, r) => {
+    const saved = parseFloat(r.taxableCompensation) || parseFloat(r.taxable_compensation)
+                || parseFloat(r.totalTaxableCompensation) || 0;
+    if (saved) return s + saved;
+    // Fallback: totalComp - totalDeduction - exemption
+    const comp = (parseFloat(r.basicSalary)||0) + (parseFloat(r.allowances)||0)
+               + (parseFloat(r.deMinimis)||0) + (parseFloat(r.thirteenthMonth)||0);
+    const ded  = (parseFloat(r.sssShare)||0) + (parseFloat(r.philhealthShare)||0) + (parseFloat(r.pagibigShare)||0);
+    const ex   = parseFloat(r.exemptionAmount) || parseFloat(r.exemption) || 0;
+    return s + Math.max(0, comp - ded - ex);
+  }, 0);
+}
+
+/* ============================================================
+   LOCAL META SYNC
+   Scans localStorage for COMP_MONTHLY_ keys written by compensation.html
+   and rebuilds meta so month-grid indicators reflect real entry counts.
+============================================================ */
+function syncAllLocalMeta() {
+  const prefix     = `COMP_MONTHLY_${APP_USER_ID}_${APP_ROLE}_`;
+  const metaPrefix = `COMP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+  let changed = false;
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(prefix) || k.startsWith(metaPrefix)) continue;
+
+    const suffix = k.slice(prefix.length); // e.g. "2026_05"
+    const parts  = suffix.split('_');
+    if (parts.length !== 2) continue;
+    const year  = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    if (!year || !month || month < 1 || month > 12) continue;
+
+    let raw;
+    try { raw = JSON.parse(localStorage.getItem(k)); } catch(e) { continue; }
+
+    // Support both { tableData: [...] } and raw array
+    const tableData = raw?.tableData || (Array.isArray(raw) ? raw : null);
+    if (!tableData) continue;
+
+    const metaKey = makeMetaKey(year, month);
+    let existingMeta = null;
+    try { existingMeta = JSON.parse(localStorage.getItem(metaKey)); } catch(e) {}
+
+    const freshRowCount = tableData.length;
+    // Always recalculate totals — existing meta may have zero amounts
+    // from data saved before totalCompensation was included in the row object.
+
+    const totalComp      = calcTotalComp(tableData);
+    const totalBasic     = calcTotalBasic(tableData);
+    const totalDeductions = calcTotalDeductions(tableData);
+    const totalTaxable   = calcTotalTaxable(tableData);
+    const meta = {
+      year, month,
+      rowCount:         freshRowCount,
+      totalComp,
+      totalBasic,
+      totalDeductions,
+      totalTaxable,
+      lastModified:     new Date().toISOString(),
+      companyName:      raw?.companyInfo?.companyName || '',
+      payrollPeriod:    raw?.companyInfo?.payrollPeriod || '',
+    };
+    localStorage.setItem(metaKey, JSON.stringify(meta));
+    changed = true;
+  }
+  return changed;
+}
+
+/* ============================================================
+   DATA LAYER — localStorage + optional API mirror
+   API endpoint: /api/monthly-compensation  (record_type: "monthly-compensation")
+   Falls back gracefully to localStorage when offline.
+============================================================ */
+async function saveMonthData(year, month, dataObj) {
+  const key = makeStorageKey(year, month);
+  const tableData = dataObj.tableData || [];
+  const meta = {
+    year, month,
+    rowCount:         tableData.length,
+    totalComp:        calcTotalComp(tableData),
+    totalBasic:       calcTotalBasic(tableData),
+    totalDeductions:  calcTotalDeductions(tableData),
+    totalTaxable:     calcTotalTaxable(tableData),
+    lastModified:     new Date().toISOString(),
+    companyName:      dataObj.companyInfo?.companyName || '',
+    payrollPeriod:    dataObj.companyInfo?.payrollPeriod || '',
+  };
+  localStorage.setItem(key, JSON.stringify(dataObj));
+  localStorage.setItem(makeMetaKey(year, month), JSON.stringify(meta));
+
+  if (USE_API && authToken) {
+    try {
+      await fetch(`${API_BASE}/monthly-compensation`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ year, month, data: dataObj, meta }),
+      });
+    } catch(_) { /* local fallback already done */ }
+  }
+  return meta;
+}
+
+async function loadMonthData(year, month) {
+  if (USE_API && authToken) {
+    try {
+      const r = await fetch(
+        `${API_BASE}/monthly-compensation/${year}/${String(month).padStart(2,'0')}`,
+        { headers: apiHeaders() }
+      );
+      if (r.ok) {
+        const d = await r.json();
+        localStorage.setItem(makeStorageKey(year, month), JSON.stringify(d.data));
+        localStorage.setItem(makeMetaKey(year, month), JSON.stringify(d.meta));
+        return { data: d.data, meta: d.meta };
+      }
+    } catch(_) {}
+  }
+  const raw     = localStorage.getItem(makeStorageKey(year, month));
+  const metaRaw = localStorage.getItem(makeMetaKey(year, month));
+  if (!raw) return null;
+  try {
+    return { data: JSON.parse(raw), meta: metaRaw ? JSON.parse(metaRaw) : null };
+  } catch(e) { return null; }
+}
+
+async function deleteMonthData(year, month) {
+  localStorage.removeItem(makeStorageKey(year, month));
+  localStorage.removeItem(makeMetaKey(year, month));
+  _metaRequestCache.clear();
+
+  if (USE_API && authToken) {
+    try {
+      await fetch(
+        `${API_BASE}/monthly-compensation/${year}/${String(month).padStart(2,'0')}`,
+        { method: 'DELETE', headers: apiHeaders() }
+      );
+    } catch(_) {}
+  }
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+
+/* ============================================================
+   METADATA FETCH FOR YEAR (with 5-second cache)
+============================================================ */
+let _metaRequestCache = new Map();
+
+async function getAllMonthMetaForYear(year) {
+  const cacheKey = `meta_${year}_${APP_ROLE}`;
+  const now = Date.now();
+  const cached = _metaRequestCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < 5000) return cached.data;
+
+  if (USE_API && authToken) {
+    try {
+      const r = await fetch(
+        `${API_BASE}/monthly-compensation?year=${year}&role=${APP_ROLE}`,
+        { headers: apiHeaders() }
+      );
+      if (r.ok) {
+        const d = await r.json();
+        const result = new Map();
+        for (const rec of (d.records || [])) {
+          const m = rec.month;
+          const meta = rec.meta || {};
+          const apiBasic = parseFloat(rec.totalBasic) || parseFloat(meta.totalBasic) || 0;
+          result.set(m, {
+            year: rec.year, month: m,
+            rowCount:        rec.rowCount        || meta.rowCount        || 0,
+            totalComp:       rec.totalComp       || meta.totalComp       || 0,
+            totalBasic:      apiBasic || getLocalTotalBasic(year, m),
+            totalDeductions: rec.totalDeductions || meta.totalDeductions || 0,
+            totalTaxable:    rec.totalTaxable    || meta.totalTaxable    || 0,
+            lastModified:    rec.saved_at        || meta.lastModified    || '',
+            companyName:     rec.companyName     || meta.companyName     || '',
+          });
+        }
+        // Also merge with localStorage to catch any local-only saves
+        const merged = mergeLocalMeta(year, result);
+        _metaRequestCache.set(cacheKey, { data: merged, timestamp: now });
+        return merged;
+      }
+    } catch(_) {}
+  }
+
+  // Full local fallback
+  const localMeta = buildLocalMetaForYear(year);
+  _metaRequestCache.set(cacheKey, { data: localMeta, timestamp: now });
+  return localMeta;
+}
+
+function buildLocalMetaForYear(year) {
+  const result = new Map();
+  const prefix = `COMP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_${year}_`;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(prefix)) continue;
+    const mm = parseInt(k.slice(prefix.length));
+    if (!mm || mm < 1 || mm > 12) continue;
+    try {
+      const meta = JSON.parse(localStorage.getItem(k));
+      if (meta) {
+        if (!meta.totalBasic) meta.totalBasic = getLocalTotalBasic(year, mm);
+        result.set(mm, meta);
+      }
+    } catch(e) {}
+  }
+  return result;
+}
+
+function getLocalTotalBasic(year, month) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(makeStorageKey(year, month)));
+    const tableData = raw?.tableData || (Array.isArray(raw) ? raw : null);
+    if (tableData) return calcTotalBasic(tableData);
+  } catch (e) {}
+  return 0;
+}
+
+function mergeLocalMeta(year, apiMap) {
+  const localMap = buildLocalMetaForYear(year);
+  const merged = new Map(apiMap);
+  for (const [m, meta] of localMap) {
+    if (!merged.has(m)) merged.set(m, meta);
+  }
+  return merged;
+}
+
+async function getAllStoredYears() {
+  const years = new Set();
+  // Local scan
+  const prefix = `COMP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(prefix)) continue;
+    const rest = k.slice(prefix.length);
+    const yr = parseInt(rest.split('_')[0]);
+    if (yr > 2000 && yr < 2100) years.add(yr);
+  }
+  // API scan
+  if (USE_API && authToken) {
+    try {
+      const r = await fetch(`${API_BASE}/monthly-compensation/years?role=${APP_ROLE}`, { headers: apiHeaders() });
+      if (r.ok) {
+        const d = await r.json();
+        (d.years || []).forEach(y => years.add(y));
+      }
+    } catch(_) {}
+  }
+  return [...years].sort((a, b) => b - a);
+}
+
+/* ============================================================
+   UI STATE
+   Restore previously-viewed year/month when returning from compensation.html.
+   compensation.html sets COMP_MONTHLY_CONTEXT_YEAR/MONTH before navigating
+   away, so we read those back here instead of defaulting to today.
+============================================================ */
+const _returnYear  = parseInt(sessionStorage.getItem('COMP_MONTHLY_CONTEXT_YEAR'))  || 0;
+const _returnMonth = parseInt(sessionStorage.getItem('COMP_MONTHLY_CONTEXT_MONTH')) || 0;
+
+let selectedYear  = (_returnYear  > 2000 && _returnYear  < 2100) ? _returnYear  : new Date().getFullYear();
+let selectedMonth = (_returnMonth >= 1    && _returnMonth <= 12)  ? _returnMonth : new Date().getMonth() + 1;
+let allYearsMeta  = new Map();      // month → meta for selectedYear
+let _isUpdating   = false;
+let _sortNewest   = true;
+let _viewAllYears = false;
+let _searchQuery  = '';
+
+/* ============================================================
+   FORMAT HELPERS
+============================================================ */
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '₱0';
+  if (Math.abs(n) >= 1_000_000) return '₱' + (n / 1_000_000).toFixed(1) + 'M';
+  if (Math.abs(n) >= 1_000)     return '₱' + (n / 1_000).toFixed(1) + 'K';
+  return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function fmtFull(n) {
+  if (isNaN(n)) return '₱0.00';
+  return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }); }
+  catch(e) { return iso.slice(0, 10); }
+}
+
+/* ============================================================
+   MONTH GRID
+============================================================ */
+async function renderMonthGrid() {
+  const grid = document.getElementById('monthGrid');
+  const now  = new Date();
+  const curY = now.getFullYear();
+  const curM = now.getMonth() + 1;
+
+  grid.innerHTML = MONTHS.map((name, i) => {
+    const m    = i + 1;
+    const meta = allYearsMeta.get(m);
+    const hasData     = !!(meta && meta.rowCount > 0);
+    const isCurrent   = selectedYear === curY && m === curM;
+    const isSelected  = m === selectedMonth;
+    const rowCount    = meta?.rowCount || 0;
+
+    let cls = 'month-btn';
+    if (isSelected)  cls += ' selected';
+    if (isCurrent)   cls += ' current-month';
+    if (hasData)     cls += ' has-data';
+
+    return `<button class="${cls}" data-month="${m}">
+      <div class="month-btn-name">${MONTHS_ABBR[i]}</div>
+      <div class="month-btn-count">${hasData ? rowCount + ' emp' : '—'}</div>
+    </button>`;
+  }).join('');
+
+  grid.querySelectorAll('.month-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedMonth = parseInt(btn.dataset.month);
+      renderMonthGrid();
+      renderHero();
+      updateOpenSelectedBtn();
+    });
+  });
+}
+
+/* ============================================================
+   YEAR STATS
+============================================================ */
+async function renderYearStats() {
+  let activeMonths = 0, totalEntries = 0, totalComp = 0, totalDed = 0, totalTax = 0;
+  for (const [, meta] of allYearsMeta) {
+    if (meta && meta.rowCount > 0) {
+      activeMonths++;
+      totalEntries  += meta.rowCount        || 0;
+      totalComp     += meta.totalComp       || 0;
+      totalDed      += meta.totalDeductions || 0;
+      totalTax      += meta.totalTaxable    || 0;
+    }
+  }
+  document.getElementById('qsActiveMonths').textContent = activeMonths || '—';
+  document.getElementById('qsTotalEntries').textContent = totalEntries || '—';
+  document.getElementById('qsGross').textContent = totalComp   ? fmt(totalComp)  : '—';
+  document.getElementById('qsNet').textContent   = totalDed    ? fmt(totalDed)   : '—';
+  document.getElementById('qsTax').textContent   = totalTax    ? fmt(totalTax)   : '—';
+}
+
+/* ============================================================
+   HERO
+============================================================ */
+async function renderHero() {
+  const wrap = document.getElementById('monthHeroWrap');
+  if (!selectedMonth) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  const meta     = allYearsMeta.get(selectedMonth);
+  const hasData  = !!(meta && meta.rowCount > 0);
+  const monthName = `${MONTHS[selectedMonth - 1]} ${selectedYear}`;
+
+  document.getElementById('heroMonthTitle').textContent = monthName;
+  document.getElementById('heroMonthSub').textContent   = hasData
+    ? `${meta.rowCount} employee(s) · Last saved ${fmtDate(meta.lastModified)}`
+    : 'No payroll data yet for this period';
+
+  const badge = document.getElementById('heroStatusBadge');
+  if (hasData) {
+    badge.className = 'status-badge status-active';
+    badge.innerHTML = '<i class="fas fa-circle" style="font-size:7px"></i> <span>Has Data</span>';
+  } else {
+    badge.className = 'status-badge status-empty';
+    badge.innerHTML = '<i class="fas fa-circle" style="font-size:7px"></i> <span>Empty</span>';
+  }
+
+  document.getElementById('heroRows').textContent  = meta?.rowCount   || 0;
+  document.getElementById('heroGross').textContent = meta?.totalComp  ? fmt(meta.totalComp)  : '₱0';
+  document.getElementById('heroTax').textContent   = meta?.totalTaxable ? fmt(meta.totalTaxable) : '₱0';
+
+  document.getElementById('heroOpenBtn').onclick = () => openMonthInTracker(selectedYear, selectedMonth);
+  document.getElementById('heroExportBtn').onclick = () => exportMonthToExcel(selectedYear, selectedMonth);
+}
+
+/* ============================================================
+   TIMELINE
+============================================================ */
+async function renderTimeline() {
+  const row  = document.getElementById('timelineRow');
+  const now  = new Date();
+  const curY = now.getFullYear();
+  const curM = now.getMonth() + 1;
+
+  // Determine max employees for bar scaling
+  let maxRows = 0;
+  for (const [, meta] of allYearsMeta) {
+    if (meta?.rowCount > maxRows) maxRows = meta.rowCount;
+  }
+
+  row.innerHTML = MONTHS.map((name, i) => {
+    const m    = i + 1;
+    const meta = allYearsMeta.get(m);
+    const hasData    = !!(meta && meta.rowCount > 0);
+    const isSelected = m === selectedMonth;
+    const isCurrent  = selectedYear === curY && m === curM;
+    const barH       = hasData && maxRows ? Math.max(12, Math.round((meta.rowCount / maxRows) * 48)) : 12;
+
+    let cls = 'timeline-month';
+    if (isSelected) cls += ' tm-selected';
+    if (hasData)    cls += ' tm-has-data';
+
+    const label = hasData ? fmt(meta.totalComp || 0) : '—';
+    return `<div class="${cls}" data-month="${m}" title="${MONTHS[i]} ${selectedYear}${hasData ? ' — ' + meta.rowCount + ' employees' : ''}">
+      <div class="tm-abbr">${MONTHS_ABBR[i]}</div>
+      <div class="tm-bar" style="height:${barH}px"></div>
+      <div class="tm-label">${label}</div>
+    </div>`;
+  }).join('');
+
+  row.querySelectorAll('.timeline-month').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedMonth = parseInt(el.dataset.month);
+      renderMonthGrid();
+      renderTimeline();
+      renderHero();
+      updateOpenSelectedBtn();
+    });
+    el.addEventListener('dblclick', () => {
+      selectedMonth = parseInt(el.dataset.month);
+      openMonthInTracker(selectedYear, selectedMonth);
+    });
+  });
+
+  document.getElementById('timelineYear').textContent = selectedYear;
+}
+
+/* ============================================================
+   RECORDS GRID
+============================================================ */
+async function renderRecordsGrid() {
+  const grid = document.getElementById('recordsGrid');
+
+  let allRecords = [];
+
+  if (_viewAllYears) {
+    const allYears = await getAllStoredYears();
+    for (const yr of allYears) {
+      let meta;
+      if (yr === selectedYear) {
+        meta = allYearsMeta;
+      } else {
+        meta = await getAllMonthMetaForYear(yr);
+      }
+      for (const [m, rec] of meta) {
+        if (rec && rec.rowCount > 0) allRecords.push({ year: yr, month: m, meta: rec });
+      }
+    }
+  } else {
+    for (const [m, meta] of allYearsMeta) {
+      allRecords.push({ year: selectedYear, month: m, meta });
+    }
+  }
+
+  // Filter by search
+  if (_searchQuery) {
+    const q = _searchQuery.toLowerCase();
+    allRecords = allRecords.filter(r =>
+      MONTHS[r.month - 1].toLowerCase().includes(q) ||
+      String(r.year).includes(q) ||
+      (r.meta?.companyName || '').toLowerCase().includes(q)
+    );
+  }
+
+  // Sort
+  allRecords.sort((a, b) => {
+    const da = a.year * 100 + a.month;
+    const db = b.year * 100 + b.month;
+    return _sortNewest ? db - da : da - db;
+  });
+
+  if (allRecords.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <i class="fas fa-folder-open"></i>
+      <h3>No compensation records yet</h3>
+      <p>Open a month in the Compensation Tracker and enter employee data to see it here.</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = allRecords.map(({ year, month, meta }) => {
+    const hasData = !!(meta && meta.rowCount > 0);
+    const cls = `record-card ${hasData ? 'has-data-card' : 'empty-card'}`;
+    return `<div class="${cls}" data-year="${year}" data-month="${month}">
+      <div class="record-card-actions">
+        <button class="rc-action-btn open-btn" title="Open in Tracker" data-year="${year}" data-month="${month}"><i class="fas fa-external-link-alt"></i></button>
+        <button class="rc-action-btn delete-btn" title="Delete record" data-year="${year}" data-month="${month}"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="record-card-month">${MONTHS[month - 1]}</div>
+      <div class="record-card-year">${year}${meta?.companyName ? ' · ' + meta.companyName : ''}</div>
+      ${hasData ? `
+        <div class="record-card-rows"><i class="fas fa-users"></i>${meta.rowCount} employee${meta.rowCount !== 1 ? 's' : ''}</div>
+        <div class="record-card-amounts">
+          <div class="record-card-basic"><span class="rc-amt-label">Basic Salary</span><span>${fmtFull(meta.totalBasic || 0)}</span></div>
+          <div class="record-card-gross-row"><span class="rc-amt-label">Total Compensation</span><span>${fmtFull(meta.totalComp || 0)}</span></div>
+        </div>
+        <div class="record-card-date">Last saved: ${fmtDate(meta.lastModified)}</div>
+      ` : '<div class="record-card-rows" style="color:var(--gray-400);margin-top:10px"><i class="fas fa-inbox"></i> No data</div>'}
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.record-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.rc-action-btn')) return;
+      const yr = parseInt(card.dataset.year);
+      const mo = parseInt(card.dataset.month);
+      selectedYear  = yr;
+      selectedMonth = mo;
+      refreshYearFromAPI(yr).then(() => {
+        renderMonthGrid();
+        renderTimeline();
+        renderHero();
+        renderYearStats();
+        updateOpenSelectedBtn();
+        document.getElementById('yearDisplay').textContent = yr;
+      });
+    });
+    card.addEventListener('dblclick', e => {
+      if (e.target.closest('.rc-action-btn')) return;
+      openMonthInTracker(parseInt(card.dataset.year), parseInt(card.dataset.month));
+    });
+  });
+
+  grid.querySelectorAll('.open-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openMonthInTracker(parseInt(btn.dataset.year), parseInt(btn.dataset.month));
+    });
+  });
+
+  grid.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const yr = parseInt(btn.dataset.year);
+      const mo = parseInt(btn.dataset.month);
+      confirmDelete(yr, mo);
+    });
+  });
+}
+
+/* ============================================================
+   REFRESH YEAR
+============================================================ */
+async function refreshYearFromAPI(year) {
+  _metaRequestCache.delete(`meta_${year}_${APP_ROLE}`);
+  allYearsMeta = await getAllMonthMetaForYear(year);
+}
+
+/* ============================================================
+   OPEN MONTH IN TRACKER
+   Sets sessionStorage context keys that compensation.html reads
+   on DOMContentLoaded to pre-load the correct month's data.
+============================================================ */
+function openMonthInTracker(year, month) {
+  const storageKey = makeStorageKey(year, month);
+  const meta       = allYearsMeta.get(month);
+  const entries    = meta?.rowCount || 0;
+  const monthLabel = `${MONTHS[month - 1]} ${year}`;
+
+  document.getElementById('overlayTitle').textContent  = `Open ${monthLabel}`;
+  document.getElementById('overlayPeriod').textContent = monthLabel;
+  document.getElementById('overlayEntries').textContent = `${entries} employee${entries !== 1 ? 's' : ''}`;
+  document.getElementById('overlayKey').textContent    = storageKey;
+
+  document.getElementById('overlayGoBtn').onclick = () => {
+    // Set compensation monthly context (mirrors VAT_MONTHLY_CONTEXT_ pattern)
+    sessionStorage.setItem('COMP_MONTHLY_CONTEXT_KEY',   storageKey);
+    sessionStorage.setItem('COMP_MONTHLY_CONTEXT_YEAR',  String(year));
+    sessionStorage.setItem('COMP_MONTHLY_CONTEXT_MONTH', String(month));
+    sessionStorage.setItem('COMP_MONTHLY_CONTEXT_LABEL', monthLabel);
+    sessionStorage.setItem('COMP_MONTHLY_CONTEXT_ROLE',  APP_ROLE);
+    closeOpenOverlay();
+    showToast(`Opening ${monthLabel}…`, 'success');
+    setTimeout(() => { location.href = 'compensation.html'; }, 400);
+  };
+
+  document.getElementById('openOverlay').classList.add('show');
+}
+
+function closeOpenOverlay() {
+  document.getElementById('openOverlay').classList.remove('show');
+}
+
+/* ============================================================
+   EXPORT YEAR TO JSON
+============================================================ */
+async function exportYear() {
+  const allYears = _viewAllYears ? await getAllStoredYears() : [selectedYear];
+  const payload  = {};
+
+  for (const yr of allYears) {
+    const meta = yr === selectedYear ? allYearsMeta : await getAllMonthMetaForYear(yr);
+    const yearData = {};
+    for (const [m, info] of meta) {
+      if (info && info.rowCount > 0) {
+        const d = await loadMonthData(yr, m);
+        if (d) yearData[`${MONTHS[m - 1]}_${yr}`] = d;
+      }
+    }
+    if (Object.keys(yearData).length > 0) Object.assign(payload, yearData);
+  }
+
+  if (Object.keys(payload).length === 0) {
+    showToast('No data to export for this year', 'warning');
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Compensation_Records_${selectedYear}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast(`Exported ${Object.keys(payload).length} month(s)`, 'success');
+}
+
+/* ============================================================
+   EXPORT SINGLE MONTH TO EXCEL
+============================================================ */
+async function exportMonthToExcel(year, month) {
+  const d = await loadMonthData(year, month);
+  if (!d || !d.data?.tableData?.length) {
+    showToast('No data to export for this period', 'warning');
+    return;
+  }
+
+  const rows = d.data.tableData;
+  const company = d.data.companyInfo || {};
+  const monthLabel = `${MONTHS[month - 1]} ${year}`;
+
+  // Build simple HTML table for Excel export
+  const headers = ['Seq','TIN','Last Name','First Name','Middle Name',
+    'Daily Rate','Basic Salary','Allowances','De Minimis','13th Month',
+    'Total Comp.','SSS','PhilHealth','Pag-ibig','Total Contribs.',
+    'Total Deduction','Taxable Comp.','Exemption','Net Taxable'];
+
+  const trs = rows.map((r, i) => `<tr>
+    <td>${i+1}</td>
+    <td>${r.tin||r.tinNumber||''}</td>
+    <td>${r.lastName||''}</td>
+    <td>${r.firstName||''}</td>
+    <td>${r.middleName||''}</td>
+    <td>${r.dailyRate||0}</td>
+    <td>${r.basicSalary||0}</td>
+    <td>${r.allowances||0}</td>
+    <td>${r.deMinimis||0}</td>
+    <td>${r.thirteenthMonth||0}</td>
+    <td>${r.totalCompensation||0}</td>
+    <td>${r.sssShare||r.sss||0}</td>
+    <td>${r.philhealthShare||r.philhealth||0}</td>
+    <td>${r.pagibigShare||r.pagibig||0}</td>
+    <td>${r.totalContributions||0}</td>
+    <td>${r.totalDeduction||0}</td>
+    <td>${r.taxableCompensation||0}</td>
+    <td>${r.exemption||0}</td>
+    <td>${r.netTaxableCompensation||0}</td>
+  </tr>`).join('');
+
+  const html = `<html><head><meta charset="UTF-8"></head><body>
+  <h2>Compensation Report — ${monthLabel}</h2>
+  <p>Company: ${company.companyName||'—'} | TIN: ${company.companyTIN||'—'} | Period: ${company.payrollPeriod||monthLabel}</p>
+  <table border="1">
+    <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${trs}</tbody>
+  </table></body></html>`;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Compensation_${monthLabel.replace(' ','_')}.xls`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast(`Exported ${monthLabel}`, 'success');
+}
+
+/* ============================================================
+   OPEN SELECTED BTN
+============================================================ */
+function updateOpenSelectedBtn() {
+  const btn = document.getElementById('openSelectedBtn');
+  btn.disabled = !selectedMonth;
+  btn.onclick = selectedMonth ? () => openMonthInTracker(selectedYear, selectedMonth) : null;
+}
+
+/* ============================================================
+   DELETE CONFIRM
+============================================================ */
+let _pendingDelete = null;
+function confirmDelete(year, month) {
+  _pendingDelete = { year, month };
+  document.getElementById('confirmModalBody').textContent =
+    `Delete all compensation data for ${MONTHS[month - 1]} ${year}? This cannot be undone.`;
+  document.getElementById('confirmModal').classList.add('show');
+}
+window.closeConfirm = function() {
+  document.getElementById('confirmModal').classList.remove('show');
+  _pendingDelete = null;
+};
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('confirmOkBtn').addEventListener('click', async () => {
+    if (!_pendingDelete) return;
+    const { year, month } = _pendingDelete;
+    window.closeConfirm();
+    await deleteMonthData(year, month);
+    if (year === selectedYear) {
+      allYearsMeta = await getAllMonthMetaForYear(year);
+    }
+    await renderMonthGrid();
+    await renderTimeline();
+    await renderRecordsGrid();
+    await renderYearStats();
+    if (selectedMonth === month) renderHero();
+    showToast(`Deleted ${MONTHS[month - 1]} ${year}`, 'success');
+  });
+});
+
+/* ============================================================
+   TOAST
+============================================================ */
+let _toastTimer = null;
+function showToast(msg, type='info') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
+
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  _toastTimer = setTimeout(() => {
+    t.classList.add('out');
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
+}
+
+/* ============================================================
+   SSE — REAL-TIME SYNC (compensation channel)
+============================================================ */
+let _sseSource = null;
+
+function connectSSE() {
+  if (!USE_API || !authToken) return;
+  if (_sseSource) { try { _sseSource.close(); } catch(e) {} _sseSource = null; }
+
+  const url = `${API_BASE}/monthly-compensation/stream?token=${encodeURIComponent(authToken)}`;
+  _sseSource = new EventSource(url);
+
+  _sseSource.addEventListener('connected', () => {
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) pill.className = 'backend-pill online';
+    if (text) text.textContent = 'Live Sync';
+  });
+
+  _sseSource.addEventListener('update', async (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.year === selectedYear) {
+        _metaRequestCache.delete(`meta_${selectedYear}_${APP_ROLE}`);
+        allYearsMeta = await getAllMonthMetaForYear(selectedYear);
+        await renderMonthGrid();
+        await renderTimeline();
+        await renderRecordsGrid();
+        await renderYearStats();
+        if (data.month === selectedMonth) await renderHero();
+        showToast(`Updated: ${MONTHS[data.month-1]} ${data.year} (${data.rowCount} entries)`, 'success');
+      }
+    } catch(err) { console.error('SSE update error', err); }
+  });
+
+  _sseSource.onerror = () => {
+    try { _sseSource.close(); } catch(e) {}
+    _sseSource = null;
+    setTimeout(connectSSE, 5000);
+  };
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_sseSource) { try { _sseSource.close(); } catch(e) {} }
+});
+
+/* ============================================================
+   COMPENSATION.HTML AUTOSAVE BRIDGE
+   When compensation.html autosaves, it writes to localStorage
+   under its own key (e.g. COMPENSATION_SESSION_TABLE_Main).
+   This bridge detects those writes and mirrors them into the
+   COMP_MONTHLY_ namespace so this page shows correct counts.
+
+   compensation.html sets the COMP_MONTHLY_CONTEXT_* keys before
+   navigating here; we read them back to know which month/year.
+============================================================ */
+function bridgeCompensationAutosave() {
+  window.addEventListener('storage', async (e) => {
+    // Catch compensation.html's sessionStorage writes (tableData changes)
+    if (e.key && (
+      e.key.startsWith('COMPENSATION_SESSION_TABLE_') ||
+      e.key.startsWith('compensationTableData') ||
+      e.key === 'compensationData'
+    )) {
+      // Get the active context
+      const year  = parseInt(sessionStorage.getItem('COMP_MONTHLY_CONTEXT_YEAR'));
+      const month = parseInt(sessionStorage.getItem('COMP_MONTHLY_CONTEXT_MONTH'));
+      if (!year || !month) return;
+
+      // Rebuild meta from the written data
+      syncAllLocalMeta();
+      _metaRequestCache.delete(`meta_${year}_${APP_ROLE}`);
+      if (year === selectedYear) {
+        allYearsMeta = await getAllMonthMetaForYear(year);
+        await renderMonthGrid();
+        await renderTimeline();
+        await renderRecordsGrid();
+        await renderYearStats();
+        if (month === selectedMonth) await renderHero();
+      }
+    }
+
+    // Also catch direct COMP_MONTHLY_ meta writes
+    const metaPrefix = `COMP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_${selectedYear}_`;
+    if (e.key && e.key.startsWith(metaPrefix)) {
+      _metaRequestCache.delete(`meta_${selectedYear}_${APP_ROLE}`);
+      allYearsMeta = await getAllMonthMetaForYear(selectedYear);
+      await renderMonthGrid();
+      await renderTimeline();
+      await renderRecordsGrid();
+      await renderYearStats();
+      if (selectedMonth) await renderHero();
+    }
+  });
+}
+
+/* ============================================================
+   FULL REFRESH
+============================================================ */
+async function fullRefresh() {
+  if (_isUpdating) return;
+  _isUpdating = true;
+  try {
+    allYearsMeta = await getAllMonthMetaForYear(selectedYear);
+    await renderMonthGrid();
+    await renderTimeline();
+    await renderRecordsGrid();
+    await renderYearStats();
+    await renderHero();
+    updateOpenSelectedBtn();
+  } finally {
+    _isUpdating = false;
+  }
+}
+
+/* ============================================================
+   YEAR NAVIGATION
+============================================================ */
+function initYearNav() {
+  document.getElementById('yearPrevBtn').addEventListener('click', async () => {
+    selectedYear--;
+    selectedMonth = null;
+    document.getElementById('yearDisplay').textContent = selectedYear;
+    await fullRefresh();
+  });
+  document.getElementById('yearNextBtn').addEventListener('click', async () => {
+    selectedYear++;
+    selectedMonth = null;
+    document.getElementById('yearDisplay').textContent = selectedYear;
+    await fullRefresh();
+  });
+  document.getElementById('yearTodayBtn').addEventListener('click', async () => {
+    selectedYear  = new Date().getFullYear();
+    selectedMonth = new Date().getMonth() + 1;
+    document.getElementById('yearDisplay').textContent = selectedYear;
+    await fullRefresh();
+  });
+}
+
+/* ============================================================
+   SEARCH
+============================================================ */
+function initSearch() {
+  document.getElementById('searchInput').addEventListener('input', async function() {
+    _searchQuery = this.value.trim();
+    if (_searchQuery) _viewAllYears = true;
+    await renderRecordsGrid();
+  });
+}
+
+/* ============================================================
+   HEADER BUTTONS
+============================================================ */
+function initHeaderButtons() {
+  document.getElementById('exportYearBtn').addEventListener('click', exportYear);
+
+  document.getElementById('viewAllYearsBtn').addEventListener('click', async function() {
+    _viewAllYears = !_viewAllYears;
+    this.innerHTML = _viewAllYears
+      ? '<i class="fas fa-calendar-alt"></i> This Year'
+      : '<i class="fas fa-layer-group"></i> All Years';
+    document.getElementById('contentTitle').textContent = _viewAllYears
+      ? 'All Compensation Records'
+      : 'Monthly Compensation Records';
+    await renderRecordsGrid();
+  });
+
+  document.getElementById('sortBtn').addEventListener('click', async function() {
+    _sortNewest = !_sortNewest;
+    this.innerHTML = _sortNewest
+      ? '<i class="fas fa-sort"></i> Newest First'
+      : '<i class="fas fa-sort"></i> Oldest First';
+    await renderRecordsGrid();
+  });
+}
+
+/* ============================================================
+   DOMContentLoaded — BOOTSTRAP
+============================================================ */
+document.addEventListener('DOMContentLoaded', async () => {
+  initIdentityBadges();
+
+  // Check backend
+  await checkBackend();
+
+  // Sync local meta from any compensation.html sessions
+  syncAllLocalMeta();
+
+  // Render year display (uses restored selectedYear)
+  document.getElementById('yearDisplay').textContent = selectedYear;
+
+  // Clear the context keys so they don't persist to the next page load
+  // (they were already read at top-level to init selectedYear/Month)
+  sessionStorage.removeItem('COMP_MONTHLY_CONTEXT_KEY');
+  sessionStorage.removeItem('COMP_MONTHLY_CONTEXT_YEAR');
+  sessionStorage.removeItem('COMP_MONTHLY_CONTEXT_MONTH');
+  sessionStorage.removeItem('COMP_MONTHLY_CONTEXT_LABEL');
+  sessionStorage.removeItem('COMP_MONTHLY_CONTEXT_ROLE');
+
+  // Init controls
+  initYearNav();
+  initSearch();
+  initHeaderButtons();
+  bridgeCompensationAutosave();
+
+  // Initial full render
+  await fullRefresh();
+
+  // Connect SSE for live sync (when API available)
+  if (USE_API) connectSSE();
+
+  // Update on storage changes from same browser
+  window.addEventListener('storage', () => {
+    syncAllLocalMeta();
+  });
+
+  // Close overlays on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeOpenOverlay();
+      window.closeConfirm();
+    }
+  });
+
+  // Close confirm on backdrop click
+  document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) window.closeConfirm();
+  });
+});
+</script>
+</body>
+</html>

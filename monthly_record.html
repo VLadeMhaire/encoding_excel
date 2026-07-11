@@ -359,8 +359,7 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../index.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
-    <a href="vatable_sales.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
+    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-home"></i>Dashboard</a>
   </div>
@@ -516,14 +515,24 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    SUB-ADMIN CONTEXT
    When monthly_record.html is opened by a sub-admin viewing a
-   client's data (via index.html → openClientMonthReadOnly), the
+   client's data (via bookkeeping.html → openClientMonthReadOnly), the
    portal sets these sessionStorage flags before navigating here.
    We capture them so timeline/card double-click can open
    vatable_sales.html with the same read-only client context that
-   index.html uses — matching mrMakeStorageKey(clientUid, 'Client', …).
+   bookkeeping.html uses — matching mrMakeStorageKey(clientUid, 'Client', …).
 ============================================================ */
 const _saReadOnly      = sessionStorage.getItem('VAT_TRACKER_READONLY') === '1';
 const _saClientName    = sessionStorage.getItem('VAT_TRACKER_VIEWING_CLIENT') || '';
@@ -531,7 +540,7 @@ const _saContextKey    = sessionStorage.getItem('VAT_MONTHLY_CONTEXT_KEY') || ''
 const _saContextRole   = sessionStorage.getItem('VAT_MONTHLY_CONTEXT_ROLE') || '';
 
 // Derive the client uid from the context key.
-// Key format (from index.html mrMakeStorageKey):
+// Key format (from bookkeeping.html mrMakeStorageKey):
 //   VAT_MONTHLY_<clientUid>_<role>_<YYYY>_<MM>
 // We strip the outer parts to extract clientUid.
 const _saClientUid = (() => {
@@ -550,7 +559,7 @@ const _saClientUid = (() => {
  * this page is running in sub-admin (read-only client view) mode or
  * as the client's own monthly_record.html.
  *
- * Sub-admin path: mirrors index.html openClientMonthReadOnly exactly —
+ * Sub-admin path: mirrors bookkeeping.html openClientMonthReadOnly exactly —
  *   uses client uid + 'Client' role for the storage key and sets all
  *   the read-only session flags before navigating to Sub-Admin/vatable_sales.html.
  *
@@ -558,20 +567,20 @@ const _saClientUid = (() => {
  */
 function openMonthInTrackerDirect(year, month) {
   if (_saReadOnly && _saClientUid && _saContextRole) {
-    // Build client's storage key (matches mrMakeStorageKey in index.html)
+    // Build client's storage key (matches mrMakeStorageKey in bookkeeping.html)
     const contextKey = `VAT_MONTHLY_${_saClientUid}_${_saContextRole}_${year}_${String(month).padStart(2,'0')}`;
     const raw = localStorage.getItem(contextKey);
     if (!raw) {
       showToast(`No sales data for ${MONTHS[month-1]} ${year}`, 'warning');
       return;
     }
-    // Set session context exactly as index.html openClientMonthReadOnly does
+    // Set session context exactly as bookkeeping.html openClientMonthReadOnly does
     sessionStorage.setItem('VAT_MONTHLY_CONTEXT_KEY',   contextKey);
     sessionStorage.setItem('VAT_MONTHLY_CONTEXT_YEAR',  String(year));
     sessionStorage.setItem('VAT_MONTHLY_CONTEXT_MONTH', String(month));
     sessionStorage.setItem('VAT_MONTHLY_CONTEXT_ROLE',  _saContextRole);
     sessionStorage.setItem('VAT_MONTHLY_CONTEXT_LABEL', `${MONTHS[month-1]} ${year}${_saClientName ? ' — ' + _saClientName : ''}`);
-    // Full read-only lock (mirrors index.html openClientMonthReadOnly)
+    // Full read-only lock (mirrors bookkeeping.html openClientMonthReadOnly)
     sessionStorage.setItem('VAT_TRACKER_READONLY',      '1');
     sessionStorage.setItem('PURCH_TRACKER_READONLY',    '1');
     sessionStorage.setItem('EXP_TRACKER_READONLY',      '1');
@@ -591,12 +600,12 @@ function openMonthInTrackerDirect(year, month) {
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// Backend detection (mirrors index.html logic)
+// Backend detection (mirrors bookkeeping.html logic)
 const API_BASE = (() => {
   if (window.VAT_API_BASE) return window.VAT_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:8000/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:8000/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -614,7 +623,7 @@ const APP_ROLE = (function(){
 // Resolve the logged-in user account ID from the portal session so each
 // client's data is stored under their own unique key and cannot be read by
 // other clients or the wrong sub-admin.
-// Format must match index.html mrMakeStorageKey: VAT_MONTHLY_${uid}_${role}_${year}_${MM}
+// Format must match bookkeeping.html mrMakeStorageKey: VAT_MONTHLY_${uid}_${role}_${year}_${MM}
 const APP_USER_ID = (function(){
   try {
     const s = sessionStorage.getItem('VAT_SESSION');
@@ -628,7 +637,7 @@ const APP_USER_ID = (function(){
 })();
 
 // Storage key namespace — scoped per user id AND role so each client account
-// gets its own isolated key space (matches index.html mrMakeStorageKey).
+// gets its own isolated key space (matches bookkeeping.html mrMakeStorageKey).
 function makeStorageKey(year, month) {
   const m = String(month).padStart(2, '0');
   return `VAT_MONTHLY_${APP_USER_ID}_${APP_ROLE}_${year}_${m}`;

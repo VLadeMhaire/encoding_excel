@@ -354,7 +354,7 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../index.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
+    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="non_vat_purchases.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-home"></i> Dashboard</a>
@@ -510,6 +510,16 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    CONFIG & CONSTANTS
 ============================================================ */
@@ -518,9 +528,9 @@ const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 
 const API_BASE = (() => {
   if (window.VAT_API_BASE) return window.VAT_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:9999/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:9999/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -1409,11 +1419,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   updateAll();
 
+  // ── Start real-time SSE sync (only when API is online) so the
+  //    "All Purchase Records" cards update live across all browsers/computers
+  //    whenever non_vat_purchases.html saves data — no reopen required.
+  setTimeout(() => {
+    if (USE_API && authToken) {
+      console.log('Starting SSE connection...');
+      connectSSE();
+    } else {
+      console.log('SSE not started - API not ready yet, will retry');
+      setTimeout(() => {
+        if (USE_API && authToken) {
+          connectSSE();
+        } else {
+          console.warn('SSE could not be established - API unavailable');
+        }
+      }, 2000);
+    }
+  }, 500);
+
   // Refresh grid whenever tab becomes visible (picks up changes from other computers)
+  // (browsers close EventSource connections when the tab is backgrounded, so
+  //  also re-connect SSE here in case it dropped.)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       renderRecordsGrid();
       renderYearStats();
+      if (USE_API && !_sseSource) connectSSE();
     }
   });
   window.addEventListener('pageshow', (e) => {
@@ -1421,9 +1453,124 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check for updates first
     checkForDataUpdate();
     updateAll();
+    if (USE_API && !_sseSource) connectSSE();
   }
 });
 });
+
+// Clean up the SSE connection when the tab/window is closed
+window.addEventListener('beforeunload', () => {
+  if (_sseSource) {
+    try { _sseSource.close(); } catch(e) {}
+    _sseSource = null;
+  }
+  if (_sseUpdateTimer) {
+    clearTimeout(_sseUpdateTimer);
+    _sseUpdateTimer = null;
+  }
+});
+
+/* ============================================================
+   REAL-TIME SYNC — Server-Sent Events
+   Mirrors the same pattern used by monthly_record.html (VAT Sales):
+   non_vat_purchases.html already POSTs to /api/monthly-npurch on every
+   save, and the backend broadcasts that save to all subscribers of
+   /api/monthly-npurch/stream. This page subscribes and refreshes the
+   month grid / "All Purchase Records" cards the moment a save arrives —
+   in this browser AND every other open browser/computer — with no need
+   to reopen non_vat_purchases.html anywhere else.
+============================================================ */
+let _sseSource = null;
+let _lastSseUpdate = 0;
+let _sseUpdateTimer = null;
+
+async function processSseUpdate(dataStr) {
+  try {
+    const data = JSON.parse(dataStr);
+
+    // Only refresh the on-screen data if the update is for the year we're viewing
+    if (data.year === selectedYear) {
+      // Force a fresh fetch from the API (bypassing the localStorage-first
+      // shortcut in getAllMonthMetaForYear) so this browser sees the save
+      // that just happened on another computer.
+      await getAllMonthMetaForYear(selectedYear, true);
+
+      if (typeof renderMonthGrid === 'function')   await renderMonthGrid();
+      if (typeof renderTimeline === 'function')    await renderTimeline();
+      if (typeof renderRecordsGrid === 'function') await renderRecordsGrid();
+      if (typeof renderYearStats === 'function')   await renderYearStats();
+
+      // Also refresh the hero panel if the updated month is the one selected
+      if (data.month === selectedMonth && typeof renderHero === 'function') {
+        await renderHero();
+      }
+    }
+    if (typeof showToast === 'function') {
+      showToast(`Updated: ${MONTHS[data.month-1]} ${data.year} (${data.rowCount} entries)`, 'success');
+    }
+  } catch(err) {
+    console.error('SSE: Failed to process update', err);
+  }
+}
+
+function connectSSE() {
+  if (!USE_API) {
+    console.log('SSE: API not available, skipping');
+    return;
+  }
+
+  if (!authToken) {
+    console.log('SSE: No auth token yet, will retry');
+    setTimeout(() => connectSSE(), 2000);
+    return;
+  }
+
+  if (_sseSource) {
+    try { _sseSource.close(); } catch(e) {}
+    _sseSource = null;
+  }
+
+  const url = `${API_BASE}/monthly-npurch/stream?token=${encodeURIComponent(authToken)}`;
+  console.log('SSE: Connecting to', url);
+  _sseSource = new EventSource(url);
+
+  _sseSource.addEventListener('connected', () => {
+    console.log('SSE: Connected successfully');
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) { pill.className = 'backend-pill online'; }
+    if (text) { text.textContent = 'Live Sync'; }
+  });
+
+  _sseSource.addEventListener('update', async (e) => {
+    console.log('SSE: Received update', e.data);
+
+    // Debounce SSE updates - don't process more than one per second
+    const now = Date.now();
+    if (now - _lastSseUpdate < 1000) {
+      console.log('SSE: Debouncing rapid update');
+      if (_sseUpdateTimer) clearTimeout(_sseUpdateTimer);
+      _sseUpdateTimer = setTimeout(async () => {
+        _sseUpdateTimer = null;
+        await processSseUpdate(e.data);
+      }, 1000);
+      return;
+    }
+    _lastSseUpdate = now;
+
+    await processSseUpdate(e.data);
+  });
+
+  _sseSource.onerror = (err) => {
+    console.error('SSE: Connection error', err);
+    if (_sseSource) {
+      try { _sseSource.close(); } catch(e) {}
+      _sseSource = null;
+    }
+    // Retry after 5 seconds
+    setTimeout(() => connectSSE(), 5000);
+  };
+}
 
 /* ============================================================
    FASTAPI CONTRACT (Non-VAT Purchases monthly)

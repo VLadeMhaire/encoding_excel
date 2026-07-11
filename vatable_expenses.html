@@ -204,6 +204,17 @@ table#vatableExpensesTable tfoot .sum-value{font-family:var(--font-mono);font-we
 .field-group input,.field-group select{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--gray-800);background:white;font-family:var(--font);transition:var(--transition)}
 .field-group input:focus,.field-group select:focus{outline:none;border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
 .right-panel-footer{padding:12px 16px;border-top:1px solid var(--gray-100);font-size:10px;color:var(--gray-400)}
+/* ── Save & Submit — company info validation error ── */
+.ss-compinfo-error{background:var(--red-50);border:1px solid var(--red-200);border-radius:8px;padding:14px 16px;margin-bottom:14px;animation:fadeInDown .2s ease;}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ss-compinfo-error-header{display:flex;align-items:center;gap:8px;color:var(--red-700);font-size:13px;margin-bottom:7px;}
+.ss-compinfo-error-header i{font-size:14px;flex-shrink:0;}
+.ss-compinfo-error-msg{font-size:12px;color:var(--red-700);margin-bottom:8px;}
+.ss-compinfo-error-list{list-style:none;padding:0;margin:0 0 12px 0;display:flex;flex-direction:column;gap:4px;}
+.ss-compinfo-error-list li{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--red-700);background:rgba(239,68,68,.08);border-radius:5px;padding:5px 9px;}
+.ss-compinfo-error-list li i{font-size:10px;color:var(--red-500);flex-shrink:0;}
+.ss-compinfo-goto-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:var(--red-500);color:white;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:var(--transition);}
+.ss-compinfo-goto-btn:hover{background:var(--red-700);}
 .col-vis-container{position:relative;display:inline-block}
 .col-vis-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:white;border:1px solid var(--gray-200);border-radius:10px;min-width:230px;z-index:1000;box-shadow:var(--shadow-lg);overflow:hidden;display:none}
 .col-vis-dropdown.open{display:block}
@@ -461,7 +472,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <button class="nav-btn" id="showAllBtn"><i class="fas fa-eye"></i>Show All Sections</button>
     <button class="nav-btn" id="tableFocusBtn"><i class="fas fa-expand"></i>Table Focus Mode</button>
     <div class="nav-divider"></div>
-    <a href="../index.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
+    <a href="../bookkeeping.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
   </div>
   <div class="sidebar-footer">
     <div>MGAA Expenses System v2.0</div>
@@ -521,6 +532,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <table id="vatableExpensesTable">
       <thead>
         <tr>
+          <th data-col="seq" style="width:42px;text-align:center">#</th>
           <th data-col="date">Date</th>
           <th data-col="invoiceNumber">Invoice No.</th>
           <th data-col="invoiceType">Invoice Type</th>
@@ -660,22 +672,49 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 'use strict';
 /* ============================================================
    BACKEND CONFIG
 ============================================================ */
-const API_BASE=((()=>{if(window.VAT_API_BASE)return window.VAT_API_BASE;if(window.__TAURI__)return'http://localhost:9999/api';return(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1')?`${window.location.protocol}//${window.location.hostname}:9999/api`:'/api';})());
+const API_BASE=((()=>{if(window.VAT_API_BASE)return window.VAT_API_BASE;if(window.__TAURI__)return'http://localhost:8001/api';return(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1')?`${window.location.protocol}//${window.location.hostname}:8001/api`:'/api';})());
 let USE_API=false,authToken=null;
 async function checkBackend(){const pill=document.getElementById('backendPill'),text=document.getElementById('backendPillText');try{const r=await fetch(`${API_BASE}/health`,{signal:AbortSignal.timeout(3000)});if(r.ok){USE_API=true;pill.className='backend-pill online';text.textContent='API Online';const s=sessionStorage.getItem('VAT_SESSION');if(s){try{const _p=JSON.parse(s);authToken=_p._token||_p.token||null;window._VAT_USER_ID=_p.id||null;}catch(e){}}return;}}catch(_){}USE_API=false;pill.className='backend-pill offline';text.textContent='Local Mode';}
+// BUG FIX: the suppliers-list init used to run in a DOMContentLoaded handler
+// registered BEFORE the one that calls checkBackend(), so on every page
+// load it loaded suppliers from (possibly stale/cleared) localStorage
+// instead of the server. Every consumer now awaits this single shared
+// promise so the server/auth check always finishes first, exactly once.
+const backendReadyPromise=(document.readyState==='loading')
+  ? new Promise(res=>document.addEventListener('DOMContentLoaded',()=>checkBackend().then(res)))
+  : checkBackend();
 function apiHeaders(){const h={'Content-Type':'application/json'};if(authToken)h['Authorization']=`Bearer ${authToken}`;return h;}
 
 /* ============================================================
    ROLE & MONTHLY CONTEXT
 ============================================================ */
 const APP_ROLE=(function(){const p=window.location.pathname;if(p.includes('/Client/'))return'Client';if(p.includes('/Sub-Admin/'))return'SubAdmin';return'Main';})();
+// SYSTEM (Accounting vs Bookkeeping) — detected from the folder path, same
+// pattern as APP_ROLE. Sent to the backend as `scope=` on the shared,
+// account-wide endpoints (/api/company-info, /api/exp-suppliers) so
+// Accounting and Bookkeeping never read/write each other's company info or
+// registered supplier TIN list, even if the same account is logged into
+// both. Falls back to null (legacy/unscoped) outside those folders.
+const APP_SYSTEM=(function(){const p=window.location.pathname;if(p.includes('/Accounting/'))return'Accounting';if(p.includes('/Bookkeeping/'))return'Bookkeeping';return null;})();
+function scopeParam(){return APP_SYSTEM?`&scope=${APP_SYSTEM}`:'';}
+const SYS_PREFIX=APP_SYSTEM?`${APP_SYSTEM}_`:'';
 const MONTHLY_CTX={key:sessionStorage.getItem('EXP_MONTHLY_CONTEXT_KEY')||null,year:sessionStorage.getItem('EXP_MONTHLY_CONTEXT_YEAR')||null,month:sessionStorage.getItem('EXP_MONTHLY_CONTEXT_MONTH')||null,label:sessionStorage.getItem('EXP_MONTHLY_CONTEXT_LABEL')||null,role:sessionStorage.getItem('EXP_MONTHLY_CONTEXT_ROLE')||null};
 const IS_MONTHLY=!!(MONTHLY_CTX.key&&MONTHLY_CTX.year&&MONTHLY_CTX.month);
-const STORAGE_NS={Client:{SUPPLIER_TIN_MAP:'EXP_SUPPLIER_TIN_MAP_Client',COMPANY_INFO:'expCompanyInfo_Client',COL_VISIBILITY:'expColVis_Client',VIS_STATES:'expVisStates_Client'},SubAdmin:{SUPPLIER_TIN_MAP:'EXP_SUPPLIER_TIN_MAP_SubAdmin',COMPANY_INFO:'expCompanyInfo_SubAdmin',COL_VISIBILITY:'expColVis_SubAdmin',VIS_STATES:'expVisStates_SubAdmin'},Main:{SUPPLIER_TIN_MAP:'EXP_SUPPLIER_TIN_MAP_Main',COMPANY_INFO:'expCompanyInfo_Main',COL_VISIBILITY:'expColVis_Main',VIS_STATES:'expVisStates_Main'}};
+const STORAGE_NS={Client:{SUPPLIER_TIN_MAP:`EXP_SUPPLIER_TIN_MAP_${SYS_PREFIX}Client`,COMPANY_INFO:`expCompanyInfo_${SYS_PREFIX}Client`,COL_VISIBILITY:'expColVis_Client',VIS_STATES:'expVisStates_Client'},SubAdmin:{SUPPLIER_TIN_MAP:`EXP_SUPPLIER_TIN_MAP_${SYS_PREFIX}SubAdmin`,COMPANY_INFO:`expCompanyInfo_${SYS_PREFIX}SubAdmin`,COL_VISIBILITY:'expColVis_SubAdmin',VIS_STATES:'expVisStates_SubAdmin'},Main:{SUPPLIER_TIN_MAP:`EXP_SUPPLIER_TIN_MAP_${SYS_PREFIX}Main`,COMPANY_INFO:`expCompanyInfo_${SYS_PREFIX}Main`,COL_VISIBILITY:'expColVis_Main',VIS_STATES:'expVisStates_Main'}};
 const NS=STORAGE_NS[APP_ROLE];
 function getActiveSessionKey(){return IS_MONTHLY?MONTHLY_CTX.key:`EXP_SESSION_TABLE_${APP_ROLE}`;}
 function getActiveCompanyKey(){return IS_MONTHLY?`${MONTHLY_CTX.key}_COMPANY`:NS.COMPANY_INFO;}
@@ -685,11 +724,25 @@ function getApiRecordId(){const uid=window._VAT_USER_ID||'anon';return IS_MONTHL
    FASTAPI DATA LAYER
 ============================================================ */
 async function apiSaveSession(tableData,companyInfo){const payload={record_id:getApiRecordId(),role:APP_ROLE,year:MONTHLY_CTX.year?parseInt(MONTHLY_CTX.year):null,month:MONTHLY_CTX.month?parseInt(MONTHLY_CTX.month):null,label:MONTHLY_CTX.label||'General',table_data:tableData,company_info:companyInfo,saved_at:new Date().toISOString(),type:'expenses'};const localData={version:'1.0',timestamp:payload.saved_at,tableData,companyInfo};localStorage.setItem(getActiveSessionKey(),JSON.stringify(localData));localStorage.setItem(getActiveCompanyKey(),JSON.stringify(companyInfo));if(USE_API&&authToken){try{await fetch(`${API_BASE}/exp-records`,{method:'POST',headers:apiHeaders(),body:JSON.stringify(payload)});}catch(_){}
-    if(IS_MONTHLY&&MONTHLY_CTX.year&&MONTHLY_CTX.month){const meta={year:parseInt(MONTHLY_CTX.year),month:parseInt(MONTHLY_CTX.month),rowCount:tableData.length,grossExpenses:tableData.reduce((s,r)=>s+(parseFloat(r.grossAmount)||0),0),netExpenses:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||0)/1.12),0),inputTax:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||0)/1.12*0.12),0),lastModified:payload.saved_at,companyName:companyInfo.name||companyInfo.companyName||'',reportDate:companyInfo.date||companyInfo.reportDate||''};try{await fetch(`${API_BASE}/monthly-expenses`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({year:meta.year,month:meta.month,data:{tableData,companyInfo},meta})});}catch(_){}}
+    if(IS_MONTHLY&&MONTHLY_CTX.year&&MONTHLY_CTX.month){const meta={year:parseInt(MONTHLY_CTX.year),month:parseInt(MONTHLY_CTX.month),rowCount:tableData.length,grossExpenses:tableData.reduce((s,r)=>s+(parseFloat(r.grossAmount)||0),0),netExpenses:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||0)/1.12),0),inputTax:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||0)/1.12*0.12),0),lastModified:payload.saved_at,companyName:companyInfo.name||companyInfo.companyName||'',reportDate:companyInfo.date||companyInfo.reportDate||''};try{await fetch(`${API_BASE}/monthly-expenses?role=${APP_ROLE}`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({year:meta.year,month:meta.month,data:{tableData,companyInfo},meta})});}catch(_){}}
   }}
 async function apiLoadSession(){if(USE_API&&authToken){try{const r=await fetch(`${API_BASE}/exp-records/${getApiRecordId()}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();if(d.table_data){localStorage.setItem(getActiveSessionKey(),JSON.stringify({version:'1.0',timestamp:d.saved_at,tableData:d.table_data,companyInfo:d.company_info||{}}));if(d.company_info)localStorage.setItem(getActiveCompanyKey(),JSON.stringify(d.company_info));}return{tableData:d.table_data||[],companyInfo:d.company_info||{}};}}catch(_){}}const raw=localStorage.getItem(getActiveSessionKey());if(!raw)return null;try{const d=JSON.parse(raw);return{tableData:d.tableData||[],companyInfo:d.companyInfo||{}};}catch(e){return null;}}
-async function apiSaveSuppliers(dbObj){localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(Object.fromEntries(dbObj)));if(USE_API&&authToken){try{await fetch(`${API_BASE}/exp-suppliers`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({role:APP_ROLE,data:Object.fromEntries(dbObj)})});}catch(_){}}}
-async function apiLoadSuppliers(){if(USE_API&&authToken){try{const r=await fetch(`${API_BASE}/exp-suppliers?role=${APP_ROLE}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(d.data||{}));return new Map(Object.entries(d.data||{}));}}catch(_){}}const s=localStorage.getItem(NS.SUPPLIER_TIN_MAP);if(s){try{return new Map(Object.entries(JSON.parse(s)));}catch(e){}}return new Map();}
+async function apiFetchServerSuppliers(){if(!(USE_API&&authToken))return null;try{const r=await fetch(`${API_BASE}/exp-suppliers?role=${APP_ROLE}${scopeParam()}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();return d.data||{};}}catch(_){}return null;}
+// BUG FIX: this used to POST `db` straight to the server, replacing the
+// ENTIRE stored supplier registry. If this browser's copy of `db` was
+// ever behind the server's (stale/cleared localStorage, a different
+// computer, or just not refreshed yet), registering or editing even one
+// supplier here would silently wipe out every TIN registered elsewhere.
+// mergeFromServer=true (default) pulls the latest server copy first and
+// fills in any keys we're missing, so a stale local copy can never erase
+// someone else's data. Intentional full wipes (Clear All) pass false.
+async function apiSaveSuppliers(dbObj,mergeFromServer=true){
+  if(mergeFromServer){const serverData=await apiFetchServerSuppliers();if(serverData){for(const[k,v]of Object.entries(serverData)){if(!dbObj.has(k))dbObj.set(k,v);}}}
+  const plain=Object.fromEntries(dbObj);
+  localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(plain));
+  if(USE_API&&authToken){try{await fetch(`${API_BASE}/exp-suppliers${APP_SYSTEM?`?scope=${APP_SYSTEM}`:''}`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({role:APP_ROLE,data:plain})});}catch(_){}}
+}
+async function apiLoadSuppliers(){if(USE_API&&authToken){try{const r=await fetch(`${API_BASE}/exp-suppliers?role=${APP_ROLE}${scopeParam()}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(d.data||{}));return new Map(Object.entries(d.data||{}));}}catch(_){}}const s=localStorage.getItem(NS.SUPPLIER_TIN_MAP);if(s){try{return new Map(Object.entries(JSON.parse(s)));}catch(e){}}return new Map();}
 
 function showSaving(msg='Saving…'){document.getElementById('savingOverlayText').textContent=msg;document.getElementById('savingOverlay').classList.remove('hidden');}
 function hideSaving(){document.getElementById('savingOverlay').classList.add('hidden');}
@@ -718,7 +771,7 @@ function addToRecent(cat){if(!cat)return;const i=recentExpenses.indexOf(cat);if(
 (function(){
   let db=new Map();
   async function loadDB(){db=await apiLoadSuppliers();renderSuppliers();}
-  async function saveDB(){await apiSaveSuppliers(db);renderSuppliers();}
+  async function saveDB(mergeFromServer=true){await apiSaveSuppliers(db,mergeFromServer);renderSuppliers();}
   window.addExpSupplierPair=async function(name,tin,address,silent){if(!name)return false;const n=name.trim();if(!n)return false;const t=tin?tin.trim():'';if(!t){let changed=false;if(address&&db.get('addr:name:'+n)!==address){db.set('addr:name:'+n,address);changed=true;}const isNew=!db.has('notin:'+n);if(isNew){db.set('notin:'+n,'1');changed=true;}if(changed)await saveDB();if(isNew&&!silent)showNotification('success','New Supplier Registered!','Supplier added to the registry',{name:n,tin:'(No TIN provided)'},'This supplier has been saved to your registered suppliers list.');return true;}const et=db.get('name:'+n),en=db.get('tin:'+t);if(et&&et!==t){showNotification('error','TIN Conflict Detected','This name is already linked to a different TIN',{name:n,tin:et},'The supplier "'+n+'" is already registered with TIN '+et+'. Please verify the information.');return false;}if(en&&en!==n){showNotification('error','TIN Already Registered','This TIN is already linked to another supplier',{name:en,tin:t},'TIN '+t+' is already registered under "'+en+'". Each TIN must be unique.');return false;}let changed=false;const isNew=!et;if(isNew){db.set('name:'+n,t);db.set('tin:'+t,n);db.delete('notin:'+n);changed=true;}if(address&&db.get('addr:'+n)!==address){db.set('addr:'+n,address);db.set('addr:'+t,address);changed=true;}if(changed)await saveDB();if(isNew&&!silent)showNotification('success','New Supplier Registered!','Supplier successfully added to the registry',{name:n,tin:t},'This supplier has been saved to your registered suppliers list.');return true;};
   window.lookupTinByExpSupplier=n=>n?(db.get('name:'+n.trim())||null):null;
   window.lookupExpSupplierByTin=t=>t?(db.get('tin:'+t.trim())||null):null;
@@ -737,12 +790,13 @@ function addToRecent(cat){if(!cat)return;const i=recentExpenses.indexOf(cat);if(
   }
   return p.sort((a, b) => a.name.localeCompare(b.name));
 };
-  window.deleteExpSupplier=async function(name,tin){if(!confirm('Delete "'+name+'" (TIN: '+tin+'")?'))return;db.delete('name:'+name);db.delete('tin:'+tin);db.delete('addr:'+name);db.delete('addr:'+tin);db.delete('notin:'+name);db.delete('addr:name:'+name);await saveDB();showToast('Deleted: "'+name+'"','success');};
-  window.clearAllExpSuppliers=async function(){if(!confirm('Delete ALL registered suppliers?'))return;db.clear();await saveDB();showToast('All suppliers cleared','success');};
+  window.deleteExpSupplier=async function(name,tin){if(!confirm('Delete "'+name+'" (TIN: '+tin+'")?'))return;const serverData=await apiFetchServerSuppliers();if(serverData){for(const[k,v]of Object.entries(serverData)){if(!db.has(k))db.set(k,v);}}db.delete('name:'+name);db.delete('tin:'+tin);db.delete('addr:'+name);db.delete('addr:'+tin);db.delete('notin:'+name);db.delete('addr:name:'+name);await saveDB(false);showToast('Deleted: "'+name+'"','success');};
+  window.clearAllExpSuppliers=async function(){if(!confirm('Delete ALL registered suppliers?'))return;db.clear();await saveDB(false);showToast('All suppliers cleared','success');};
   function escH(t){const d=document.createElement('div');d.textContent=t||'';return d.innerHTML;}
   window.renderSuppliers=function(){const pairs=getAllExpSuppliers();const cnt=document.getElementById('suppliersCount');if(cnt)cnt.textContent=pairs.length;const container=document.getElementById('suppliersListContainer');if(!container)return;if(!pairs.length){container.innerHTML='<div style="text-align:center;padding:24px;color:var(--gray-400)"><i class="fas fa-inbox" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>No registered suppliers yet.</div>';return;}container.innerHTML=pairs.map(p=>{const addr=p.address?`<div class="sup-addr"><i class="fas fa-map-marker-alt"></i>${escH(p.address)}</div>`:'';return`<div class="supplier-item"><div class="supplier-info"><div class="supplier-name-tin"><span class="sup-name">${escH(p.name)}</span><span class="sup-arrow">→</span><span class="sup-tin">${escH(p.tin||'No TIN')}</span></div>${addr}</div><button class="del-sup-btn" onclick="deleteExpSupplier('${escH(p.name)}','${escH(p.tin)}')"><i class="fas fa-trash"></i></button></div>`;}).join('');};
   window.refreshSuppliersFromAPI=async function(){if(!USE_API||!authToken)return;const fresh=await apiLoadSuppliers();if(fresh){db=fresh;renderSuppliers();}};
-  document.addEventListener('DOMContentLoaded',()=>{
+  document.addEventListener('DOMContentLoaded',async()=>{
+    await backendReadyPromise;
     loadDB();
     setInterval(()=>{if(USE_API&&authToken)window.refreshSuppliersFromAPI();},30000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.refreshSuppliersFromAPI();});
@@ -806,9 +860,9 @@ function clearCompanyInfo(){if(!confirm('Clear all company information?'))return
 (function(){
   // All keys that company_information.html writes to for expenses
   const WATCH_KEYS = [
-    'expCompanyInfo_Main',
-    'expCompanyInfo_Client',
-    'expCompanyInfo_SubAdmin'
+    `expCompanyInfo_${SYS_PREFIX}Main`,
+    `expCompanyInfo_${SYS_PREFIX}Client`,
+    `expCompanyInfo_${SYS_PREFIX}SubAdmin`
   ];
 
   function applyFromKey(key) {
@@ -826,7 +880,7 @@ function clearCompanyInfo(){if(!confirm('Clear all company information?'))return
   async function loadExternalCompanyInfo() {
     if (USE_API && authToken) {
       try {
-        const r = await fetch(`${API_BASE}/company-info`, { headers: apiHeaders() });
+        const r = await fetch(`${API_BASE}/company-info${APP_SYSTEM?`?scope=${APP_SYSTEM}`:''}`, { headers: apiHeaders() });
         if (r.ok) {
           const d = await r.json();
           if (d.data && d.data.companyName) { applyCompanyInfo(d.data); localStorage.setItem(NS.COMPANY_INFO, JSON.stringify(d.data)); return; }
@@ -883,14 +937,14 @@ function openPortalModal(){
     await saveSession();
     showToast('Navigating to portal…','success');
     document.getElementById('submitModalOverlay').classList.add('hidden');
-    setTimeout(()=>{location.href='../index.html';},400);
+    setTimeout(()=>{location.href='../bookkeeping.html';},400);
   };
 }
 
 /* ============================================================
    COLUMN VISIBILITY
 ============================================================ */
-const COLS=[{key:'date',name:'Date'},{key:'invoiceNumber',name:'Invoice No.'},{key:'invoiceType',name:'Invoice Type'},{key:'paymentMode',name:'Payment Mode'},{key:'transactionType',name:'Transaction Type'},{key:'tinNumber',name:'TIN Number'},{key:'supplierName',name:'Supplier Name'},{key:'address',name:'Address'},{key:'grossAmount',name:'Gross Amount'},{key:'natureExpense',name:'Nature of Expense'},{key:'netExpenses',name:'Net Expenses'},{key:'inputTax',name:'Input Tax'},{key:'withholdingRate',name:'W/T Rate'},{key:'withholdingTax',name:'Withholding Tax'},{key:'grossMinusWT',name:'Gross − W/T'},{key:'remarks',name:'Remarks'},{key:'action',name:'Del'}];
+const COLS=[{key:'seq',name:'#'},{key:'date',name:'Date'},{key:'invoiceNumber',name:'Invoice No.'},{key:'invoiceType',name:'Invoice Type'},{key:'paymentMode',name:'Payment Mode'},{key:'transactionType',name:'Transaction Type'},{key:'tinNumber',name:'TIN Number'},{key:'supplierName',name:'Supplier Name'},{key:'address',name:'Address'},{key:'grossAmount',name:'Gross Amount'},{key:'natureExpense',name:'Nature of Expense'},{key:'netExpenses',name:'Net Expenses'},{key:'inputTax',name:'Input Tax'},{key:'withholdingRate',name:'W/T Rate'},{key:'withholdingTax',name:'Withholding Tax'},{key:'grossMinusWT',name:'Gross − W/T'},{key:'remarks',name:'Remarks'},{key:'action',name:'Del'}];
 let colVis={};
 function initColVisibility(){colVis=JSON.parse(localStorage.getItem(NS.COL_VISIBILITY)||'{}');const list=document.getElementById('colList');COLS.forEach(c=>{const item=document.createElement('div');item.className='col-item';const cb=document.createElement('input');cb.type='checkbox';cb.id='cv_'+c.key;cb.checked=!colVis[c.key];const lbl=document.createElement('label');lbl.htmlFor='cv_'+c.key;lbl.textContent=c.name;cb.addEventListener('change',()=>{colVis[c.key]=!cb.checked;applyColVis();localStorage.setItem(NS.COL_VISIBILITY,JSON.stringify(colVis));});item.appendChild(cb);item.appendChild(lbl);list.appendChild(item);});applyColVis();document.getElementById('showAllColsBtn').addEventListener('click',()=>{COLS.forEach(c=>{colVis[c.key]=false;const cb=document.getElementById('cv_'+c.key);if(cb)cb.checked=true;});applyColVis();localStorage.setItem(NS.COL_VISIBILITY,JSON.stringify(colVis));showToast('All columns visible','success');});document.getElementById('hideAllColsBtn').addEventListener('click',()=>{COLS.forEach(c=>{colVis[c.key]=true;const cb=document.getElementById('cv_'+c.key);if(cb)cb.checked=false;});applyColVis();localStorage.setItem(NS.COL_VISIBILITY,JSON.stringify(colVis));showToast('All columns hidden','info');});const btn=document.getElementById('colVisBtn'),dd=document.getElementById('colVisDropdown');btn.addEventListener('click',e=>{e.stopPropagation();dd.classList.toggle('open');});document.addEventListener('click',e=>{if(!dd.contains(e.target)&&e.target!==btn)dd.classList.remove('open');});}
 function applyColVis(){const table=document.getElementById('vatableExpensesTable'),ths=table.querySelectorAll('thead th');COLS.forEach((c,i)=>{const hide=!!colVis[c.key];ths[i].classList.toggle('hidden-column',hide);table.querySelectorAll('tbody tr,tfoot tr').forEach(row=>{const td=row.children[i];if(td)td.classList.toggle('hidden-column',hide);});});rebuildSummaryRow();}
@@ -943,6 +997,7 @@ function createRow(data={}){
   const invTypes=['OR','SI','DR','AR','TR','CR','OTHERS'];
   const grossDisplay=data.grossAmount?formatCurrency(data.grossAmount):'';
   tr.innerHTML=`
+    <td style="text-align:center;width:42px;color:var(--gray-400);font-size:11px;font-weight:600;user-select:none;"><span class="seq-num">0</span></td>
     <td><input type="text" value="${data.date||today}" class="date-input" placeholder="MM/DD/YYYY"></td>
     <td><input type="text" value="${escH(data.invoiceNumber||'')}" class="invoice-number" placeholder="INV-001"></td>
     <td><select class="invoice-type"><option value="">Select</option>${invTypes.map(v=>`<option${data.invoiceType===v?' selected':''}>${v}</option>`).join('')}</select></td>
@@ -1010,9 +1065,10 @@ function showTinSuggestions(input,row){if(activeTinSug){activeTinSug.remove();ac
 /* ============================================================
    ADD / DELETE ROWS
 ============================================================ */
-function addRow(data={}){const tb=document.getElementById('tableBody');const row=createRow(data);tb.appendChild(row);currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStats();scheduleAutoSave();return row;}
-function addBatchRows(count){const tb=document.getElementById('tableBody');const frag=document.createDocumentFragment();for(let i=0;i<count;i++)frag.appendChild(createRow());tb.appendChild(frag);currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStats();scheduleAutoSave();}
-function deleteRow(rid){const row=document.getElementById(rid);if(!row||!confirm('Delete this row?'))return;row.style.transition='opacity .2s,transform .2s';row.style.opacity='0';row.style.transform='translateX(-10px)';setTimeout(()=>{row.remove();if(currentPage>getTotalPages())currentPage=Math.max(1,getTotalPages());renderCurrentPage();scheduleStats();scheduleAutoSave();},200);}
+function refreshSeqNumbers(){const rows=document.getElementById('tableBody').children;for(let i=0,len=rows.length;i<len;i++){const seqEl=rows[i].querySelector('.seq-num');if(seqEl)seqEl.textContent=i+1;}}
+function addRow(data={}){const tb=document.getElementById('tableBody');const row=createRow(data);tb.appendChild(row);refreshSeqNumbers();currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStats();scheduleAutoSave();return row;}
+function addBatchRows(count){const tb=document.getElementById('tableBody');const frag=document.createDocumentFragment();for(let i=0;i<count;i++)frag.appendChild(createRow());tb.appendChild(frag);refreshSeqNumbers();currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStats();scheduleAutoSave();}
+function deleteRow(rid){const row=document.getElementById(rid);if(!row||!confirm('Delete this row?'))return;row.style.transition='opacity .2s,transform .2s';row.style.opacity='0';row.style.transform='translateX(-10px)';setTimeout(()=>{row.remove();refreshSeqNumbers();if(currentPage>getTotalPages())currentPage=Math.max(1,getTotalPages());renderCurrentPage();scheduleStats();scheduleAutoSave();},200);}
 
 /* ============================================================
    STATS UPDATE — uses formatCurrency
@@ -1043,7 +1099,7 @@ function updateAllStats(){
     }finally{statsRunning=false;}
   });
 }
-function rebuildSummaryRow(gA,nE,iT,wT,gmw){const foot=document.getElementById('summaryRow');if(!foot)return;if(gA===undefined){gA=0;nE=0;iT=0;wT=0;gmw=0;document.querySelectorAll('#tableBody tr').forEach(r=>{gA+=getInputNumber(r.querySelector('.gross-amount'));nE+=parseFloat((r.querySelector('.net-expenses')?.textContent||'0').replace(/,/g,''))||0;iT+=parseFloat((r.querySelector('.input-tax')?.textContent||'0').replace(/,/g,''))||0;wT+=parseFloat((r.querySelector('.withholding-tax')?.textContent||'0').replace(/,/g,''))||0;gmw+=parseFloat((r.querySelector('.gross-minus-wt')?.textContent||'0').replace(/,/g,''))||0;});}const ths=document.querySelectorAll('#vatableExpensesTable thead th');let cells='';let first=true;ths.forEach((th,i)=>{if(th.classList.contains('hidden-column'))return;let c='';if(first){c='<span class="sum-label">TOTALS</span>';first=false;}else if(i===8)c='<span class="sum-value">'+formatCurrency(gA)+'</span>';else if(i===10)c='<span class="sum-value">'+formatCurrency(nE)+'</span>';else if(i===11)c='<span class="sum-value">'+formatCurrency(iT)+'</span>';else if(i===13)c='<span class="sum-value">'+formatCurrency(wT)+'</span>';else if(i===14)c='<span class="sum-value">'+formatCurrency(gmw)+'</span>';cells+=`<td>${c}</td>`;});foot.innerHTML='<tr>'+cells+'</tr>';}
+function rebuildSummaryRow(gA,nE,iT,wT,gmw){const foot=document.getElementById('summaryRow');if(!foot)return;if(gA===undefined){gA=0;nE=0;iT=0;wT=0;gmw=0;document.querySelectorAll('#tableBody tr').forEach(r=>{gA+=getInputNumber(r.querySelector('.gross-amount'));nE+=parseFloat((r.querySelector('.net-expenses')?.textContent||'0').replace(/,/g,''))||0;iT+=parseFloat((r.querySelector('.input-tax')?.textContent||'0').replace(/,/g,''))||0;wT+=parseFloat((r.querySelector('.withholding-tax')?.textContent||'0').replace(/,/g,''))||0;gmw+=parseFloat((r.querySelector('.gross-minus-wt')?.textContent||'0').replace(/,/g,''))||0;});}const ths=document.querySelectorAll('#vatableExpensesTable thead th');let cells='';let first=true;ths.forEach((th,i)=>{if(th.classList.contains('hidden-column'))return;let c='';if(first){c='<span class="sum-label">TOTALS</span>';first=false;}else if(i===9)c='<span class="sum-value">'+formatCurrency(gA)+'</span>';else if(i===11)c='<span class="sum-value">'+formatCurrency(nE)+'</span>';else if(i===12)c='<span class="sum-value">'+formatCurrency(iT)+'</span>';else if(i===14)c='<span class="sum-value">'+formatCurrency(wT)+'</span>';else if(i===15)c='<span class="sum-value">'+formatCurrency(gmw)+'</span>';cells+=`<td>${c}</td>`;});foot.innerHTML='<tr>'+cells+'</tr>';}
 function updateTallyGrid(tallyMap,totalGross){const grid=document.getElementById('expenseTallyGrid');if(!grid)return;if(!tallyMap.size){grid.innerHTML='<div class="tally-card total-card"><div class="tally-card-label"><i class="fas fa-pen-alt" style="color:var(--blue-500)"></i>No expense data yet</div><div class="tally-card-sub">Enter a Nature of Expense and Gross Amount to see category totals here</div></div>';return;}const sorted=[...tallyMap.entries()].sort((a,b)=>b[1].gross-a[1].gross);let html=sorted.map(([cat,d])=>{const r=(d.rate*100).toFixed(0)+'%';return`<div class="tally-card ${d.type}"><div class="tally-card-label"><i class="fas ${d.type==='rental'?'fa-building':d.type==='goods'?'fa-box':'fa-cogs'}" style="color:${d.type==='rental'?'var(--red-500)':d.type==='goods'?'var(--amber-500)':'var(--purple-500)'}"></i>${escH(cat)}</div><div class="tally-card-amount">₱ ${formatCurrency(d.gross)}</div><div class="tally-card-sub">${d.count} item${d.count!==1?'s':''} · W/T ${r} · Net ₱ ${formatCurrency(d.net)}</div></div>`;}).join('');html+=`<div class="tally-card total-card"><div class="tally-card-label" style="color:var(--blue-700)"><i class="fas fa-sigma" style="color:var(--blue-600)"></i>Total All Categories</div><div class="tally-card-amount">₱ ${formatCurrency(totalGross)}</div><div class="tally-card-sub">${sorted.length} categories</div></div>`;grid.innerHTML=html;}
 
 /* ============================================================
@@ -1055,7 +1111,54 @@ function setupAutoDateUpdate(){const rdInput=document.getElementById('reportDate
 /* ============================================================
    SAVE / LOAD FILE
 ============================================================ */
-function saveDataToFile(){const blob=new Blob([JSON.stringify({version:'1.0',type:'vatable-expenses',timestamp:new Date().toISOString(),companyInfo:getCompanyData(),tableData:getTableData()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Expenses_Data_'+(IS_MONTHLY?MONTHLY_CTX.label.replace(/\s/g,'_')+'_':'')+new Date().toISOString().split('T')[0]+'.exp';a.click();URL.revokeObjectURL(a.href);showToast('Data saved to file','success');}
+function checkRequiredCompanyFields() {
+  const REQUIRED = [
+    { id: 'companyName',        label: 'Company Name' },
+    { id: 'companyTIN',         label: 'TIN Number' },
+    { id: 'companyAddress',     label: 'Address' },
+    { id: 'lineOfBusiness',     label: 'Line of Business' },
+    { id: 'authorizedEmployee', label: 'Authorized Employee' },
+  ];
+  return REQUIRED.filter(f => {
+    const el = document.getElementById(f.id);
+    return !el || !el.value.trim();
+  });
+}
+function highlightMissingCompanyFields(missing) {
+  const rightPanel = document.getElementById('rightPanel');
+  if (rightPanel && rightPanel.classList.contains('collapsed')) {
+    document.getElementById('headerRightToggle')?.click();
+  }
+  missing.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el) return;
+    el.style.transition = 'border-color .2s, box-shadow .2s';
+    el.style.borderColor = 'var(--red-500)';
+    el.style.boxShadow   = '0 0 0 3px rgba(239,68,68,.18)';
+    el.addEventListener('input', function clear() {
+      el.style.borderColor = '';
+      el.style.boxShadow   = '';
+      el.removeEventListener('input', clear);
+    }, { once: true });
+  });
+  const firstEl = document.getElementById(missing[0].id);
+  if (firstEl) { firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => firstEl.focus(), 300); }
+}
+function saveDataToFile() {
+  const missing = checkRequiredCompanyFields();
+  if (missing.length > 0) {
+    showToast('Fill in required company info first: ' + missing.map(f => f.label).join(', '), 'error');
+    highlightMissingCompanyFields(missing);
+    return;
+  }
+  const blob = new Blob([JSON.stringify({ version: '1.0', type: 'vatable-expenses', timestamp: new Date().toISOString(), companyInfo: getCompanyData(), tableData: getTableData() }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Expenses_Data_' + (IS_MONTHLY ? MONTHLY_CTX.label.replace(/\s/g, '_') + '_' : '') + new Date().toISOString().split('T')[0] + '.exp';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Data saved to file', 'success');
+}
 function loadDataFromFile(){const fi=document.createElement('input');fi.type='file';fi.accept='.exp,.json';fi.addEventListener('change',function(){const f=this.files[0];if(!f)return;const r=new FileReader();r.onload=async e=>{try{const d=JSON.parse(e.target.result);if(!d.version||!d.tableData)throw new Error('Invalid format');if(d.companyInfo)applyCompanyInfo(d.companyInfo);document.getElementById('tableBody').innerHTML='';d.tableData.forEach(rd=>addRow(rd));if(!d.tableData.length)addRow();currentPage=1;renderCurrentPage();updateAllStats();await saveSession();showToast('Loaded '+d.tableData.length+' rows','success');}catch(ex){showToast('Error: '+ex.message,'error');}};r.readAsText(f);});fi.click();}
 function loadMultipleFiles(){const fi=document.createElement('input');fi.type='file';fi.accept='.exp,.json';fi.multiple=true;fi.addEventListener('change',function(){const files=Array.from(this.files);if(!files.length)return;let allData=[],companyInfo=null,done=0,errs=[];files.forEach(file=>{const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d.version||!d.tableData)throw new Error('bad');allData.push(...d.tableData);if(!companyInfo&&d.companyInfo)companyInfo=d.companyInfo;}catch(ex){errs.push(file.name);}if(++done===files.length)mergeIntoTable(allData,companyInfo,errs,files.length);};r.readAsText(file);});});fi.click();}
 async function mergeIntoTable(rows,companyInfo,errs,total){const curr=document.querySelectorAll('#tableBody tr').length;let action='append';if(curr>0)action=confirm('Table has '+curr+' row(s). OK=Append, Cancel=Replace')?'append':'replace';if(action==='replace')document.getElementById('tableBody').innerHTML='';rows.forEach(rd=>addRow(rd));if(companyInfo&&action==='replace')applyCompanyInfo(companyInfo);currentPage=1;renderCurrentPage();updateAllStats();renderSuppliers();await saveSession();let msg='Loaded '+rows.length+' rows from '+(total-errs.length)+'/'+total+' files';if(errs.length)msg+=' ('+errs.length+' failed)';showToast(msg,errs.length?'warning':'success');}
@@ -1067,7 +1170,7 @@ function exportToExcel(){const co=getCompanyData();if(!co.name||!co.tin||!co.add
 <div class="title">VATABLE EXPENSES DATA REPORT${monthlyNote}</div>
 <table class="co-table"><tr><td class="co-lbl">Company Name:</td><td>${escH(co.name)}</td><td class="co-lbl">TIN Number:</td><td>${escH(co.tin)}</td></tr><tr><td class="co-lbl">Address:</td><td>${escH(co.address)}</td><td class="co-lbl">Line of Business:</td><td>${escH(co.business)}</td></tr><tr><td class="co-lbl">Telephone:</td><td>${escH(co.telephone||'N/A')}</td><td class="co-lbl">Report Date:</td><td>${escH(co.date||'')}</td></tr><tr><td class="co-lbl">Authorized Employee:</td><td>${escH(co.employee)}</td><td class="co-lbl">Email:</td><td>${escH(co.email||'N/A')}</td></tr></table>
 <div class="sec-ttl">Expenses Transactions</div>
-<table class="dt"><thead><tr><th>Date</th><th>Invoice No.</th><th>Invoice Type</th><th>Payment Mode</th><th>Transaction Type</th><th>TIN Number</th><th>Supplier Name</th><th>Address</th><th>Gross Amount</th><th>Nature of Expense</th><th>Net Expenses</th><th>Input Tax</th><th>W/T Rate</th><th>Withholding Tax</th><th>Gross − W/T</th><th>Remarks</th></tr></thead><tbody>`;
+<table class="dt"><thead><tr><th>#</th><th>Date</th><th>Invoice No.</th><th>Invoice Type</th><th>Payment Mode</th><th>Transaction Type</th><th>TIN Number</th><th>Supplier Name</th><th>Address</th><th>Gross Amount</th><th>Nature of Expense</th><th>Net Expenses</th><th>Input Tax</th><th>W/T Rate</th><th>Withholding Tax</th><th>Gross − W/T</th><th>Remarks</th></tr></thead><tbody>`;
 rows.forEach((r,idx)=>{const v=cls=>r.querySelector(cls);const wr=v('.withholding-rate')?.textContent||'0%';const g=getInputNumber(v('.gross-amount'));const n=parseFloat((v('.net-expenses')?.textContent||'0').replace(/,/g,''))||0,it2=parseFloat((v('.input-tax')?.textContent||'0').replace(/,/g,''))||0,wt2=parseFloat((v('.withholding-tax')?.textContent||'0').replace(/,/g,''))||0,gmw2=parseFloat((v('.gross-minus-wt')?.textContent||'0').replace(/,/g,''))||0;html+=`<tr${idx%2===0?'':' style="background:#EFF6FF"'}><td style="text-align:center">${escH(v('.date-input')?.value||'')}</td><td>${escH(v('.invoice-number')?.value||'')}</td><td style="text-align:center">${escH(v('.invoice-type')?.value||'')}</td><td style="text-align:center">${escH(v('.payment-mode')?.value||'')}</td><td style="text-align:center">${escH(v('.transaction-type')?.value||'')}</td><td style="text-align:center;font-family:monospace">${escH(v('.tin-number')?.value||'')}</td><td>${escH(v('.supplier-name')?.value||'')}</td><td>${escH(v('.address')?.value||'')}</td><td class="num">${g.toFixed(2)}</td><td>${escH(v('.nature-input')?.value||'')}</td><td class="num">${n.toFixed(2)}</td><td class="num">${it2.toFixed(2)}</td><td style="text-align:center">${wr}</td><td class="num">${wt2.toFixed(2)}</td><td class="num">${gmw2.toFixed(2)}</td><td>${escH(v('.remarks')?.value||'')}</td></tr>`;});
 html+=`</tbody><tfoot><tr class="sum-row"><td colspan="8" style="text-align:right;font-weight:bold">TOTALS:</td><td class="num">${gA.toFixed(2)}</td><td>-</td><td class="num">${nE.toFixed(2)}</td><td class="num">${iT.toFixed(2)}</td><td>-</td><td class="num">${wT.toFixed(2)}</td><td class="num">${netPay.toFixed(2)}</td><td>-</td></tr></tfoot></table>
 <div class="sec-ttl">Expense Category Tally</div><table class="cs-table"><thead><tr><th>Nature of Expense</th><th>W/T Rate</th><th>Count</th><th>Total Gross</th><th>Total Net</th><th>Total W/T</th></tr></thead><tbody>`;
@@ -1197,7 +1300,7 @@ window.addEventListener('beforeunload',()=>{const localData={version:'1.0',times
    INIT
 ============================================================ */
 document.addEventListener('DOMContentLoaded',async()=>{
-  await checkBackend();
+  await backendReadyPromise;
   loadRecentExpenses();
   if(IS_MONTHLY){const banner=document.getElementById('monthlyBanner'),bannerLabel=document.getElementById('monthlyBannerLabel'),bannerKey=document.getElementById('monthlyBannerKey');if(banner){banner.classList.remove('hidden');bannerLabel.textContent=MONTHLY_CTX.label;bannerKey.textContent=`[${MONTHLY_CTX.key}]`;}const ctxBadge=document.getElementById('monthlyContextBadge'),ctxLabel=document.getElementById('monthlyContextLabel');if(ctxBadge){ctxBadge.classList.remove('hidden');ctxLabel.textContent=MONTHLY_CTX.label;}document.getElementById('topbarSub').textContent=`Monthly Record — ${MONTHLY_CTX.label}`;document.getElementById('sidebarBrandSub').textContent=MONTHLY_CTX.label;}
   const rdEl=document.getElementById('reportDate');if(rdEl&&!rdEl.value){if(IS_MONTHLY){const m=String(MONTHLY_CTX.month).padStart(2,'0');rdEl.value=`${m}/01/${MONTHLY_CTX.year}`;}else{rdEl.value=getTodayDisplayDate();}}
@@ -1297,38 +1400,390 @@ document.addEventListener('DOMContentLoaded',async()=>{
     document.getElementById('submitModalCancelBtn').addEventListener('click',()=>document.getElementById('submitModalOverlay').classList.add('hidden'));
     document.getElementById('submitModalOverlay').addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden');});
   }
+
+  // Startup (session restore / default row seeding) is fully done — tell the
+  // Undo/Redo module so it can start history fresh.
+  document.dispatchEvent(new CustomEvent('vatapp:ready'));
 });
 </script>
 
 <!-- ============================================================
-   UNDO / REDO
+   UNDO / REDO  (cell-level)
+   ------------------------------------------------------------
+   Every edit to a single table cell — or a single company-info
+   field — is tracked as its OWN, independent undo/redo step.
+   One Undo reverts exactly the one cell that changed and never
+   touches any other cell/row. Adding or deleting a row is also
+   tracked per-row (one action = one step). Only whole-table
+   operations (Clear Table, Load Data, Merge Files) — which by
+   definition replace every row at once — are tracked as a single
+   full-table step, since there is no single "cell" to point to.
 ============================================================ -->
 <script>
 (function(){
-  let undoStack=[],redoStack=[],isUndoingOrRedoing=false;
-  function captureSnapshot(){const rows=document.querySelectorAll('#tableBody tr');const tableData=Array.from(rows).map(row=>({date:row.querySelector('.date-input')?.value||'',invoiceNumber:row.querySelector('.invoice-number')?.value||'',invoiceType:row.querySelector('.invoice-type')?.value||'',paymentMode:row.querySelector('.payment-mode')?.value||'',transactionType:row.querySelector('.transaction-type')?.value||'',tinNumber:row.querySelector('.tin-number')?.value||'',supplierName:row.querySelector('.supplier-name')?.value||'',address:row.querySelector('.address')?.value||'',grossAmount:(row.querySelector('.gross-amount')?.dataset.raw||row.querySelector('.gross-amount')?.value||'').replace(/,/g,''),natureExpense:row.querySelector('.nature-input')?.value||'',remarks:row.querySelector('.remarks')?.value||''}));const companyInfo={companyName:document.getElementById('companyName')?.value||'',companyTIN:document.getElementById('companyTIN')?.value||'',companyAddress:document.getElementById('companyAddress')?.value||'',lineOfBusiness:document.getElementById('lineOfBusiness')?.value||'',telephone:document.getElementById('telephone')?.value||'',reportDate:document.getElementById('reportDate')?.value||'',authorizedEmployee:document.getElementById('authorizedEmployee')?.value||'',email:document.getElementById('email')?.value||''};return{tableData,companyInfo};}
-  function restoreSnapshot(snapshot){if(!snapshot)return;isUndoingOrRedoing=true;const tbody=document.getElementById('tableBody');if(tbody&&snapshot.tableData){tbody.innerHTML='';snapshot.tableData.forEach(rd=>tbody.appendChild(createRow(rd)));if(!snapshot.tableData.length)addRow();if(typeof currentPage!=='undefined')currentPage=1;if(typeof renderCurrentPage==='function')renderCurrentPage();if(typeof updateAllStats==='function')updateAllStats();}if(snapshot.companyInfo){const map={companyName:'companyName',companyTIN:'companyTIN',companyAddress:'companyAddress',lineOfBusiness:'lineOfBusiness',telephone:'telephone',reportDate:'reportDate',authorizedEmployee:'authorizedEmployee',email:'email'};for(const[prop,id]of Object.entries(map)){const el=document.getElementById(id);if(el&&snapshot.companyInfo[prop]!==undefined)el.value=snapshot.companyInfo[prop];}if(typeof saveCompanyInfo==='function')saveCompanyInfo();}if(typeof renderSuppliers==='function')renderSuppliers();if(typeof updateAllStats==='function')updateAllStats();if(typeof scheduleAutoSave==='function')scheduleAutoSave();setTimeout(()=>{isUndoingOrRedoing=false;},10);}
-  function pushToUndoStack(){if(isUndoingOrRedoing)return;redoStack=[];while(undoStack.length>50)undoStack.shift();undoStack.push(captureSnapshot());updateUndoRedoButtons();}
-  function performUndo(){if(!undoStack.length){showToast('Nothing to undo','info');return;}const current=captureSnapshot();const previous=undoStack.pop();if(previous){redoStack.push(current);while(redoStack.length>50)redoStack.shift();restoreSnapshot(previous);showToast('Undo successful','success');updateUndoRedoButtons();}}
-  function performRedo(){if(!redoStack.length){showToast('Nothing to redo','info');return;}const current=captureSnapshot();const next=redoStack.pop();if(next){undoStack.push(current);while(undoStack.length>50)undoStack.shift();restoreSnapshot(next);showToast('Redo successful','success');updateUndoRedoButtons();}}
+  const ROW_FIELDS=['date-input','invoice-number','invoice-type','payment-mode','transaction-type','tin-number','supplier-name','address','gross-amount','nature-input','remarks'];
+  const CURRENCY_FIELDS=['gross-amount'];
+  const COMPANY_FIELDS=['companyName','companyTIN','companyAddress','lineOfBusiness','telephone','reportDate','authorizedEmployee','email'];
+  const MAX_HISTORY=100;
+
+  let undoStack=[],redoStack=[],isApplying=false;
+
+  /* ---------------- field read/write helpers ---------------- */
+  function getFieldValue(el,field){
+    if(!el)return '';
+    if(CURRENCY_FIELDS.includes(field))return(el.dataset.raw!==undefined?el.dataset.raw:el.value||'').toString().replace(/,/g,'');
+    return el.value!==undefined?el.value:'';
+  }
+  function setFieldValue(row,field,value){
+    const el=row.querySelector('.'+field);
+    if(!el)return;
+    if(CURRENCY_FIELDS.includes(field)){el.dataset.raw=value||'';el.value=value?formatCurrency(value):'';}
+    else{el.value=value;if(field==='nature-input'&&typeof updateBadge==='function')updateBadge(el);}
+    if(typeof calcRow==='function')calcRow(row);
+    if(typeof updateRowColor==='function')updateRowColor(row);
+  }
+  function fieldOf(el){return el&&el.classList?ROW_FIELDS.find(f=>el.classList.contains(f))||null:null;}
+  function rowIndexOf(row){const tb=document.getElementById('tableBody');return tb?Array.from(tb.children).indexOf(row):-1;}
+  function insertRowsAtIndices(entries){
+    entries.slice().sort((a,b)=>a.index-b.index).forEach(({row,index})=>{
+      const tb=document.getElementById('tableBody');if(!tb)return;
+      const ref=tb.children[index]||null;
+      tb.insertBefore(row,ref);
+      row.style.opacity='';row.style.transform='';
+    });
+  }
+  function afterStructuralChange(){
+    if(typeof refreshSeqNumbers==='function')refreshSeqNumbers();
+    if(typeof currentPage!=='undefined'&&typeof getTotalPages==='function')currentPage=Math.min(Math.max(1,currentPage),getTotalPages());
+    if(typeof renderCurrentPage==='function')renderCurrentPage();
+    if(typeof updateAllStats==='function')updateAllStats();
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  }
+
+  /* ---------------- whole-table snapshot (bulk ops only) ---------------- */
+  function captureFullState(){
+    const rows=document.querySelectorAll('#tableBody tr');
+    const tableData=Array.from(rows).map(row=>({
+      date:row.querySelector('.date-input')?.value||'',
+      invoiceNumber:row.querySelector('.invoice-number')?.value||'',
+      invoiceType:row.querySelector('.invoice-type')?.value||'',
+      paymentMode:row.querySelector('.payment-mode')?.value||'',
+      transactionType:row.querySelector('.transaction-type')?.value||'',
+      tinNumber:row.querySelector('.tin-number')?.value||'',
+      supplierName:row.querySelector('.supplier-name')?.value||'',
+      address:row.querySelector('.address')?.value||'',
+      grossAmount:getFieldValue(row.querySelector('.gross-amount'),'gross-amount'),
+      natureExpense:row.querySelector('.nature-input')?.value||'',
+      remarks:row.querySelector('.remarks')?.value||''
+    }));
+    const companyInfo={};COMPANY_FIELDS.forEach(id=>{const el=document.getElementById(id);companyInfo[id]=el?el.value:'';});
+    return{tableData,companyInfo};
+  }
+  function restoreFullState(snapshot){
+    if(!snapshot)return;
+    const pageBeforeRestore=(typeof currentPage!=='undefined')?currentPage:1;
+    const tbody=document.getElementById('tableBody');
+    if(tbody&&snapshot.tableData){
+      tbody.innerHTML='';
+      snapshot.tableData.forEach(rd=>tbody.appendChild(createRow(rd)));
+      if(!snapshot.tableData.length)addRow();
+      if(typeof refreshSeqNumbers==='function')refreshSeqNumbers();
+      if(typeof getTotalPages==='function')currentPage=Math.min(Math.max(1,pageBeforeRestore),getTotalPages());
+      if(typeof renderCurrentPage==='function')renderCurrentPage();
+    }
+    if(snapshot.companyInfo){
+      COMPANY_FIELDS.forEach(id=>{const el=document.getElementById(id);if(el&&snapshot.companyInfo[id]!==undefined)el.value=snapshot.companyInfo[id];});
+      if(typeof saveCompanyInfo==='function')saveCompanyInfo();
+    }
+    if(typeof renderSuppliers==='function')renderSuppliers();
+    if(typeof updateAllStats==='function')updateAllStats();
+    if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  }
+
+  /* ---------------- history stack ---------------- */
+  function pushEntry(entry){
+    if(isApplying)return;
+    redoStack=[];
+    undoStack.push(entry);
+    if(undoStack.length>MAX_HISTORY)undoStack.shift();
+    updateUndoRedoButtons();
+  }
+  // If a cell/company field is still focused (mid-edit, not yet blurred)
+  // when Undo/Redo runs, flushAllPending() commits it and its "before"
+  // baseline gets updated to that committed value. But the undo/redo itself
+  // then sets the field's live value directly (bypassing that baseline). If
+  // we didn't resync here, the next Undo/Redo would see a false mismatch
+  // between the stale baseline and the live value and treat it as a brand
+  // new edit -- flipping the cell back and forth every time Undo is pressed.
+  function resyncActiveEdits(){
+    if(activeCellEdit){
+      const{row,field}=activeCellEdit;
+      if(row&&row.isConnected)activeCellEdit.before=getFieldValue(row.querySelector('.'+field),field);
+      else activeCellEdit=null;
+    }
+    if(activeCompanyEdit){
+      const{el}=activeCompanyEdit;
+      if(el&&el.isConnected)activeCompanyEdit.before=el.value;
+      else activeCompanyEdit=null;
+    }
+  }
+  function performUndo(){
+    flushAllPending();
+    if(!undoStack.length){showToast('Nothing to undo','info');return;}
+    const entry=undoStack.pop();
+    isApplying=true;
+    if(entry.kind==='action'){entry.undo();redoStack.push(entry);}
+    else{const current=captureFullState();restoreFullState(entry.state);redoStack.push({kind:'snapshot',state:current});}
+    if(redoStack.length>MAX_HISTORY)redoStack.shift();
+    resyncActiveEdits();
+    showToast('Undo successful','success');
+    updateUndoRedoButtons();
+    setTimeout(()=>{isApplying=false;},0);
+  }
+  function performRedo(){
+    flushAllPending();
+    if(!redoStack.length){showToast('Nothing to redo','info');return;}
+    const entry=redoStack.pop();
+    isApplying=true;
+    if(entry.kind==='action'){entry.redo();undoStack.push(entry);}
+    else{const current=captureFullState();restoreFullState(entry.state);undoStack.push({kind:'snapshot',state:current});}
+    if(undoStack.length>MAX_HISTORY)undoStack.shift();
+    resyncActiveEdits();
+    showToast('Redo successful','success');
+    updateUndoRedoButtons();
+    setTimeout(()=>{isApplying=false;},0);
+  }
   function updateUndoRedoButtons(){const u=document.getElementById('globalUndoBtn'),r=document.getElementById('globalRedoBtn');if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;}
-  let changeTimer=null;
-  function recordChange(){if(isUndoingOrRedoing)return;if(changeTimer)clearTimeout(changeTimer);changeTimer=setTimeout(()=>{pushToUndoStack();changeTimer=null;},150);}
-  function addUndoRedoButtonsToUI(){const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('globalUndoBtn'))return;const undoBtn=document.createElement('button');undoBtn.id='globalUndoBtn';undoBtn.className='topbar-btn';undoBtn.innerHTML='<i class="fas fa-undo-alt"></i> Undo';undoBtn.title='Undo (Ctrl+Z)';undoBtn.addEventListener('click',performUndo);const redoBtn=document.createElement('button');redoBtn.id='globalRedoBtn';redoBtn.className='topbar-btn';redoBtn.innerHTML='<i class="fas fa-redo-alt"></i> Redo';redoBtn.title='Redo (Ctrl+Y)';redoBtn.addEventListener('click',performRedo);actions.insertBefore(undoBtn,actions.firstChild);actions.insertBefore(redoBtn,actions.firstChild);updateUndoRedoButtons();}
-  function setupListeners(){const tb=document.getElementById('tableBody');if(tb){tb.addEventListener('input',recordChange);tb.addEventListener('change',recordChange);}['companyName','companyTIN','companyAddress','lineOfBusiness','telephone','reportDate','authorizedEmployee','email'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',recordChange);el.addEventListener('change',recordChange);}});document.body.addEventListener('click',e=>{if(e.target.closest('.delete-btn')&&!isUndoingOrRedoing)pushToUndoStack();});['clearBtn','loadDataBtn','loadMultipleFilesBtn','clearInfoBtn','clearAllSuppliersBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',()=>{if(!isUndoingOrRedoing)pushToUndoStack();});});const origAdd=window.addRow,origBatch=window.addBatchRows;if(origAdd)window.addRow=function(data){if(!isUndoingOrRedoing)pushToUndoStack();return origAdd(data);};if(origBatch)window.addBatchRows=function(count){if(!isUndoingOrRedoing)pushToUndoStack();return origBatch(count);};}
-  function init(){addUndoRedoButtonsToUI();setupListeners();window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();performUndo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();performRedo();}});if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>setTimeout(pushToUndoStack,600));}else setTimeout(pushToUndoStack,600);}
+
+  /* ---------------- per-cell edit sessions ---------------- */
+  // A "session" runs from focus-in on a field to the moment the value is
+  // finally committed (blur, or a select's change). Exactly one undo step
+  // is produced per session — no matter how many keystrokes happened in
+  // between — and it only ever touches THAT field on THAT row.
+  let activeCellEdit=null;    // {row,field,before}
+  let activeCompanyEdit=null; // {el,field,before}
+
+  function commitCellEdit(){
+    if(!activeCellEdit)return;
+    const {row,field,before}=activeCellEdit;
+    if(!row.isConnected)return;
+    const after=getFieldValue(row.querySelector('.'+field),field);
+    if(after!==before){
+      const rowId=row.id;
+      pushEntry({kind:'action',
+        undo:()=>{const r=document.getElementById(rowId);if(r)setFieldValue(r,field,before);},
+        redo:()=>{const r=document.getElementById(rowId);if(r)setFieldValue(r,field,after);}
+      });
+      activeCellEdit.before=after; // move baseline forward so a repeat commit (e.g. change+blur) is a no-op
+    }
+  }
+  function commitCompanyEdit(){
+    if(!activeCompanyEdit)return;
+    const {el,field,before}=activeCompanyEdit;
+    const after=el.value;
+    if(after!==before){
+      pushEntry({kind:'action',
+        undo:()=>{const e=document.getElementById(field);if(e){e.value=before;if(typeof saveCompanyInfo==='function')saveCompanyInfo();}},
+        redo:()=>{const e=document.getElementById(field);if(e){e.value=after;if(typeof saveCompanyInfo==='function')saveCompanyInfo();}}
+      });
+      activeCompanyEdit.before=after;
+    }
+  }
+  function flushAllPending(){commitCellEdit();commitCompanyEdit();}
+
+  function onCellFocusIn(e){
+    if(isApplying)return;
+    const field=fieldOf(e.target);if(!field)return;
+    const row=e.target.closest('tr');if(!row)return;
+    if(activeCellEdit&&(activeCellEdit.row!==row||activeCellEdit.field!==field))commitCellEdit();
+    activeCellEdit={row,field,before:getFieldValue(e.target,field)};
+  }
+  function onCellCommit(e){
+    if(isApplying)return;
+    const field=fieldOf(e.target);if(!field||!activeCellEdit)return;
+    const row=e.target.closest('tr');
+    if(!row||row!==activeCellEdit.row||field!==activeCellEdit.field)return;
+    commitCellEdit();
+  }
+  function onCompanyFocusIn(e){
+    if(isApplying)return;
+    const el=e.target;if(!COMPANY_FIELDS.includes(el.id))return;
+    if(activeCompanyEdit&&activeCompanyEdit.el!==el)commitCompanyEdit();
+    activeCompanyEdit={el,field:el.id,before:el.value};
+  }
+  function onCompanyCommit(e){
+    if(isApplying)return;
+    if(!activeCompanyEdit||activeCompanyEdit.el!==e.target)return;
+    commitCompanyEdit();
+  }
+
+  /* ---------------- row add / delete tracking ---------------- */
+  let suppressAutoPush=false,suppressReleaseTimer=null,pendingBulkBefore=null;
+  let burstActive=false,burstRows=[],burstTimer=null;
+
+  function noteAddedRow(row,index){
+    burstActive=true;
+    burstRows.push({row,index});
+    if(burstTimer)clearTimeout(burstTimer);
+    burstTimer=setTimeout(finishBurst,60);
+  }
+  function finishBurst(){
+    burstTimer=null;
+    const rows=burstRows;burstRows=[];burstActive=false;
+    if(!rows.length)return;
+    if(pendingBulkBefore){finalizeBulkIfPending();return;}
+    pushEntry({kind:'action',
+      undo:()=>{rows.forEach(({row})=>row.remove());afterStructuralChange();},
+      redo:()=>{insertRowsAtIndices(rows);afterStructuralChange();}
+    });
+  }
+  function finalizeBulkIfPending(){
+    if(!pendingBulkBefore)return;
+    const before=pendingBulkBefore;pendingBulkBefore=null;
+    suppressAutoPush=false;
+    if(suppressReleaseTimer){clearTimeout(suppressReleaseTimer);suppressReleaseTimer=null;}
+    const after=captureFullState();
+    if(JSON.stringify(before)!==JSON.stringify(after))pushEntry({kind:'snapshot',state:before});
+  }
+  function beginBulkAction(){
+    flushAllPending();
+    pendingBulkBefore=captureFullState();
+    suppressAutoPush=true;
+    if(suppressReleaseTimer)clearTimeout(suppressReleaseTimer);
+    // Safety valve: if the action never actually mutates the table (e.g. the
+    // user cancels a file picker), don't leave suppression stuck forever.
+    suppressReleaseTimer=setTimeout(()=>{if(!burstActive)finalizeBulkIfPending();},30000);
+  }
+
+  function wrapRowAdders(){
+    const origAdd=window.addRow,origBatch=window.addBatchRows;
+    if(origAdd){
+      window.addRow=function(data){
+        const row=origAdd(data);
+        if(!isApplying&&row)noteAddedRow(row,rowIndexOf(row));
+        return row;
+      };
+    }
+    if(origBatch){
+      window.addBatchRows=function(count){
+        const tb=document.getElementById('tableBody');
+        const startIndex=tb?tb.children.length:0;
+        const result=origBatch(count);
+        if(!isApplying&&tb){
+          Array.from(tb.children).slice(startIndex).forEach((row,i)=>noteAddedRow(row,startIndex+i));
+        }
+        return result;
+      };
+    }
+  }
+  function wrapRowDeleters(){
+    const origDelete=window.deleteRow;
+    if(origDelete){
+      window.deleteRow=function(rid){
+        const row=document.getElementById(rid);
+        if(!row)return origDelete(rid);
+        const index=rowIndexOf(row);
+        origDelete(rid);
+        setTimeout(()=>{
+          if(isApplying)return;
+          if(!row.isConnected){
+            pushEntry({kind:'action',
+              undo:()=>{insertRowsAtIndices([{row,index}]);afterStructuralChange();},
+              redo:()=>{row.remove();afterStructuralChange();}
+            });
+          }
+        },260);
+      };
+    }
+    const origDeleteSel=window.deleteSelectedRows;
+    if(origDeleteSel){
+      window.deleteSelectedRows=function(rows){
+        if(!rows||!rows.length)return origDeleteSel(rows);
+        const snap=rows.map(row=>({row,index:rowIndexOf(row)}));
+        origDeleteSel(rows);
+        setTimeout(()=>{
+          if(isApplying)return;
+          const removed=snap.filter(s=>!s.row.isConnected);
+          if(removed.length){
+            pushEntry({kind:'action',
+              undo:()=>{insertRowsAtIndices(removed);afterStructuralChange();},
+              redo:()=>{removed.forEach(s=>s.row.remove());afterStructuralChange();}
+            });
+          }
+        },320);
+      };
+    }
+  }
+
+  /* ---------------- wiring ---------------- */
+  function addUndoRedoButtonsToUI(){const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('globalUndoBtn'))return;const undoBtn=document.createElement('button');undoBtn.id='globalUndoBtn';undoBtn.className='topbar-btn';undoBtn.innerHTML='<i class="fas fa-undo-alt"></i> Undo';undoBtn.title='Undo (Ctrl+Z)';undoBtn.addEventListener('click',performUndo);const redoBtn=document.createElement('button');redoBtn.id='globalRedoBtn';redoBtn.className='topbar-btn';redoBtn.innerHTML='<i class="fas fa-redo-alt"></i> Redo';redoBtn.title='Redo (Ctrl+Y)';redoBtn.addEventListener('click',performRedo);actions.insertBefore(redoBtn,actions.firstChild);actions.insertBefore(undoBtn,actions.firstChild);updateUndoRedoButtons();}
+
+  function setupListeners(){
+    const tb=document.getElementById('tableBody');
+    if(tb){
+      tb.addEventListener('focusin',onCellFocusIn);
+      tb.addEventListener('focusout',onCellCommit);
+      tb.addEventListener('change',onCellCommit);
+    }
+    COMPANY_FIELDS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.addEventListener('focusin',onCompanyFocusIn);el.addEventListener('focusout',onCompanyCommit);el.addEventListener('change',onCompanyCommit);}
+    });
+    // Capture phase so we snapshot BEFORE the button's own handler mutates
+    // anything (clears/replaces the table, wipes company info, etc.).
+    document.addEventListener('click',e=>{
+      if(isApplying)return;
+      const simpleBtn=e.target.closest('#clearInfoBtn,#clearAllSuppliersBtn');
+      const rowBtn=e.target.closest('#clearBtn,#loadDataBtn,#loadMultipleFilesBtn');
+      if(simpleBtn||rowBtn){
+        beginBulkAction();
+        if(simpleBtn)setTimeout(finalizeBulkIfPending,150);
+      }
+    },true);
+    wrapRowAdders();
+    wrapRowDeleters();
+  }
+
+  function init(){
+    addUndoRedoButtonsToUI();
+    setupListeners();
+    window.addEventListener('keydown',e=>{
+      if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();performUndo();}
+      else if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();performRedo();}
+    });
+    // The app's own startup (session restore / default row seeding) runs
+    // asynchronously and mutates rows/fields directly — once it confirms
+    // it's actually done, wipe out any such startup noise so Undo/Redo only
+    // ever reflect real user edits.
+    document.addEventListener('vatapp:ready',()=>{undoStack=[];redoStack=[];updateUndoRedoButtons();});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
 
+
 <!-- ============================================================
    SAVE & SUBMIT MODAL — saves .exp named by month/year then
-   navigates to index.html#submit-report (mirrors vatable_sales.html)
+   navigates to bookkeeping.html#submit-report (mirrors vatable_sales.html)
 ============================================================ -->
 <div class="save-submit-modal-overlay hidden" id="saveSubmitModalOverlay">
   <div class="submit-modal">
     <div class="submit-modal-title"><i class="fas fa-cloud-upload-alt" style="color:var(--blue-600)"></i>Save &amp; Submit Report</div>
     <div class="submit-modal-sub">Save a .exp file named by month/year and go to Submit Report in the portal.</div>
+
+    <!-- Company info validation error (hidden by default) -->
+    <div class="ss-compinfo-error hidden" id="ssCompInfoError">
+      <div class="ss-compinfo-error-header">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Company Information Incomplete</strong>
+      </div>
+      <p class="ss-compinfo-error-msg">Please fill in all required company fields before submitting:</p>
+      <ul class="ss-compinfo-error-list" id="ssCompInfoErrorList"></ul>
+      <button class="ss-compinfo-goto-btn" id="ssGotoCompInfoBtn">
+        <i class="fas fa-arrow-right"></i> Go to Company Info Panel
+      </button>
+    </div>
+
     <div class="submit-modal-file" id="saveSubmitFileInfo">
       <i class="fas fa-receipt" style="color:var(--blue-600);font-size:1.4rem"></i>
       <div>
@@ -1346,7 +1801,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
 <script>
 /* ============================================================
    SAVE & SUBMIT — saves .exp named by tracking copy month/year
-   then navigates to index.html#submit-report
+   then navigates to bookkeeping.html#submit-report
 ============================================================ */
 function getExpTrackingMonthYear() {
   if (IS_MONTHLY && MONTHLY_CTX.year && MONTHLY_CTX.month) {
@@ -1365,6 +1820,34 @@ function getExpMonthName(n) {
 
 function openSaveAndSubmitModal() {
   if (APP_ROLE !== 'Client') return;
+
+  const missing    = checkRequiredCompanyFields();
+  const errorBox   = document.getElementById('ssCompInfoError');
+  const fileInfo   = document.getElementById('saveSubmitFileInfo');
+  const confirmBtn = document.getElementById('saveSubmitModalConfirmBtn');
+  const errorList  = document.getElementById('ssCompInfoErrorList');
+
+  if (missing.length > 0) {
+    errorList.innerHTML = missing.map(f =>
+      `<li><i class="fas fa-times-circle"></i>${f.label}</li>`
+    ).join('');
+    errorBox.classList.remove('hidden');
+    fileInfo.classList.add('hidden');
+    confirmBtn.disabled = true;
+    confirmBtn.style.opacity = '0.4';
+    confirmBtn.style.cursor = 'not-allowed';
+    document.getElementById('ssGotoCompInfoBtn').onclick = function() {
+      document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
+      highlightMissingCompanyFields(missing);
+    };
+  } else {
+    errorBox.classList.add('hidden');
+    fileInfo.classList.remove('hidden');
+    confirmBtn.disabled = false;
+    confirmBtn.style.opacity = '';
+    confirmBtn.style.cursor = '';
+  }
+
   const { year, month } = getExpTrackingMonthYear();
   const monthName = getExpMonthName(month);
   const filename  = `EXP_Report_${monthName}_${year}.exp`;
@@ -1374,6 +1857,7 @@ function openSaveAndSubmitModal() {
   document.getElementById('saveSubmitModalOverlay').classList.remove('hidden');
 
   document.getElementById('saveSubmitModalConfirmBtn').onclick = async function() {
+    if (this.disabled) return;
     // 1. Save current session
     await saveSession();
 
@@ -1404,7 +1888,7 @@ function openSaveAndSubmitModal() {
       sessionStorage.setItem('VAT_PENDING_REPORT_YEAR',  String(y));
       document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
       showToast('File saved — redirecting to Submit Report…', 'success');
-      setTimeout(() => { location.href = '../index.html#submit-report'; }, 700);
+      setTimeout(() => { location.href = '../bookkeeping.html#submit-report'; }, 700);
     };
     reader.readAsDataURL(blob);
   };

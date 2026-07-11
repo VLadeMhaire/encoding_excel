@@ -301,7 +301,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
 .notif-box-header.success{background:var(--green-50);border-bottom:1px solid #BBF7D0}
 .notif-box-header.warning{background:#FFF7ED;border-bottom:1px solid #FED7AA}
 .notif-box-header.error{background:var(--red-50);border-bottom:1px solid #FECACA}
-.notif-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px}
+.notif-icon-wrap{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px}
 .notif-box-header.success .notif-icon-wrap{background:#BBF7D0;color:#059669}
 .notif-box-header.warning .notif-icon-wrap{background:#FED7AA;color:#D97706}
 .notif-box-header.error .notif-icon-wrap{background:#FECACA;color:#DC2626}
@@ -478,7 +478,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <button class="nav-btn" id="showAllBtn"><i class="fas fa-eye"></i>Show All Sections</button>
     <button class="nav-btn" id="tableFocusBtn"><i class="fas fa-expand"></i>Table Focus Mode</button>
     <div class="nav-divider"></div>
-    <a href="../index.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
+    <a href="../bookkeeping.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
   </div>
   <div class="sidebar-footer">
     <div>MGAA CAPEX System v2.0</div>
@@ -553,6 +553,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <table id="capexTable">
       <thead>
   <tr>
+    <th data-col="seq" style="width:42px;text-align:center">#</th>
     <th data-col="date">Date</th>
     <th data-col="invoiceNumber">Invoice No.</th>
     <th data-col="invoiceType">Invoice Type</th>
@@ -713,7 +714,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
       </div>
       <div class="notif-message" id="notifMessage"></div>
     </div>
-    <div class="notif-footer"><button class="notif-close-btn" id="notifCloseBtn"><i class="fas fa-check"></i> OK</button></div>
+    <div class="notif-footer"><button class="notif-close-btn" id="notifCloseBtn"><i class="fas fa-check"></i> Got it</button></div>
   </div>
 </div>
 
@@ -746,6 +747,16 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    ROLE DETECTION — Client / SubAdmin / Main
 ============================================================ */
@@ -756,10 +767,25 @@ const APP_ROLE=(function(){
   return 'Main';
 })();
 
+// SYSTEM (Accounting vs Bookkeeping) — detected from the folder path, same
+// pattern as APP_ROLE. Sent to the backend as `scope=` on the shared,
+// account-wide endpoints (/api/company-info, /api/capex-suppliers) so
+// Accounting and Bookkeeping never read/write each other's company info or
+// registered supplier TIN list, even if the same account is logged into
+// both. Falls back to null (legacy/unscoped) outside those folders.
+const APP_SYSTEM=(function(){
+  const p=window.location.pathname;
+  if(p.includes('/Accounting/')) return 'Accounting';
+  if(p.includes('/Bookkeeping/')) return 'Bookkeeping';
+  return null;
+})();
+function scopeParam(){return APP_SYSTEM?`&scope=${APP_SYSTEM}`:'';}
+const SYS_PREFIX=APP_SYSTEM?`${APP_SYSTEM}_`:'';
+
 const STORAGE_NS={
-  Client:  {SUPPLIER_TIN_MAP:'CAPEX_SUPPLIER_TIN_MAP_Client',  COMPANY_INFO:'capexCompanyInfo_Client',  COL_VISIBILITY:'capexColVis_Client',  VIS_STATES:'capexVisStates_Client'},
-  SubAdmin:{SUPPLIER_TIN_MAP:'CAPEX_SUPPLIER_TIN_MAP_SubAdmin',COMPANY_INFO:'capexCompanyInfo_SubAdmin',COL_VISIBILITY:'capexColVis_SubAdmin',VIS_STATES:'capexVisStates_SubAdmin'},
-  Main:    {SUPPLIER_TIN_MAP:'CAPEX_SUPPLIER_TIN_MAP_Main',    COMPANY_INFO:'capexCompanyInfo_Main',    COL_VISIBILITY:'capexColVis_Main',    VIS_STATES:'capexVisStates_Main'},
+  Client:  {SUPPLIER_TIN_MAP:`CAPEX_SUPPLIER_TIN_MAP_${SYS_PREFIX}Client`,  COMPANY_INFO:`capexCompanyInfo_${SYS_PREFIX}Client`,  COL_VISIBILITY:'capexColVis_Client',  VIS_STATES:'capexVisStates_Client'},
+  SubAdmin:{SUPPLIER_TIN_MAP:`CAPEX_SUPPLIER_TIN_MAP_${SYS_PREFIX}SubAdmin`,COMPANY_INFO:`capexCompanyInfo_${SYS_PREFIX}SubAdmin`,COL_VISIBILITY:'capexColVis_SubAdmin',VIS_STATES:'capexVisStates_SubAdmin'},
+  Main:    {SUPPLIER_TIN_MAP:`CAPEX_SUPPLIER_TIN_MAP_${SYS_PREFIX}Main`,    COMPANY_INFO:`capexCompanyInfo_${SYS_PREFIX}Main`,    COL_VISIBILITY:'capexColVis_Main',    VIS_STATES:'capexVisStates_Main'},
 };
 const NS=STORAGE_NS[APP_ROLE];
 
@@ -792,8 +818,8 @@ function getActiveCompanyKey() {
 ============================================================ */
 (function(){
   let db=new Map();
-  async function apiSaveSuppliers(){if(!USE_API||!authToken)return;try{await fetch(`${API_BASE}/capex-suppliers`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({role:APP_ROLE,data:Object.fromEntries(db)})});}catch(_){}}
-  async function apiLoadSuppliers(){if(!USE_API||!authToken)return null;try{const r=await fetch(`${API_BASE}/capex-suppliers?role=${APP_ROLE}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();return d.data||null;}}catch(_){}return null;}
+  async function apiSaveSuppliers(){if(!USE_API||!authToken)return;try{await fetch(`${API_BASE}/capex-suppliers${APP_SYSTEM?`?scope=${APP_SYSTEM}`:''}`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({role:APP_ROLE,data:Object.fromEntries(db)})});}catch(_){}}
+  async function apiLoadSuppliers(){if(!USE_API||!authToken)return null;try{const r=await fetch(`${API_BASE}/capex-suppliers?role=${APP_ROLE}${scopeParam()}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();return d.data||null;}}catch(_){}return null;}
   async function loadDB(){try{const s=localStorage.getItem(NS.SUPPLIER_TIN_MAP);if(s)db=new Map(Object.entries(JSON.parse(s)));}catch(e){}const api=await apiLoadSuppliers();if(api){db=new Map(Object.entries(api));localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(api));}}
   async function saveDB(){localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(Object.fromEntries(db)));renderSuppliers();await apiSaveSuppliers();}
   window.addCAPEXSupplierPair=function(name,tin,address){
@@ -803,9 +829,11 @@ function getActiveCompanyKey() {
     if(et&&et!==t){ showToast('⚠ "'+n+'" already linked to TIN '+et,'warning'); return false; }
     if(en&&en!==n){ showToast('⚠ TIN '+t+' already linked to "'+en+'"','warning'); return false; }
     let changed=false;
-    if(!et){ db.set('name:'+n,t); db.set('tin:'+t,n); changed=true; }
+    const isNew=!et;
+    if(isNew){ db.set('name:'+n,t); db.set('tin:'+t,n); changed=true; }
     if(address&&db.get('addr:'+n)!==address){ db.set('addr:'+n,address); db.set('addr:'+t,address); changed=true; }
     if(changed) saveDB();
+    if(isNew) showNotification('success','New Supplier Registered!','Supplier successfully added to the registry',{name:n,tin:t},'This supplier has been saved to your registered suppliers list.');
     return true;
   };
   window.lookupCAPEXTinByName=n=>n?(db.get('name:'+n.trim())||null):null;
@@ -832,7 +860,7 @@ function getActiveCompanyKey() {
     }).join('');
   };
   window.refreshSuppliersFromAPI=async function(){const api=await apiLoadSuppliers();if(api){db=new Map(Object.entries(api));localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(api));renderSuppliers();}};
-  document.addEventListener('DOMContentLoaded',async()=>{await loadDB();renderSuppliers();
+  document.addEventListener('DOMContentLoaded',async()=>{await window.__backendReady;await loadDB();renderSuppliers();
     setInterval(()=>{if(USE_API&&authToken)window.refreshSuppliersFromAPI();},30000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.refreshSuppliersFromAPI();});
   });
@@ -850,6 +878,47 @@ function showToast(msg,type='info'){
 }
 function showLPToast(msg){ let t=document.querySelector('.long-press-toast'); if(!t){t=document.createElement('div');t.className='long-press-toast';document.body.appendChild(t);} t.textContent=msg; }
 function hideLPToast(){ const t=document.querySelector('.long-press-toast'); if(t) t.remove(); }
+
+/* ============================================================
+   RICH NOTIFICATION MODAL — "New Supplier Registered!" etc.
+   Wires up the #notifOverlay markup (success/warning/error variants
+   already styled above) so registering a new TIN/Supplier pair shows
+   a confirmation modal instead of saving silently.
+============================================================ */
+function showNotification(type,title,subtitle,details,message){
+  const overlay=document.getElementById('notifOverlay');
+  if(!overlay) return;
+  const header=document.getElementById('notifHeader'),
+        icon=document.getElementById('notifIcon'),
+        titleEl=document.getElementById('notifTitle'),
+        subtitleEl=document.getElementById('notifSubtitle'),
+        msgEl=document.getElementById('notifMessage'),
+        row1=document.getElementById('notifDetailRow1'),
+        row2=document.getElementById('notifDetailRow2'),
+        d1lbl=document.getElementById('notifD1Label'),
+        d1val=document.getElementById('notifD1Value'),
+        d2lbl=document.getElementById('notifD2Label'),
+        d2val=document.getElementById('notifD2Value');
+  header.className='notif-box-header '+type;
+  const icons={success:'fa-check-circle',warning:'fa-exclamation-triangle',error:'fa-times-circle'};
+  icon.className='fas '+(icons[type]||'fa-info-circle');
+  titleEl.textContent=title;
+  subtitleEl.textContent=subtitle||'';
+  msgEl.textContent=message||'';
+  const rc=type+'-row';
+  row1.className='notif-detail-row '+rc;
+  row2.className='notif-detail-row '+rc;
+  if(details&&details.name!==undefined){ d1lbl.textContent='Supplier Name'; d1val.textContent=details.name||'—'; row1.style.display='flex'; } else row1.style.display='none';
+  if(details&&details.tin!==undefined){ d2lbl.textContent='TIN Number'; d2val.textContent=details.tin||'—'; row2.style.display='flex'; } else row2.style.display='none';
+  overlay.classList.remove('hidden');
+}
+function closeNotification(){ const o=document.getElementById('notifOverlay'); if(o) o.classList.add('hidden'); }
+document.addEventListener('DOMContentLoaded',()=>{
+  const closeBtn=document.getElementById('notifCloseBtn');
+  if(closeBtn) closeBtn.addEventListener('click',closeNotification);
+  const overlay=document.getElementById('notifOverlay');
+  if(overlay) overlay.addEventListener('click',function(e){ if(e.target===this) closeNotification(); });
+});
 window.formatTIN=function(input){ let v=input.value.replace(/\D/g,''); if(v.length>12)v=v.slice(0,12); const parts=[v.slice(0,3),v.slice(3,6),v.slice(6,9),v.slice(9,12)].filter(p=>p!==''); input.value=parts.join('-'); };
 window.validateTIN=function(input){ const d=input.value.replace(/\D/g,''); input.style.boxShadow=(d.length>0&&d.length<12)?'inset 0 0 0 2px #FECACA':''; };
 function formatCompanyTIN(input){ let v=input.value.replace(/\D/g,''); if(v.length>12)v=v.slice(0,12); const parts=[v.slice(0,3),v.slice(3,6),v.slice(6,9),v.slice(9,12)].filter(p=>p!==''); input.value=parts.join('-'); }
@@ -859,7 +928,7 @@ function formatCompanyTIN(input){ let v=input.value.replace(/\D/g,''); if(v.leng
 ============================================================ */
 const API_BASE = (() => {
   if (window.CAPEX_API_BASE) return window.CAPEX_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:9999/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   // Use the same host the page was loaded from — works for Tailscale IPs,
   // localhost, and any other hostname without needing a hardcoded IP.
   return `${window.location.protocol}//${window.location.host}/api`;
@@ -889,6 +958,15 @@ async function checkBackend(){
   pill.className='backend-pill offline';
   text.textContent='Local Mode';
 }
+/* Kicked off immediately (not inside a DOMContentLoaded handler) so every other
+   part of the page — including the supplier TIN registry loader further below —
+   can `await` this single promise and be guaranteed the real backend/auth status
+   before deciding whether to trust the API or fall back to local-only data.
+   Previously the supplier list loaded on its own DOMContentLoaded listener that
+   fired before this check finished, so it silently read a stale/empty local
+   cache and only self-corrected up to 30s later — making already-registered
+   TINs look "reset" until then. */
+window.__backendReady=checkBackend();
 function apiHeaders() {
   const headers = {
     'Content-Type': 'application/json'
@@ -941,15 +1019,15 @@ function selectDate(year,month,day){const input=dpState.targetInput;if(!input){c
 ============================================================ */
 (function(){
   const WATCH_KEYS = [
-    'capexCompanyInfo_Main',
-    'capexCompanyInfo_Client',
-    'capexCompanyInfo_SubAdmin'
+    `capexCompanyInfo_${SYS_PREFIX}Main`,
+    `capexCompanyInfo_${SYS_PREFIX}Client`,
+    `capexCompanyInfo_${SYS_PREFIX}SubAdmin`
   ];
 
   async function loadExternalCompanyInfo(){
     if(USE_API&&authToken){
       try{
-        const r=await fetch(`${API_BASE}/company-info`,{headers:apiHeaders()});
+        const r=await fetch(`${API_BASE}/company-info${APP_SYSTEM?`?scope=${APP_SYSTEM}`:''}`,{headers:apiHeaders()});
         if(r.ok){const d=await r.json();if(d.data&&(d.data.companyName||d.data.name)){applyCompanyInfoRaw(d.data);localStorage.setItem(NS.COMPANY_INFO,JSON.stringify(d.data));return;}}
       }catch(_){}
     }
@@ -1047,8 +1125,9 @@ function saveSession() {
           data: { tableData: tableData, companyInfo: companyInfo },
           meta: {
             rowCount: tableData.length,
+            nonVatGross: tableData.reduce((s,r)=>s+(parseFloat(String(r.nonVatGross||0).replace(/,/g,''))||0),0),
             totalGross: tableData.reduce((s,r)=>s+(parseFloat(String(r.nonVatGross||0).replace(/,/g,''))||0)+(parseFloat(String(r.vatableGross||0).replace(/,/g,''))||0),0),
-            netPurchases: tableData.reduce((s,r)=>{ const nv=parseFloat(String(r.nonVatGross||0).replace(/,/g,''))||0; const vg=parseFloat(String(r.vatableGross||0).replace(/,/g,''))||0; return s+nv+(vg/1.12); },0),
+            netPurchases: tableData.reduce((s,r)=>{ const vg=parseFloat(String(r.vatableGross||0).replace(/,/g,''))||0; return s+(vg/1.12); },0),
             inputTax: tableData.reduce((s,r)=>{ const vg=parseFloat(String(r.vatableGross||0).replace(/,/g,''))||0; return s+(vg/1.12)*0.12; },0),
             withholdingTax: tableData.reduce((s,r)=>s+(parseFloat(String(r.withholdingTax||0).replace(/,/g,''))||0),0),
           }
@@ -1278,6 +1357,7 @@ function clearCompanyInfo(){
    COLUMN VISIBILITY
 ============================================================ */
 const COLS = [
+  {key:'seq', name:'#'},
   {key:'date', name:'Date'},
   {key:'invoiceNumber', name:'Invoice No.'},
   {key:'invoiceType', name:'Invoice Type'},
@@ -1395,6 +1475,14 @@ function updateRowColor(row){
   if(nv>0){ row.classList.add('row-nonvat'); }
 }
 
+function refreshSeqNumbers(){
+  const rows=document.getElementById('tableBody').children;
+  for(let i=0,len=rows.length;i<len;i++){
+    const seqEl=rows[i].querySelector('.seq-num');
+    if(seqEl)seqEl.textContent=i+1;
+  }
+}
+
 function createRow(data={}){
   const rid='r'+(Date.now()+'').slice(-8)+'_'+Math.floor(Math.random()*1000);
   const tr=document.createElement('tr'); tr.id=rid;
@@ -1407,6 +1495,7 @@ function createRow(data={}){
   const vgDisplay=vgRaw?formatCurrency(vgRaw):'';
   const wtDisplay=wtRaw?formatCurrency(wtRaw):'';
   tr.innerHTML = `
+  <td style="text-align:center;width:42px;color:var(--gray-400);font-size:11px;font-weight:600;user-select:none;"><span class="seq-num">0</span></td>
   <td><input type="text" value="${escH(data.date||today)}" class="date-input" placeholder="MM/DD/YYYY" maxlength="10"></td>
   <td><input type="text" value="${escH(data.invoiceNumber||'')}" class="invoice-number" placeholder="INV-001"></td>
   <td><select class="invoice-type"><option value="">Select</option>${invTypes.map(v=>`<option${data.invoiceType===v?' selected':''}>${v}</option>`).join('')}</select></td>
@@ -1532,6 +1621,7 @@ function showTinSuggestions(input,row){
 function addRow(data={}){
   const tb=document.getElementById('tableBody');
   const row=createRow(data); tb.appendChild(row);
+  refreshSeqNumbers();
   currentPage=Math.ceil(tb.children.length/rowsPerPage);
   renderCurrentPage(); scheduleStats();
 }
@@ -1540,6 +1630,7 @@ function addBatchRows(count){
   const frag=document.createDocumentFragment();
   for(let i=0;i<count;i++) frag.appendChild(createRow());
   tb.appendChild(frag);
+  refreshSeqNumbers();
   currentPage=Math.ceil(tb.children.length/rowsPerPage);
   renderCurrentPage(); scheduleStats();
 }
@@ -1547,7 +1638,7 @@ window.deleteRow=function(rid){
   const row=document.getElementById(rid);
   if(!row||!confirm('Delete this row?')) return;
   row.style.transition='opacity .2s,transform .2s'; row.style.opacity='0'; row.style.transform='translateX(-10px)';
-  setTimeout(()=>{ row.remove(); if(currentPage>getTotalPages()) currentPage=Math.max(1,getTotalPages()); renderCurrentPage(); scheduleStats(); },200);
+  setTimeout(()=>{ row.remove(); refreshSeqNumbers(); if(currentPage>getTotalPages()) currentPage=Math.max(1,getTotalPages()); renderCurrentPage(); scheduleStats(); },200);
 };
 
 /* ============================================================
@@ -1589,64 +1680,78 @@ window.updateAllStats=function(){
   });
 };
 
-function rebuildSummaryRow(nv,vg,net,it,wt,gmw){
-  const foot=document.getElementById('summaryRow'); if(!foot) return;
-  if(nv===undefined){
-    nv=0;vg=0;net=0;it=0;wt=0;gmw=0;
-    document.querySelectorAll('#tableBody tr').forEach(r=>{
-      nv+=getInputNumber(r.querySelector('.non-vat-gross'));
-      vg+=getInputNumber(r.querySelector('.vatable-gross'));
-      net+=parseFloat((r.querySelector('.net-purchases')?.textContent||'0').replace(/,/g,''))||0;
-      it+=parseFloat((r.querySelector('.input-tax')?.textContent||'0').replace(/,/g,''))||0;
-      wt+=getInputNumber(r.querySelector('.withholding-tax'));
-      gmw+=parseFloat((r.querySelector('.gross-minus-wt')?.textContent||'0').replace(/,/g,''))||0;
-    });
-  }
-  
-  // Get ALL table headers, including hidden ones
-  const ths = document.querySelectorAll('#capexTable thead th');
-  let cells = '';
-  let first = true;
-  let visibleIndex = 0;
-  
-  ths.forEach((th, i) => {
-    // Skip hidden columns completely
-    if (th.classList.contains('hidden-column')) return;
-    
-    let c = '';
-    if (first) {
-      c = '<span class="sum-label">TOTALS</span>';
-      first = false;
-    } else {
-      // Map by visible position
-      switch(visibleIndex) {
-        case 8:  // Non-VAT Gross (9th visible column)
-          c = '<span class="sum-value">' + formatCurrency(nv) + '</span>';
-          break;
-        case 9:  // Vatable Gross (10th visible column)
-          c = '<span class="sum-value">' + formatCurrency(vg) + '</span>';
-          break;
-        case 10: // Net Purchases (11th visible column)
-          c = '<span class="sum-value">' + formatCurrency(net) + '</span>';
-          break;
-        case 11: // Input Tax (12th visible column)
-          c = '<span class="sum-value">' + formatCurrency(it) + '</span>';
-          break;
-        case 12: // Withholding Tax (13th visible column)
-          c = '<span class="sum-value">' + formatCurrency(wt) + '</span>';
-          break;
-        case 13: // Gross - W/T (14th visible column)
-          c = '<span class="sum-value">' + formatCurrency(gmw) + '</span>';
-          break;
-        default:
-          c = '';
-      }
-    }
-    cells += `<td${c ? '' : ' style="background:transparent"'}>${c}</td>`;
-    visibleIndex++;
+function rebuildSummaryRow() {
+  const foot = document.getElementById('summaryRow');
+  if (!foot) return;
+
+  // 1. Compute totals from all rows
+  let nvTotal = 0, vgTotal = 0, netTotal = 0, itTotal = 0, wtTotal = 0, gmwTotal = 0;
+  document.querySelectorAll('#tableBody tr').forEach(r => {
+    const nv = getInputNumber(r.querySelector('.non-vat-gross'));
+    const vg = getInputNumber(r.querySelector('.vatable-gross'));
+    const wt = getInputNumber(r.querySelector('.withholding-tax'));
+    const net = parseFloat((r.querySelector('.net-purchases')?.textContent || '0').replace(/,/g, '')) || 0;
+    const it = parseFloat((r.querySelector('.input-tax')?.textContent || '0').replace(/,/g, '')) || 0;
+    const gmw = parseFloat((r.querySelector('.gross-minus-wt')?.textContent || '0').replace(/,/g, '')) || 0;
+    nvTotal += nv;
+    vgTotal += vg;
+    netTotal += net;
+    itTotal += it;
+    wtTotal += wt;
+    gmwTotal += gmw;
   });
-  
-  foot.innerHTML = '<tr>' + cells + '</tr>';
+
+  const totals = {
+    nonVatGross: nvTotal,
+    vatableGross: vgTotal,
+    netPurchases: netTotal,
+    inputTax: itTotal,
+    withholdingTax: wtTotal,
+    grossMinusWT: gmwTotal,
+  };
+
+  // 2. Build cells for every visible column
+  let cells = '';
+  let labelPlaced = false;
+  let visibleCols = [];
+
+  // First, collect visible columns in order (skip hidden)
+  COLS.forEach(col => {
+    if (!colVis[col.key]) visibleCols.push(col);
+  });
+
+  // Iterate through visible columns
+  visibleCols.forEach((col, index) => {
+    const key = col.key;
+    let content = '';
+
+    // Determine where to put the "TOTALS" label
+    // If the first column is 'seq', put label in the second column, otherwise in the first.
+    const firstKey = visibleCols[0]?.key;
+    const shouldPutLabelHere = (firstKey === 'seq' && index === 1) || (firstKey !== 'seq' && index === 0);
+
+    if (shouldPutLabelHere) {
+      content = '<span class="sum-label">TOTALS</span>';
+      labelPlaced = true;
+    } else if (totals.hasOwnProperty(key)) {
+      content = `<span class="sum-value">${formatCurrency(totals[key])}</span>`;
+    } else {
+      content = '';
+    }
+    cells += `<td${content ? '' : ' style="background:transparent"'}>${content}</td>`;
+  });
+
+  // If for some reason label was never placed (should not happen), put it in the first cell.
+  if (!labelPlaced && cells) {
+    // Replace first cell with label (simplified: rebuild)
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `<tr>${cells}</tr>`;
+    const firstTd = tempDiv.querySelector('td');
+    if (firstTd) firstTd.innerHTML = '<span class="sum-label">TOTALS</span>';
+    foot.innerHTML = tempDiv.innerHTML;
+  } else {
+    foot.innerHTML = `<tr>${cells}</tr>`;
+  }
 }
 
 /* ============================================================
@@ -1677,7 +1782,54 @@ function getTableData() {
     remarks: r.querySelector('.remarks')?.value || ''
   }));
 }
+/* ── Company-info validation ───────────────────────────────────────────── */
+function getCompanyInfoMissingFields(){
+  const required=[
+    {id:'companyName',     label:'Company Name'},
+    {id:'companyTIN',      label:'TIN Number'},
+    {id:'companyAddress',  label:'Address'},
+    {id:'lineOfBusiness',  label:'Line of Business'},
+    {id:'authorizedEmployee', label:'Authorized Employee'}
+  ];
+  return required.filter(f=>!document.getElementById(f.id)?.value?.trim()).map(f=>f.label);
+}
+function checkCompanyInfoAndWarn(){
+  const missing=getCompanyInfoMissingFields();
+  if(!missing.length) return true;
+  // Highlight the right panel
+  const panel=document.getElementById('rightPanel');
+  if(panel){
+    panel.style.transition='box-shadow .2s';
+    panel.style.boxShadow='0 0 0 3px var(--red-500,#ef4444)';
+    setTimeout(()=>{ panel.style.boxShadow=''; },2000);
+  }
+  // Highlight each missing field
+  missing.forEach(label=>{
+    const required=[
+      {id:'companyName',label:'Company Name'},
+      {id:'companyTIN',label:'TIN Number'},
+      {id:'companyAddress',label:'Address'},
+      {id:'lineOfBusiness',label:'Line of Business'},
+      {id:'authorizedEmployee',label:'Authorized Employee'}
+    ];
+    const f=required.find(r=>r.label===label);
+    if(f){
+      const el=document.getElementById(f.id);
+      if(el){
+        el.style.transition='border-color .2s,box-shadow .2s';
+        el.style.borderColor='var(--red-500,#ef4444)';
+        el.style.boxShadow='0 0 0 2px rgba(239,68,68,.25)';
+        setTimeout(()=>{ el.style.borderColor=''; el.style.boxShadow=''; },2500);
+      }
+    }
+  });
+  showToast('Please fill in required Company Information fields: '+missing.join(', '),'error');
+  return false;
+}
+/* ── End company-info validation ───────────────────────────────────────── */
+
 function saveDataToFile(){
+  if(!checkCompanyInfoAndWarn()) return;
   const blob=new Blob([JSON.stringify({version:'1.0',type:'capex',timestamp:new Date().toISOString(),companyInfo:getCompanyData(),tableData:getTableData()},null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='CAPEX_Data_'+new Date().toISOString().split('T')[0]+'.capex';
@@ -2155,7 +2307,7 @@ function setupAutoDateUpdate(){
 ============================================================ */
 async function initializeCapexTracker() {
   // 1. Backend check
-  await checkBackend();
+  await window.__backendReady;
 
   // Module-level MONTHLY_CTX / IS_MONTHLY / IS_BRIDGE are already set at top of script.
   // IS_BRIDGE: sub-admin opening a Client's data (read-only cross-role view)
@@ -2436,7 +2588,7 @@ async function initializeCapexTracker() {
         await saveSession();
         showToast('Navigating to portal…', 'success');
         document.getElementById('submitModalOverlay').classList.add('hidden');
-        setTimeout(() => { location.href = '../index.html'; }, 400);
+        setTimeout(() => { location.href = '../bookkeeping.html'; }, 400);
       });
     }
     const cancelBtn = document.getElementById('submitModalCancelBtn');
@@ -2584,7 +2736,7 @@ if (document.readyState === 'loading') {
 
 /* ============================================================
    SAVE & SUBMIT — saves .capex named by month/year
-   then navigates to portal index.html#submit-report
+   then navigates to portal bookkeeping.html#submit-report
 ============================================================ */
 function getTrackingMonthYear() {
   // Priority: monthly context → report date field → today
@@ -2608,6 +2760,7 @@ function getMonthName(n) {
 
 function openSaveAndSubmitModal() {
   if (APP_ROLE !== 'Client') return;
+  if (!checkCompanyInfoAndWarn()) return;
   const { year, month } = getTrackingMonthYear();
   const monthName = getMonthName(month);
   const filename = `CAPEX_Report_${monthName}_${year}.capex`;
@@ -2660,7 +2813,7 @@ function openSaveAndSubmitModal() {
       sessionStorage.setItem('VAT_PENDING_REPORT_YEAR', String(y));
       document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
       showToast('File saved — redirecting to Submit Report...', 'success');
-      setTimeout(() => { location.href = '../index.html#submit-report'; }, 700);
+      setTimeout(() => { location.href = '../bookkeeping.html#submit-report'; }, 700);
     };
     reader.readAsDataURL(blob);
   };

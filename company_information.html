@@ -195,14 +195,6 @@ html, body { min-height:100%; background:#f5f6f9; color:var(--gray-900); font-fa
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
     <a href="index2.html" class="nav-link" style="margin-left:10px"><i class="fas fa-home"></i> Dashboard</a>
-    <a href="vatable_sales.html" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> VAT Sales</a>
-    <a href="vatable_purchases.html" class="nav-link"><i class="fas fa-shopping-cart"></i> VAT Purchases</a>
-    <a href="vatable_expenses.html" class="nav-link"><i class="fas fa-receipt"></i> VAT Expenses</a>
-    <a href="non_vat_purchases.html" class="nav-link"><i class="fas fa-shopping-bag"></i> Non-VAT Purchases</a>
-    <a href="non_vat_expenses.html" class="nav-link"><i class="fas fa-file-alt"></i> Non-VAT Expenses</a>
-    <a href="capex.html" class="nav-link"><i class="fas fa-tools"></i> CAPEX</a>
-    <a href="taxes_licenses.html" class="nav-link"><i class="fas fa-landmark"></i> Taxes &amp; Licenses</a>
-    <a href="purchase_returns.html" class="nav-link"><i class="fas fa-undo-alt"></i> Purchase Returns</a>
   </div>
 </nav>
 
@@ -421,6 +413,16 @@ html, body { min-height:100%; background:#f5f6f9; color:var(--gray-900); font-fa
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 'use strict';
 
 /* =====================================================
@@ -440,6 +442,24 @@ const APP_USER_ID = (function(){
 })();
 
 /* =====================================================
+   SYSTEM (Accounting vs Bookkeeping) — detected from the
+   folder path, same pattern as the role detection below.
+   Sent to the backend as `scope=` so the two systems never
+   share the same account's company-info record, even if the
+   same account id is logged into both. Also used to namespace
+   the local-storage keys below so a shared browser/origin
+   can't leak cached data between the two systems either.
+   Falls back to null (legacy/unscoped) outside those folders.
+===================================================== */
+const APP_SYSTEM = (function(){
+  const p = window.location.pathname;
+  if (p.includes('/Accounting/'))  return 'Accounting';
+  if (p.includes('/Bookkeeping/')) return 'Bookkeeping';
+  return null;
+})();
+const SYS_PREFIX = APP_SYSTEM ? `${APP_SYSTEM}_` : '';
+
+/* =====================================================
    STORAGE KEYS — scoped per APP_USER_ID so each client
    account's company info is fully isolated.
    All tracker pages read the same scoped keys because
@@ -448,37 +468,39 @@ const APP_USER_ID = (function(){
    reportDate is stored as YYYY-MM-DD, displayed MM/DD/YYYY
 ===================================================== */
 const u = APP_USER_ID;
+// All keys carry SYS_PREFIX so Accounting and Bookkeeping never read/write
+// each other's cached copies, even under the same account id / browser.
 const COMPANY_KEYS = [
   // VAT Sales
-  `vatCompanyInfo_${u}_Main`,
-  `vatCompanyInfo_${u}_Client`,
-  `vatCompanyInfo_${u}_SubAdmin`,
+  `vatCompanyInfo_${SYS_PREFIX}${u}_Main`,
+  `vatCompanyInfo_${SYS_PREFIX}${u}_Client`,
+  `vatCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
   // VAT Purchases
-  `purchCompanyInfo_${u}_Main`,
-  `purchCompanyInfo_${u}_Client`,
-  `purchCompanyInfo_${u}_SubAdmin`,
+  `purchCompanyInfo_${SYS_PREFIX}${u}_Main`,
+  `purchCompanyInfo_${SYS_PREFIX}${u}_Client`,
+  `purchCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
   // VAT Expenses
-  `expCompanyInfo_${u}_Main`,
-  `expCompanyInfo_${u}_Client`,
-  `expCompanyInfo_${u}_SubAdmin`,
+  `expCompanyInfo_${SYS_PREFIX}${u}_Main`,
+  `expCompanyInfo_${SYS_PREFIX}${u}_Client`,
+  `expCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
   // Non-VAT Purchases
-  `npurchCompanyInfo_${u}_Main`,
-  `npurchCompanyInfo_${u}_Client`,
-  `npurchCompanyInfo_${u}_SubAdmin`,
+  `npurchCompanyInfo_${SYS_PREFIX}${u}_Main`,
+  `npurchCompanyInfo_${SYS_PREFIX}${u}_Client`,
+  `npurchCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
   // Non-VAT Expenses
-  `nvatExpCompanyInfo_${u}`,
-  `nvatExpCompanyInfo_${u}_Client`,
-  `nvatExpCompanyInfo_${u}_SubAdmin`,
+  `nvatExpCompanyInfo_${SYS_PREFIX}${u}`,
+  `nvatExpCompanyInfo_${SYS_PREFIX}${u}_Client`,
+  `nvatExpCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
   // CAPEX
-  `capexCompanyInfo_${u}_Main`,
-  `capexCompanyInfo_${u}_Client`,
-  `capexCompanyInfo_${u}_SubAdmin`,
+  `capexCompanyInfo_${SYS_PREFIX}${u}_Main`,
+  `capexCompanyInfo_${SYS_PREFIX}${u}_Client`,
+  `capexCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
   // Taxes & Licenses
-  `taxesCompanyInfo_${u}_Main`,
-  `taxesCompanyInfo_${u}_Client`,
-  `taxesCompanyInfo_${u}_SubAdmin`,
+  `taxesCompanyInfo_${SYS_PREFIX}${u}_Main`,
+  `taxesCompanyInfo_${SYS_PREFIX}${u}_Client`,
+  `taxesCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
   // Purchase Returns
-  `purchaseReturnsCompanyInfo_${u}`
+  `purchaseReturnsCompanyInfo_${SYS_PREFIX}${u}`
 ];
 
 // These IDs match EXACTLY the getElementById() calls in vatable_sales.html
@@ -526,14 +548,14 @@ function fmtTIN(inp) {
 function loadSaved() {
   // All known company info keys across all modules
   const allKeys = [
-    `vatCompanyInfo_${u}_Main`,    `vatCompanyInfo_${u}_Client`,    `vatCompanyInfo_${u}_SubAdmin`,
-    `purchCompanyInfo_${u}_Main`,  `purchCompanyInfo_${u}_Client`,  `purchCompanyInfo_${u}_SubAdmin`,
-    `expCompanyInfo_${u}_Main`,    `expCompanyInfo_${u}_Client`,    `expCompanyInfo_${u}_SubAdmin`,
-    `npurchCompanyInfo_${u}_Main`, `npurchCompanyInfo_${u}_Client`, `npurchCompanyInfo_${u}_SubAdmin`,
-    `nvatExpCompanyInfo_${u}`,     `nvatExpCompanyInfo_${u}_Client`,`nvatExpCompanyInfo_${u}_SubAdmin`,
-    `capexCompanyInfo_${u}_Main`,  `capexCompanyInfo_${u}_Client`,  `capexCompanyInfo_${u}_SubAdmin`,
-    `taxesCompanyInfo_${u}_Main`,  `taxesCompanyInfo_${u}_Client`,  `taxesCompanyInfo_${u}_SubAdmin`,
-    `purchaseReturnsCompanyInfo_${u}`
+    `vatCompanyInfo_${SYS_PREFIX}${u}_Main`,    `vatCompanyInfo_${SYS_PREFIX}${u}_Client`,    `vatCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
+    `purchCompanyInfo_${SYS_PREFIX}${u}_Main`,  `purchCompanyInfo_${SYS_PREFIX}${u}_Client`,  `purchCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
+    `expCompanyInfo_${SYS_PREFIX}${u}_Main`,    `expCompanyInfo_${SYS_PREFIX}${u}_Client`,    `expCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
+    `npurchCompanyInfo_${SYS_PREFIX}${u}_Main`, `npurchCompanyInfo_${SYS_PREFIX}${u}_Client`, `npurchCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
+    `nvatExpCompanyInfo_${SYS_PREFIX}${u}`,     `nvatExpCompanyInfo_${SYS_PREFIX}${u}_Client`,`nvatExpCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
+    `capexCompanyInfo_${SYS_PREFIX}${u}_Main`,  `capexCompanyInfo_${SYS_PREFIX}${u}_Client`,  `capexCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
+    `taxesCompanyInfo_${SYS_PREFIX}${u}_Main`,  `taxesCompanyInfo_${SYS_PREFIX}${u}_Client`,  `taxesCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`,
+    `purchaseReturnsCompanyInfo_${SYS_PREFIX}${u}`
   ];
   for (const k of allKeys) {
     const raw = localStorage.getItem(k);
@@ -605,7 +627,7 @@ function writeData(data) {
   // data.reportDate is already in storage format (YYYY-MM-DD) so it's compatible as-is.
 
   const CAPEX_KEYS = new Set([
-    `capexCompanyInfo_${u}_Main`, `capexCompanyInfo_${u}_Client`, `capexCompanyInfo_${u}_SubAdmin`
+    `capexCompanyInfo_${SYS_PREFIX}${u}_Main`, `capexCompanyInfo_${SYS_PREFIX}${u}_Client`, `capexCompanyInfo_${SYS_PREFIX}${u}_SubAdmin`
   ]);
 
   COMPANY_KEYS.forEach(k => {
@@ -654,9 +676,9 @@ function toast(msg, type='info') {
 /* ── API helpers ── */
 function getApiBase() {
   if (window.VAT_API_BASE) return window.VAT_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:8000/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? `${window.location.protocol}//${window.location.hostname}:8000/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 }
 function getApiToken() {
@@ -674,11 +696,16 @@ async function checkApiAvailable() {
     return r.ok;
   } catch(_) { return false; }
 }
+function companyInfoUrl() {
+  // Passing scope keeps this system's saved company info out of the other
+  // system's account-wide record — see COMPANY_INFO_SCOPE_NOTE in main.py.
+  return getApiBase() + '/company-info' + (APP_SYSTEM ? `?scope=${APP_SYSTEM}` : '');
+}
 async function apiSaveCompanyInfo(data) {
   const token = getApiToken();
   if (!token) return;
   try {
-    await fetch(getApiBase() + '/company-info', {
+    await fetch(companyInfoUrl(), {
       method: 'POST', headers: apiHeaders(),
       body: JSON.stringify({ data })
     });
@@ -688,7 +715,7 @@ async function apiLoadCompanyInfo() {
   const token = getApiToken();
   if (!token) return null;
   try {
-    const r = await fetch(getApiBase() + '/company-info', { headers: apiHeaders() });
+    const r = await fetch(companyInfoUrl(), { headers: apiHeaders() });
     if (r.ok) { const d = await r.json(); return (d.data && Object.keys(d.data).length) ? d.data : null; }
   } catch(_) {}
   return null;

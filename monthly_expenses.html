@@ -356,7 +356,7 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
       <span class="id-badge-sep hidden" id="identitySep">›</span>
       <div class="id-badge id-badge-client hidden" id="clientBadge"><i class="fas fa-user"></i><span id="clientBadgeLabel">—</span></div>
     </div>
-    <a href="../index.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
+    <a href="../bookkeeping.html" class="topbar-btn"><i class="fas fa-home"></i> Portal</a>
     <a href="vatable_expenses.html" class="topbar-btn"><i class="fas fa-table-list"></i> Current Tracker</a>
     <a href="Graphical_Analysis.html" class="topbar-btn"><i class="fas fa-chart-line"></i> Graphical Analysis</a>
     <a href="index2.html" class="topbar-btn"><i class="fas fa-home"></i> Dashboard</a>
@@ -510,6 +510,16 @@ body { font-family: var(--font); background: var(--gray-100); color: var(--gray-
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 /* ============================================================
    CONFIG & CONSTANTS
 ============================================================ */
@@ -518,9 +528,9 @@ const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 
 const API_BASE = (() => {
   if (window.VAT_API_BASE) return window.VAT_API_BASE;
-  if (window.__TAURI__) return 'http://localhost:9999/api';
+  if (window.__TAURI__) return 'http://localhost:8001/api';
   return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `${window.location.protocol}//${window.location.hostname}:9999/api`
+    ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : '/api';
 })();
 
@@ -606,7 +616,7 @@ async function saveMonthData(year, month, dataObj) {
 
   if (USE_API && authToken) {
     try {
-      await fetch(`${API_BASE}/monthly-expenses`, {
+      await fetch(`${API_BASE}/monthly-expenses?role=${APP_ROLE}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ year, month, data: dataObj, meta }),
@@ -619,7 +629,7 @@ async function saveMonthData(year, month, dataObj) {
 async function loadMonthData(year, month) {
   if (USE_API && authToken) {
     try {
-      const r = await fetch(`${API_BASE}/monthly-expenses/${year}/${String(month).padStart(2,'0')}`, {
+      const r = await fetch(`${API_BASE}/monthly-expenses/${year}/${String(month).padStart(2,'0')}?role=${APP_ROLE}`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (r.ok) {
@@ -642,94 +652,150 @@ async function deleteMonthData(year, month) {
   localStorage.removeItem(makeMetaKey(year, month));
   if (USE_API && authToken) {
     try {
-      await fetch(`${API_BASE}/monthly-expenses/${year}/${String(month).padStart(2,'0')}`, {
+      await fetch(`${API_BASE}/monthly-expenses/${year}/${String(month).padStart(2,'0')}?role=${APP_ROLE}`, {
         method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` }
       });
     } catch(_) {}
   }
 }
 
-async function getAllMonthMetaForYear(year) {
-  // ALWAYS read localStorage first — meta keys written by vatable_expenses.html's
-  // beforeunload are stored here and must never be skipped by an API call.
-  const localResult = [];
+/* ============================================================
+   META CACHE — short-lived (5s) in-memory cache so the several
+   render calls inside one updateAll() cycle don't each re-hit the
+   API, while still staying fresh enough to reflect a just-received
+   SSE update (the SSE handler busts this cache before re-rendering).
+============================================================ */
+let _metaRequestCache = new Map();
+
+// Read the 12 months of a year purely from localStorage, deriving meta from
+// the raw session key if the meta key itself happens to be missing. This is
+// also used as a per-month fallback when the API has nothing for a given
+// month yet — e.g. data saved locally while the API was unreachable/401'd.
+function _localMonthMeta(year) {
+  const result = [];
   for (let m = 1; m <= 12; m++) {
     const metaRaw = localStorage.getItem(makeMetaKey(year, m));
     if (metaRaw) {
-      try { localResult.push(JSON.parse(metaRaw)); } catch(e) { localResult.push(null); }
+      try { result.push(JSON.parse(metaRaw)); } catch(e) { result.push(null); }
+      continue;
+    }
+    const rawData = localStorage.getItem(makeStorageKey(year, m));
+    if (rawData) {
+      try {
+        const parsed = JSON.parse(rawData);
+        const td = parsed.tableData || [];
+        const meta = {
+          year, month: m,
+          rowCount:       td.length,
+          grossAmount:    calcGross(td),
+          netExpenses:    calcNet(td),
+          inputTax:       calcTax(td),
+          withholdingTax: calcWT(td),
+          netPayable:     calcNetPay(td),
+          lastModified:   parsed.timestamp || new Date().toISOString(),
+          companyName:    (parsed.companyInfo && (parsed.companyInfo.companyName || parsed.companyInfo.name)) || '',
+          reportDate:     (parsed.companyInfo && (parsed.companyInfo.reportDate || parsed.companyInfo.date)) || '',
+        };
+        localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
+        result.push(meta);
+      } catch(e) { result.push(null); }
     } else {
-      // Fallback: derive meta from the raw session key if meta key is missing
-      const rawData = localStorage.getItem(makeStorageKey(year, m));
-      if (rawData) {
-        try {
-          const parsed = JSON.parse(rawData);
-          const td = parsed.tableData || [];
-          const meta = {
-            year, month: m,
-            rowCount:       td.length,
-            grossAmount:    calcGross(td),
-            netExpenses:    calcNet(td),
-            inputTax:       calcTax(td),
-            withholdingTax: calcWT(td),
-            netPayable:     calcNetPay(td),
-            lastModified:   parsed.timestamp || new Date().toISOString(),
-            companyName:    (parsed.companyInfo && (parsed.companyInfo.companyName || parsed.companyInfo.name)) || '',
-            reportDate:     (parsed.companyInfo && (parsed.companyInfo.reportDate || parsed.companyInfo.date)) || '',
-          };
-          localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
-          localResult.push(meta);
-        } catch(e) { localResult.push(null); }
-      } else {
-        localResult.push(null);
-      }
+      result.push(null);
     }
   }
+  return result;
+}
 
-  const hasLocalData = localResult.some(m => m !== null);
+async function getAllMonthMetaForYear(year) {
+  const cacheKey = `meta_${year}_${APP_ROLE}`;
+  const now      = Date.now();
+  const cached   = _metaRequestCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < 5000) return cached.data;
 
-  // If any local data exists return it immediately — don't let an API call overwrite it
-  if (hasLocalData) return localResult;
+  const localResult = _localMonthMeta(year);
 
-  // Only hit the API when there is truly nothing saved locally yet
+  // When online, the API is the source of truth FOR THE MONTHS IT HAS —
+  // this is what lets a save made on a different browser/computer show up
+  // here. But any month the API doesn't have yet (e.g. saved locally before
+  // the API was reachable, or before this account's token was valid) still
+  // falls back to the local copy instead of disappearing.
   if (USE_API && authToken) {
     try {
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 5000);
       const r = await fetch(`${API_BASE}/monthly-expenses?year=${year}&role=${APP_ROLE}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+        cache: 'no-store',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (r.ok) {
         const list = await r.json();
-        const apiResult = Array(12).fill(null);
+        const merged = localResult.slice();
         (list.records || list).forEach(rec => {
           const m = parseInt(rec.month);
           if (m >= 1 && m <= 12) {
-            const meta = rec.meta || rec;
-            apiResult[m - 1] = meta;
+            const meta = {
+  ...(rec.meta || {}),
+  // Guarantee the fields renderTimeline / fmtPHP require,
+  // using the API's flat top-level copies as the authoritative fallback.
+  rowCount:        rec.meta?.rowCount        ?? rec.rowCount        ?? 0,
+  grossAmount:     rec.meta?.grossAmount     ?? rec.grossAmount     ?? 0,
+  netExpenses:     rec.meta?.netExpenses     ?? rec.netExpenses     ?? 0,
+  inputTax:        rec.meta?.inputTax        ?? rec.inputTax        ?? 0,
+  withholdingTax:  rec.meta?.withholdingTax  ?? rec.withholdingTax  ?? 0,
+  netPayable:      rec.meta?.netPayable      ?? rec.netPayable      ?? 0,
+  companyName:     rec.meta?.companyName     ?? rec.companyName     ?? '',
+  lastModified:    rec.meta?.lastModified    ?? rec.lastModified    ?? null,
+};
+merged[m - 1] = meta;
             if (!rec.role || rec.role === APP_ROLE) {
               localStorage.setItem(makeMetaKey(year, m), JSON.stringify(meta));
             }
           }
         });
-        return apiResult;
+        _metaRequestCache.set(cacheKey, { data: merged, timestamp: now });
+        setTimeout(() => {
+          if (_metaRequestCache.get(cacheKey)?.timestamp === now) _metaRequestCache.delete(cacheKey);
+        }, 10000);
+        return merged;
       }
     } catch(_) {}
   }
 
+  // Offline / API-unavailable — local data only.
+  _metaRequestCache.set(cacheKey, { data: localResult, timestamp: now });
+  setTimeout(() => {
+    if (_metaRequestCache.get(cacheKey)?.timestamp === now) _metaRequestCache.delete(cacheKey);
+  }, 5000);
+
   return localResult;
 }
-async function getAllStoredYears() {
-  if (USE_API && authToken) {
-    try {
-      const r = await fetch(`${API_BASE}/monthly-expenses/years?role=${APP_ROLE}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      });
-      if (r.ok) { const d = await r.json(); if (d.years && d.years.length) return d.years.sort((a,b)=>b-a); }
-    } catch(_) {}
-  }
+function _localStoredYears() {
   const years = new Set();
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     const m = k && k.match(new RegExp(`EXP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_(\\d{4})_`));
     if (m) years.add(parseInt(m[1]));
+  }
+  return years;
+}
+
+async function getAllStoredYears() {
+  const years = _localStoredYears();
+  if (USE_API && authToken) {
+    try {
+      const r = await fetch(`${API_BASE}/monthly-expenses/years?role=${APP_ROLE}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (r.ok) {
+        const d = await r.json();
+        (d.years || []).forEach(y => years.add(y));
+      }
+    } catch(_) {}
   }
   return Array.from(years).sort((a, b) => b - a);
 }
@@ -791,7 +857,10 @@ function calcNetPay(tableData) {
   }, 0);
 }
 
-function fmtPHP(n) { return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+function fmtPHP(n) {
+  const v = parseFloat(n) || 0;
+  return '₱' + v.toLocaleString('en-PH', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
 function fmtDate(iso) {
   if (!iso) return '—';
   try { return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
@@ -1260,6 +1329,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.visibilityState === 'visible') {
       console.log('visibilitychange: visible, refreshing...');
       updateAll();
+      // Browsers close EventSource connections when a tab is backgrounded —
+      // reconnect so real-time updates keep flowing once it's visible again.
+      if (USE_API && !_sseSource) connectSSE();
     }
   });
 
@@ -1273,10 +1345,116 @@ document.addEventListener('DOMContentLoaded', async () => {
       // context was set before navigating away.
       await checkReturnFromTracker();
       await updateAll();
+      if (USE_API && !_sseSource) connectSSE();
     }
   });
 
+  // ── Listen for same-browser live writes from vatable_expenses.html
+  //    (fires when another tab in the same browser writes to localStorage)
+  window.addEventListener('storage', (e) => {
+    if (!e.key) return;
+    const metaPrefix = `EXP_MONTHLY_META_${APP_USER_ID}_${APP_ROLE}_`;
+    const dataPrefix = `EXP_MONTHLY_${APP_USER_ID}_${APP_ROLE}_`;
+    if (!e.key.startsWith(metaPrefix) && !e.key.startsWith(dataPrefix)) return;
+    _metaRequestCache.clear();
+    updateAll();
+  });
+
+  // ── Start real-time SSE sync (only when API is online).
+  //    Wait a moment for the auth token to be fully available.
+  setTimeout(() => {
+    if (USE_API && authToken) {
+      connectSSE();
+    } else {
+      setTimeout(() => { if (USE_API && authToken) connectSSE(); }, 2000);
+    }
+  }, 500);
+
   await updateAll();
+});
+
+/* ============================================================
+   REAL-TIME SYNC — Server-Sent Events
+   Mirrors monthly_record.html's connectSSE/processSseUpdate so a save
+   made in vatable_expenses.html on ANY computer (whenever it has a
+   year+month context and mirrors to /api/monthly-expenses) instantly
+   refreshes the "All Monthly Expenses Records" cards here — on every
+   open tab, on every browser, without anyone reopening the tracker.
+============================================================ */
+let _sseSource       = null;
+let _lastSseUpdate    = 0;
+let _sseUpdateTimer   = null;
+
+async function processSseUpdate(dataStr) {
+  try {
+    const data = JSON.parse(dataStr);
+
+    // Bust the short-lived meta cache for the affected year so the next
+    // render actually re-fetches from the API instead of reusing a cached copy.
+    _metaRequestCache.delete(`meta_${data.year}_${APP_ROLE}`);
+
+    if (data.year === selectedYear) {
+      await updateAll();
+    } else if (data.year) {
+      // Different year — still refresh stats/years list so switching to it shows fresh data
+      await renderYearStats();
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(`Updated: ${MONTHS[data.month-1]} ${data.year} (${data.rowCount} entries)`, 'success');
+    }
+  } catch(err) {
+    console.error('SSE: Failed to process expenses update', err);
+  }
+}
+
+function connectSSE() {
+  if (!USE_API) return;
+  if (!authToken) { setTimeout(() => connectSSE(), 2000); return; }
+
+  if (_sseSource) {
+    try { _sseSource.close(); } catch(e) {}
+    _sseSource = null;
+  }
+
+  const url = `${API_BASE}/monthly-expenses/stream?token=${encodeURIComponent(authToken)}`;
+  console.log('SSE: Connecting to', url);
+  _sseSource = new EventSource(url);
+
+  _sseSource.addEventListener('connected', () => {
+    console.log('SSE: Connected successfully');
+    const pill = document.getElementById('backendPill');
+    const text = document.getElementById('backendPillText');
+    if (pill) pill.className = 'backend-pill online';
+    if (text) text.textContent = 'Live Sync';
+  });
+
+  _sseSource.addEventListener('update', async (e) => {
+    console.log('SSE: Received update', e.data);
+    // Debounce — don't process more than one update per second
+    const now = Date.now();
+    if (now - _lastSseUpdate < 1000) {
+      if (_sseUpdateTimer) clearTimeout(_sseUpdateTimer);
+      _sseUpdateTimer = setTimeout(async () => {
+        _sseUpdateTimer = null;
+        await processSseUpdate(e.data);
+      }, 1000);
+      return;
+    }
+    _lastSseUpdate = now;
+    await processSseUpdate(e.data);
+  });
+
+  _sseSource.onerror = (err) => {
+    console.error('SSE: Connection error', err);
+    if (_sseSource) { try { _sseSource.close(); } catch(e) {} _sseSource = null; }
+    setTimeout(() => connectSSE(), 5000);
+  };
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_sseSource) { _sseSource.close(); _sseSource = null; }
+  if (_sseUpdateTimer) { clearTimeout(_sseUpdateTimer); _sseUpdateTimer = null; }
 });
 
 /* ============================================================

@@ -209,6 +209,17 @@ table#nonVatPurchasesTable tfoot .sum-value{font-family:var(--font-mono);font-we
 .field-group input,.field-group select{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--gray-800);background:white;font-family:var(--font);transition:var(--transition)}
 .field-group input:focus,.field-group select:focus{outline:none;border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
 .right-panel-footer{padding:12px 16px;border-top:1px solid var(--gray-100);font-size:10px;color:var(--gray-400)}
+/* ── Save & Submit — company info validation error ── */
+.ss-compinfo-error{background:var(--red-50);border:1px solid var(--red-200);border-radius:8px;padding:14px 16px;margin-bottom:14px;animation:fadeInDown .2s ease;}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ss-compinfo-error-header{display:flex;align-items:center;gap:8px;color:var(--red-700);font-size:13px;margin-bottom:7px;}
+.ss-compinfo-error-header i{font-size:14px;flex-shrink:0;}
+.ss-compinfo-error-msg{font-size:12px;color:var(--red-700);margin-bottom:8px;}
+.ss-compinfo-error-list{list-style:none;padding:0;margin:0 0 12px 0;display:flex;flex-direction:column;gap:4px;}
+.ss-compinfo-error-list li{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--red-700);background:rgba(239,68,68,.08);border-radius:5px;padding:5px 9px;}
+.ss-compinfo-error-list li i{font-size:10px;color:var(--red-500);flex-shrink:0;}
+.ss-compinfo-goto-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:var(--red-500);color:white;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:var(--transition);}
+.ss-compinfo-goto-btn:hover{background:var(--red-700);}
 
 /* COL VIS DROPDOWN */
 .col-vis-container{position:relative;display:inline-block}
@@ -451,7 +462,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <button class="nav-btn" id="showAllBtn"><i class="fas fa-eye"></i>Show All Sections</button>
     <button class="nav-btn" id="tableFocusBtn"><i class="fas fa-expand"></i>Table Focus Mode</button>
     <div class="nav-divider"></div>
-    <a href="../index.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
+    <a href="../bookkeeping.html" class="nav-btn"><i class="fas fa-arrow-left"></i>Back to Portal</a>
   </div>
   <div class="sidebar-footer">
     <div>MGAA Non-VAT Purchases v2.0</div>
@@ -501,6 +512,7 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
     <table id="nonVatPurchasesTable">
       <thead>
         <tr>
+          <th data-col="seq" style="width:42px;text-align:center">#</th>
           <th data-col="date">Date</th>
           <th data-col="invoiceNumber">Invoice No.</th>
           <th data-col="invoiceType">Invoice Type</th>
@@ -616,6 +628,20 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
   <div class="submit-modal">
     <div class="submit-modal-title"><i class="fas fa-cloud-upload-alt" style="color:var(--blue-600)"></i>Save &amp; Submit Report</div>
     <div class="submit-modal-sub">Save a .npurch file named by month/year and go to Submit Report in the portal.</div>
+
+    <!-- Company info validation error (hidden by default) -->
+    <div class="ss-compinfo-error hidden" id="ssCompInfoError">
+      <div class="ss-compinfo-error-header">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Company Information Incomplete</strong>
+      </div>
+      <p class="ss-compinfo-error-msg">Please fill in all required company fields before submitting:</p>
+      <ul class="ss-compinfo-error-list" id="ssCompInfoErrorList"></ul>
+      <button class="ss-compinfo-goto-btn" id="ssGotoCompInfoBtn">
+        <i class="fas fa-arrow-right"></i> Go to Company Info Panel
+      </button>
+    </div>
+
     <div class="submit-modal-file" id="saveSubmitFileInfo">
       <i class="fas fa-cart-plus" style="color:#8B5CF6;font-size:1.4rem"></i>
       <div>
@@ -663,15 +689,25 @@ td.cell-selected{background:rgba(37,99,235,.12)!important;outline:1.5px solid va
 </div>
 
 <script>
+// ── Auth guard: redirect to sign-in if no active session ──
+(function() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem('VAT_SESSION') || 'null');
+    if (!session || !session.id) { window.location.replace('../bookkeeping.html'); }
+  } catch(e) { window.location.replace('../bookkeeping.html'); }
+})();
+</script>
+
+<script>
 'use strict';
 /* ============================================================
    BACKEND CONFIG
 ============================================================ */
 const API_BASE=(()=>{
   if(window.VAT_API_BASE)return window.VAT_API_BASE;
-  if(window.__TAURI__)return'http://localhost:9999/api';
+  if(window.__TAURI__)return'http://localhost:8001/api';
   return(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1')
-    ?`${window.location.protocol}//${window.location.hostname}:9999/api`:'/api';
+    ?`${window.location.protocol}//${window.location.hostname}:8001/api`:'/api';
 })();
 let USE_API=false,authToken=null;
 async function checkBackend(){
@@ -680,11 +716,29 @@ async function checkBackend(){
   USE_API=false;pill.className='backend-pill offline';text.textContent='Local Mode';
 }
 function apiHeaders(){const h={'Content-Type':'application/json'};if(authToken)h['Authorization']=`Bearer ${authToken}`;return h;}
+/* Kicked off immediately (not inside a DOMContentLoaded handler) so every other
+   part of the page — including the supplier TIN registry loader further below —
+   can `await` this single promise and be guaranteed the real backend/auth status
+   before deciding whether to trust the API or fall back to local-only data.
+   Previously the supplier list loaded on its own DOMContentLoaded listener that
+   fired before this check finished, so it silently read a stale/empty local
+   cache and only self-corrected up to 30s later — making already-registered
+   TINs look "reset" until then. */
+window.__backendReady=checkBackend();
 
 /* ============================================================
    ROLE & MONTHLY CONTEXT
 ============================================================ */
 const APP_ROLE=(function(){const p=window.location.pathname;if(p.includes('/Client/'))return'Client';if(p.includes('/Sub-Admin/'))return'SubAdmin';return'Main';})();
+// SYSTEM (Accounting vs Bookkeeping) — detected from the folder path, same
+// pattern as APP_ROLE. Sent to the backend as `scope=` on the shared,
+// account-wide endpoints (/api/company-info, /api/npurch-suppliers) so
+// Accounting and Bookkeeping never read/write each other's company info or
+// registered supplier TIN list, even if the same account is logged into
+// both. Falls back to null (legacy/unscoped) outside those folders.
+const APP_SYSTEM=(function(){const p=window.location.pathname;if(p.includes('/Accounting/'))return'Accounting';if(p.includes('/Bookkeeping/'))return'Bookkeeping';return null;})();
+function scopeParam(){return APP_SYSTEM?`&scope=${APP_SYSTEM}`:'';}
+const SYS_PREFIX=APP_SYSTEM?`${APP_SYSTEM}_`:'';
 const MONTHLY_CTX={key:sessionStorage.getItem('NPURCH_MONTHLY_CONTEXT_KEY')||null,year:sessionStorage.getItem('NPURCH_MONTHLY_CONTEXT_YEAR')||null,month:sessionStorage.getItem('NPURCH_MONTHLY_CONTEXT_MONTH')||null,label:sessionStorage.getItem('NPURCH_MONTHLY_CONTEXT_LABEL')||null};
 const IS_MONTHLY=!!(MONTHLY_CTX.key&&MONTHLY_CTX.year&&MONTHLY_CTX.month);
 
@@ -692,9 +746,9 @@ const IS_MONTHLY=!!(MONTHLY_CTX.key&&MONTHLY_CTX.year&&MONTHLY_CTX.month);
    ROLE-SPECIFIC STORAGE NAMESPACE
 ============================================================ */
 const STORAGE_NS={
-  Client:{SUPPLIER_TIN_MAP:'NPURCH_SUPPLIER_TIN_MAP_Client',COMPANY_INFO:'npurchCompanyInfo_Client',COL_VISIBILITY:'npurchColVis_Client',VIS_STATES:'npurchVisStates_Client'},
-  SubAdmin:{SUPPLIER_TIN_MAP:'NPURCH_SUPPLIER_TIN_MAP_SubAdmin',COMPANY_INFO:'npurchCompanyInfo_SubAdmin',COL_VISIBILITY:'npurchColVis_SubAdmin',VIS_STATES:'npurchVisStates_SubAdmin'},
-  Main:{SUPPLIER_TIN_MAP:'NPURCH_SUPPLIER_TIN_MAP_Main',COMPANY_INFO:'npurchCompanyInfo_Main',COL_VISIBILITY:'npurchColVis_Main',VIS_STATES:'npurchVisStates_Main'}
+  Client:{SUPPLIER_TIN_MAP:`NPURCH_SUPPLIER_TIN_MAP_${SYS_PREFIX}Client`,COMPANY_INFO:`npurchCompanyInfo_${SYS_PREFIX}Client`,COL_VISIBILITY:'npurchColVis_Client',VIS_STATES:'npurchVisStates_Client'},
+  SubAdmin:{SUPPLIER_TIN_MAP:`NPURCH_SUPPLIER_TIN_MAP_${SYS_PREFIX}SubAdmin`,COMPANY_INFO:`npurchCompanyInfo_${SYS_PREFIX}SubAdmin`,COL_VISIBILITY:'npurchColVis_SubAdmin',VIS_STATES:'npurchVisStates_SubAdmin'},
+  Main:{SUPPLIER_TIN_MAP:`NPURCH_SUPPLIER_TIN_MAP_${SYS_PREFIX}Main`,COMPANY_INFO:`npurchCompanyInfo_${SYS_PREFIX}Main`,COL_VISIBILITY:'npurchColVis_Main',VIS_STATES:'npurchVisStates_Main'}
 };
 const NS=STORAGE_NS[APP_ROLE];
 function getActiveSessionKey(){return IS_MONTHLY?MONTHLY_CTX.key:`NPURCH_SESSION_TABLE_${APP_ROLE}`;}
@@ -711,7 +765,7 @@ async function apiSaveSession(tableData,companyInfo){
   localStorage.setItem(getActiveCompanyKey(),JSON.stringify(companyInfo));
   if(USE_API&&authToken){
     try{await fetch(`${API_BASE}/npurch-records`,{method:'POST',headers:apiHeaders(),body:JSON.stringify(payload)});}catch(_){}
-    if(IS_MONTHLY&&MONTHLY_CTX.year&&MONTHLY_CTX.month){const meta={year:parseInt(MONTHLY_CTX.year),month:parseInt(MONTHLY_CTX.month),rowCount:tableData.length,grossPurchases:tableData.reduce((s,r)=>s+(parseFloat(r.grossAmount)||parseFloat(r.grossPurchases)||0),0),netPurchases:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||parseFloat(r.grossPurchases)||0)/1.12),0),inputTax:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||parseFloat(r.grossPurchases)||0)/1.12*0.12),0),lastModified:payload.saved_at,companyName:companyInfo.name||companyInfo.companyName||'',reportDate:companyInfo.date||companyInfo.reportDate||''};try{await fetch(`${API_BASE}/monthly-npurch`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({year:meta.year,month:meta.month,data:{tableData,companyInfo},meta})});}catch(_){}}
+    if(IS_MONTHLY&&MONTHLY_CTX.year&&MONTHLY_CTX.month){const meta={year:parseInt(MONTHLY_CTX.year),month:parseInt(MONTHLY_CTX.month),rowCount:tableData.length,grossPurchases:tableData.reduce((s,r)=>s+(parseFloat(r.grossAmount)||parseFloat(r.grossPurchases)||0),0),netPurchases:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||parseFloat(r.grossPurchases)||0)/1.12),0),inputTax:tableData.reduce((s,r)=>s+((parseFloat(r.grossAmount)||parseFloat(r.grossPurchases)||0)/1.12*0.12),0),lastModified:payload.saved_at,companyName:companyInfo.name||companyInfo.companyName||'',reportDate:companyInfo.date||companyInfo.reportDate||''};try{await fetch(`${API_BASE}/monthly-npurch?role=${encodeURIComponent(APP_ROLE)}`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({year:meta.year,month:meta.month,data:{tableData,companyInfo},meta})});}catch(_){}}
   }
 }
 async function apiLoadSession(){
@@ -721,10 +775,10 @@ async function apiLoadSession(){
 }
 async function apiSaveSuppliers(dbObj){
   localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(Object.fromEntries(dbObj)));
-  if(USE_API&&authToken){try{await fetch(`${API_BASE}/npurch-suppliers`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({role:APP_ROLE,data:Object.fromEntries(dbObj)})});}catch(_){}}
+  if(USE_API&&authToken){try{await fetch(`${API_BASE}/npurch-suppliers${APP_SYSTEM?`?scope=${APP_SYSTEM}`:''}`,{method:'POST',headers:apiHeaders(),body:JSON.stringify({role:APP_ROLE,data:Object.fromEntries(dbObj)})});}catch(_){}}
 }
 async function apiLoadSuppliers(){
-  if(USE_API&&authToken){try{const r=await fetch(`${API_BASE}/npurch-suppliers?role=${APP_ROLE}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(d.data||{}));return new Map(Object.entries(d.data||{}));}}catch(_){}}
+  if(USE_API&&authToken){try{const r=await fetch(`${API_BASE}/npurch-suppliers?role=${APP_ROLE}${scopeParam()}`,{headers:apiHeaders()});if(r.ok){const d=await r.json();localStorage.setItem(NS.SUPPLIER_TIN_MAP,JSON.stringify(d.data||{}));return new Map(Object.entries(d.data||{}));}}catch(_){}}
   const s=localStorage.getItem(NS.SUPPLIER_TIN_MAP);if(s){try{return new Map(Object.entries(JSON.parse(s)));}catch(e){}}
   return new Map();
 }
@@ -795,7 +849,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     container.innerHTML=pairs.map(p=>{const addr=p.address?`<div class="supplier-address"><i class="fas fa-map-marker-alt"></i>${escH(p.address)}</div>`:'';return`<div class="supplier-item"><div class="supplier-info"><div class="supplier-name-tin"><span class="supplier-name">${escH(p.name)}</span><span class="supplier-arrow">→</span><span class="supplier-tin">${escH(p.tin||'No TIN')}</span></div>${addr}</div><button class="delete-supplier-btn" onclick="deleteSupplierPair('${escH(p.name)}','${escH(p.tin)}')"><i class="fas fa-trash"></i></button></div>`;}).join('');
   };
   window.refreshSuppliersFromAPI=async function(){if(!USE_API||!authToken)return;const fresh=await apiLoadSuppliers();if(fresh){db=fresh;renderSuppliersList();}};
-  document.addEventListener('DOMContentLoaded',()=>{
+  document.addEventListener('DOMContentLoaded',async()=>{
+    await window.__backendReady;
     loadDB();
     setInterval(()=>{if(USE_API&&authToken)window.refreshSuppliersFromAPI();},30000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.refreshSuppliersFromAPI();});
@@ -864,9 +919,9 @@ function clearCompanyInfo(){if(!confirm('Clear all company information?'))return
 (function(){
   // All keys that company_information.html writes to for non-VAT purchases
   const WATCH_KEYS = [
-    'npurchCompanyInfo_Main',
-    'npurchCompanyInfo_Client',
-    'npurchCompanyInfo_SubAdmin'
+    `npurchCompanyInfo_${SYS_PREFIX}Main`,
+    `npurchCompanyInfo_${SYS_PREFIX}Client`,
+    `npurchCompanyInfo_${SYS_PREFIX}SubAdmin`
   ];
 
   function applyFromKey(key) {
@@ -884,7 +939,7 @@ function clearCompanyInfo(){if(!confirm('Clear all company information?'))return
   async function loadExternalCompanyInfo() {
     if (USE_API && authToken) {
       try {
-        const r = await fetch(`${API_BASE}/company-info`, { headers: apiHeaders() });
+        const r = await fetch(`${API_BASE}/company-info${APP_SYSTEM?`?scope=${APP_SYSTEM}`:''}`, { headers: apiHeaders() });
         if (r.ok) {
           const d = await r.json();
           if (d.data && d.data.companyName) { applyCompanyInfo(d.data); localStorage.setItem(NS.COMPANY_INFO, JSON.stringify(d.data)); return; }
@@ -961,7 +1016,7 @@ function updateRowColor(row){
 /* ============================================================
    COLUMN VISIBILITY
 ============================================================ */
-const COLS=[{key:'date',name:'Date'},{key:'invoiceNumber',name:'Invoice No.'},{key:'invoiceType',name:'Invoice Type'},{key:'paymentMode',name:'Payment Mode'},{key:'tinNumber',name:'TIN Number'},{key:'supplierName',name:'Supplier Name'},{key:'address',name:'Address'},{key:'grossPurchases',name:'Gross Purchases'},{key:'withholdingRate',name:'W/T Rate'},{key:'withholdingAmount',name:'W/T Amount'},{key:'grossMinusWT',name:'Gross − W/T'},{key:'remarks',name:'Remarks'},{key:'action',name:'Del'}];
+const COLS=[{key:'seq',name:'#'},{key:'date',name:'Date'},{key:'invoiceNumber',name:'Invoice No.'},{key:'invoiceType',name:'Invoice Type'},{key:'paymentMode',name:'Payment Mode'},{key:'tinNumber',name:'TIN Number'},{key:'supplierName',name:'Supplier Name'},{key:'address',name:'Address'},{key:'grossPurchases',name:'Gross Purchases'},{key:'withholdingRate',name:'W/T Rate'},{key:'withholdingAmount',name:'W/T Amount'},{key:'grossMinusWT',name:'Gross − W/T'},{key:'remarks',name:'Remarks'},{key:'action',name:'Del'}];
 let colVisibility={};
 function initColVisibility(){
   colVisibility=JSON.parse(localStorage.getItem(NS.COL_VISIBILITY)||'{}');
@@ -996,6 +1051,7 @@ function createRow(data={}){
   const grossDisplay=data.grossPurchases?formatCurrency(data.grossPurchases):'';
   const wr=data.withholdingRate||'0';
   tr.innerHTML=`
+    <td style="text-align:center;width:42px;color:var(--gray-400);font-size:11px;font-weight:600;user-select:none;"><span class="seq-num">0</span></td>
     <td><input type="text" value="${data.date||today}" class="date-input" placeholder="MM/DD/YYYY"></td>
     <td><input type="text" value="${escH(data.invoiceNumber||'')}" class="invoice-number" placeholder="INV-001"></td>
     <td><select class="invoice-type"><option value="">Select</option>${invoiceTypes.map(v=>`<option${data.invoiceType===v?' selected':''}>${v}</option>`).join('')}</select></td>
@@ -1049,9 +1105,17 @@ function showTinSuggestions(input,row){if(activeSugBox){activeSugBox.remove();ac
 /* ============================================================
    ADD / DELETE ROWS
 ============================================================ */
-function addRow(data={}){const tb=document.getElementById('tableBody');const row=createRow(data);tb.appendChild(row);currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();return row;}
-function addBatchRows(count){const tb=document.getElementById('tableBody');const frag=document.createDocumentFragment();for(let i=0;i<count;i++)frag.appendChild(createRow());tb.appendChild(frag);currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();}
-function deleteRow(rid){const row=document.getElementById(rid);if(!row||!confirm('Delete this row?'))return;row.style.transition='opacity .2s,transform .2s';row.style.opacity='0';row.style.transform='translateX(-10px)';setTimeout(()=>{row.remove();if(currentPage>getTotalPages())currentPage=Math.max(1,getTotalPages());renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();},200);}
+function refreshSeqNumbers(){
+  const rows=document.getElementById('tableBody').children;
+  for(let i=0,len=rows.length;i<len;i++){
+    const seqEl=rows[i].querySelector('.seq-num');
+    if(seqEl)seqEl.textContent=i+1;
+  }
+}
+
+function addRow(data={}){const tb=document.getElementById('tableBody');const row=createRow(data);tb.appendChild(row);refreshSeqNumbers();currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();return row;}
+function addBatchRows(count){const tb=document.getElementById('tableBody');const frag=document.createDocumentFragment();for(let i=0;i<count;i++)frag.appendChild(createRow());tb.appendChild(frag);refreshSeqNumbers();currentPage=Math.ceil(tb.children.length/rowsPerPage);renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();}
+function deleteRow(rid){const row=document.getElementById(rid);if(!row||!confirm('Delete this row?'))return;row.style.transition='opacity .2s,transform .2s';row.style.opacity='0';row.style.transform='translateX(-10px)';setTimeout(()=>{row.remove();refreshSeqNumbers();if(currentPage>getTotalPages())currentPage=Math.max(1,getTotalPages());renderCurrentPage();scheduleStatsUpdate();scheduleAutoSave();},200);}
 
 /* ============================================================
    STATS UPDATE
@@ -1088,7 +1152,7 @@ function updateAllStats(){
     }finally{statsRunning=false;}
   });
 }
-function rebuildSummaryRow(gP,wH,gmw){const foot=document.getElementById('summaryRow');if(!foot)return;if(gP===undefined){const rows=document.querySelectorAll('#tableBody tr');gP=0;wH=0;gmw=0;rows.forEach(r=>{gP+=getInputNumber(r.querySelector('.gross-purchases'));wH+=parseFloat((r.querySelector('.withholding-amount')?.textContent||'0').replace(/,/g,''))||0;gmw+=parseFloat((r.querySelector('.gross-minus-wt')?.textContent||'0').replace(/,/g,''))||0;});}const ths=document.querySelectorAll('#nonVatPurchasesTable thead th');let cells='',firstVisible=true;ths.forEach((th,i)=>{if(th.classList.contains('hidden-column'))return;let c='';if(firstVisible){c='<span class="sum-label">TOTALS</span>';firstVisible=false;}else if(i===7)c='<span class="sum-value">'+formatCurrency(gP)+'</span>';else if(i===9)c='<span class="sum-value">'+formatCurrency(wH)+'</span>';else if(i===10)c='<span class="sum-value">'+formatCurrency(gmw)+'</span>';cells+=`<td>${c}</td>`;});foot.innerHTML='<tr>'+cells+'</tr>';}
+function rebuildSummaryRow(gP,wH,gmw){const foot=document.getElementById('summaryRow');if(!foot)return;if(gP===undefined){const rows=document.querySelectorAll('#tableBody tr');gP=0;wH=0;gmw=0;rows.forEach(r=>{gP+=getInputNumber(r.querySelector('.gross-purchases'));wH+=parseFloat((r.querySelector('.withholding-amount')?.textContent||'0').replace(/,/g,''))||0;gmw+=parseFloat((r.querySelector('.gross-minus-wt')?.textContent||'0').replace(/,/g,''))||0;});}const ths=document.querySelectorAll('#nonVatPurchasesTable thead th');let cells='',firstVisible=true;ths.forEach((th,i)=>{if(th.classList.contains('hidden-column'))return;let c='';if(firstVisible){c='<span class="sum-label">TOTALS</span>';firstVisible=false;}else if(i===8)c='<span class="sum-value">'+formatCurrency(gP)+'</span>';else if(i===10)c='<span class="sum-value">'+formatCurrency(wH)+'</span>';else if(i===11)c='<span class="sum-value">'+formatCurrency(gmw)+'</span>';cells+=`<td>${c}</td>`;});foot.innerHTML='<tr>'+cells+'</tr>';}
 
 /* ============================================================
    REPORT DATE
@@ -1099,7 +1163,41 @@ function setupAutoDateUpdate(){const rdInput=document.getElementById('reportDate
 /* ============================================================
    SAVE / LOAD FILE
 ============================================================ */
-function saveDataToFile(){const blob=new Blob([JSON.stringify({version:'1.0',type:'non-vat-purchases',timestamp:new Date().toISOString(),companyInfo:getCompanyData(),tableData:getTableData()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='NonVAT_Purchases_'+(IS_MONTHLY?MONTHLY_CTX.label.replace(/\s/g,'_')+'_':'')+new Date().toISOString().split('T')[0]+'.npurch';a.click();URL.revokeObjectURL(a.href);showToast('Data saved to .npurch file','success');}
+function checkRequiredCompanyFields(){
+  const REQUIRED=[
+    {id:'companyName',        label:'Company Name'},
+    {id:'companyTIN',         label:'TIN Number'},
+    {id:'companyAddress',     label:'Address'},
+    {id:'lineOfBusiness',     label:'Line of Business'},
+    {id:'authorizedEmployee', label:'Authorized Employee'},
+  ];
+  return REQUIRED.filter(f=>{const el=document.getElementById(f.id);return !el||!el.value.trim();});
+}
+function highlightMissingCompanyFields(missing){
+  const rightPanel=document.getElementById('rightPanel');
+  if(rightPanel&&rightPanel.classList.contains('collapsed')){document.getElementById('headerRightToggle')?.click();}
+  missing.forEach(f=>{
+    const el=document.getElementById(f.id);if(!el)return;
+    el.style.transition='border-color .2s, box-shadow .2s';
+    el.style.borderColor='var(--red-500)';
+    el.style.boxShadow='0 0 0 3px rgba(239,68,68,.18)';
+    el.addEventListener('input',function clear(){el.style.borderColor='';el.style.boxShadow='';el.removeEventListener('input',clear);},{once:true});
+  });
+  const firstEl=document.getElementById(missing[0].id);
+  if(firstEl){firstEl.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>firstEl.focus(),300);}
+}
+function saveDataToFile(){
+  const missing=checkRequiredCompanyFields();
+  if(missing.length>0){
+    showToast('Fill in required company info first: '+missing.map(f=>f.label).join(', '),'error');
+    highlightMissingCompanyFields(missing);
+    return;
+  }
+  const blob=new Blob([JSON.stringify({version:'1.0',type:'non-vat-purchases',timestamp:new Date().toISOString(),companyInfo:getCompanyData(),tableData:getTableData()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='NonVAT_Purchases_'+(IS_MONTHLY?MONTHLY_CTX.label.replace(/\s/g,'_')+'_':'')+new Date().toISOString().split('T')[0]+'.npurch';
+  a.click();URL.revokeObjectURL(a.href);showToast('Data saved to .npurch file','success');
+}
 function loadDataFromFile(){const fi=document.createElement('input');fi.type='file';fi.accept='.npurch,.json';fi.addEventListener('change',function(){const f=this.files[0];if(!f)return;const r=new FileReader();r.onload=async e=>{try{const d=JSON.parse(e.target.result);if(!d.version||!d.tableData)throw new Error('Invalid format');if(d.companyInfo)applyCompanyInfo(d.companyInfo);document.getElementById('tableBody').innerHTML='';d.tableData.forEach(rd=>addRow(rd));if(!d.tableData.length)addRow();currentPage=1;renderCurrentPage();updateAllStats();await saveSession();showToast('Loaded '+d.tableData.length+' rows','success');}catch(ex){showToast('Error: '+ex.message,'error');}};r.readAsText(f);});fi.click();}
 function loadMultipleFiles(){const fi=document.createElement('input');fi.type='file';fi.accept='.npurch,.json';fi.multiple=true;fi.addEventListener('change',function(){const files=Array.from(this.files);if(!files.length)return;let allData=[],companyInfo=null,done=0,errs=[];files.forEach(file=>{const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d.version||!d.tableData)throw new Error('bad');allData.push(...d.tableData);if(!companyInfo&&d.companyInfo)companyInfo=d.companyInfo;}catch(ex){errs.push(file.name);}if(++done===files.length)mergeIntoTable(allData,companyInfo,errs,files.length);};r.readAsText(file);});});fi.click();}
 async function mergeIntoTable(rows,companyInfo,errs,total){const curr=document.querySelectorAll('#tableBody tr').length;let action='append';if(curr>0)action=confirm('Table has '+curr+' row(s). OK=Append, Cancel=Replace')?'append':'replace';if(action==='replace')document.getElementById('tableBody').innerHTML='';rows.forEach(rd=>addRow(rd));if(companyInfo&&action==='replace')applyCompanyInfo(companyInfo);currentPage=1;renderCurrentPage();updateAllStats();renderSuppliersList();await saveSession();let msg='Loaded '+rows.length+' rows from '+(total-errs.length)+'/'+total+' files';if(errs.length)msg+=' ('+errs.length+' failed)';showToast(msg,errs.length?'warning':'success');}
@@ -1251,13 +1349,13 @@ function openPortalModal(){
     await saveSession();
     showToast('Navigating to portal…','success');
     document.getElementById('submitModalOverlay').classList.add('hidden');
-    setTimeout(()=>{location.href='../index.html';},400);
+    setTimeout(()=>{location.href='../bookkeeping.html';},400);
   };
 }
 
 /* ============================================================
    SAVE & SUBMIT — saves .npurch named by tracking copy month/year
-   then navigates to index.html#submit-report
+   then navigates to bookkeeping.html#submit-report
 ============================================================ */
 function getNPurchTrackingMonthYear(){
   if(IS_MONTHLY&&MONTHLY_CTX.year&&MONTHLY_CTX.month){
@@ -1276,6 +1374,32 @@ function getNPurchMonthName(n){
 
 function openSaveAndSubmitModal(){
   if(APP_ROLE!=='Client')return;
+
+  const missing=checkRequiredCompanyFields();
+  const errorBox=document.getElementById('ssCompInfoError');
+  const fileInfo=document.getElementById('saveSubmitFileInfo');
+  const confirmBtn=document.getElementById('saveSubmitModalConfirmBtn');
+  const errorList=document.getElementById('ssCompInfoErrorList');
+
+  if(missing.length>0){
+    errorList.innerHTML=missing.map(f=>`<li><i class="fas fa-times-circle"></i>${f.label}</li>`).join('');
+    errorBox.classList.remove('hidden');
+    fileInfo.classList.add('hidden');
+    confirmBtn.disabled=true;
+    confirmBtn.style.opacity='0.4';
+    confirmBtn.style.cursor='not-allowed';
+    document.getElementById('ssGotoCompInfoBtn').onclick=function(){
+      document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
+      highlightMissingCompanyFields(missing);
+    };
+  } else {
+    errorBox.classList.add('hidden');
+    fileInfo.classList.remove('hidden');
+    confirmBtn.disabled=false;
+    confirmBtn.style.opacity='';
+    confirmBtn.style.cursor='';
+  }
+
   const{year,month}=getNPurchTrackingMonthYear();
   const monthName=getNPurchMonthName(month);
   const filename=`NPURCH_Report_${monthName}_${year}.npurch`;
@@ -1285,6 +1409,7 @@ function openSaveAndSubmitModal(){
   document.getElementById('saveSubmitModalOverlay').classList.remove('hidden');
 
   document.getElementById('saveSubmitModalConfirmBtn').onclick=async function(){
+    if(this.disabled)return;
     // 1. Save current session
     await saveSession();
 
@@ -1314,7 +1439,7 @@ function openSaveAndSubmitModal(){
       sessionStorage.setItem('VAT_PENDING_REPORT_YEAR',String(y));
       document.getElementById('saveSubmitModalOverlay').classList.add('hidden');
       showToast('File saved — redirecting to Submit Report…','success');
-      setTimeout(()=>{location.href='../index.html#submit-report';},700);
+      setTimeout(()=>{location.href='../bookkeeping.html#submit-report';},700);
     };
     reader.readAsDataURL(blob);
   };
@@ -1329,7 +1454,7 @@ window.addEventListener('beforeunload',()=>{const localData={version:'1.0',times
    INIT
 ============================================================ */
 document.addEventListener('DOMContentLoaded',async()=>{
-  await checkBackend();
+  await window.__backendReady;
   if(IS_MONTHLY){const banner=document.getElementById('monthlyBanner'),bannerLabel=document.getElementById('monthlyBannerLabel'),bannerKey=document.getElementById('monthlyBannerKey');if(banner){banner.classList.remove('hidden');bannerLabel.textContent=MONTHLY_CTX.label;bannerKey.textContent=`[${MONTHLY_CTX.key}]`;}const ctxBadge=document.getElementById('monthlyContextBadge'),ctxLabel=document.getElementById('monthlyContextLabel');if(ctxBadge){ctxBadge.classList.remove('hidden');ctxLabel.textContent=MONTHLY_CTX.label;}document.getElementById('topbarSub').textContent=`Monthly Record — ${MONTHLY_CTX.label}`;document.getElementById('sidebarBrandSub').textContent=MONTHLY_CTX.label;}
   const rdEl=document.getElementById('reportDate');if(rdEl&&!rdEl.value){if(IS_MONTHLY){const m=String(MONTHLY_CTX.month).padStart(2,'0');rdEl.value=`${m}/01/${MONTHLY_CTX.year}`;}else{rdEl.value=getTodayDisplayDate();}}
   const sub=APP_ROLE==='Client'?'Client':APP_ROLE==='SubAdmin'?'Sub-Admin':'';
@@ -1432,6 +1557,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
     document.getElementById('saveSubmitModalCancelBtn')?.addEventListener('click',()=>document.getElementById('saveSubmitModalOverlay').classList.add('hidden'));
     document.getElementById('saveSubmitModalOverlay')?.addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden');});
   }
+
+  // Startup (session restore / default row seeding) is fully done — tell the
+  // Undo/Redo module so it can start history fresh.
+  document.dispatchEvent(new CustomEvent('vatapp:ready'));
 });
 </script>
 
@@ -1442,17 +1571,59 @@ document.addEventListener('DOMContentLoaded',async()=>{
 (function(){
   let undoStack=[],redoStack=[],isUndoingOrRedoing=false;
   function captureSnapshot(){const rows=document.querySelectorAll('#tableBody tr');const tableData=Array.from(rows).map(row=>({date:row.querySelector('.date-input')?.value||'',invoiceNumber:row.querySelector('.invoice-number')?.value||'',invoiceType:row.querySelector('.invoice-type')?.value||'',paymentMode:row.querySelector('.payment-mode')?.value||'',tinNumber:row.querySelector('.tin-number')?.value||'',supplierName:row.querySelector('.supplier-name')?.value||'',address:row.querySelector('.address')?.value||'',grossPurchases:(row.querySelector('.gross-purchases')?.dataset.raw||row.querySelector('.gross-purchases')?.value||'').replace(/,/g,''),withholdingRate:row.querySelector('.withholding-rate')?.value||'0',remarks:row.querySelector('.remarks')?.value||''}));const companyInfo={companyName:document.getElementById('companyName')?.value||'',companyTIN:document.getElementById('companyTIN')?.value||'',companyAddress:document.getElementById('companyAddress')?.value||'',lineOfBusiness:document.getElementById('lineOfBusiness')?.value||'',telephone:document.getElementById('telephone')?.value||'',reportDate:document.getElementById('reportDate')?.value||'',authorizedEmployee:document.getElementById('authorizedEmployee')?.value||'',email:document.getElementById('email')?.value||''};return{tableData,companyInfo};}
-  function restoreSnapshot(snapshot){if(!snapshot)return;isUndoingOrRedoing=true;const tbody=document.getElementById('tableBody');if(tbody&&snapshot.tableData){tbody.innerHTML='';snapshot.tableData.forEach(rd=>tbody.appendChild(createRow(rd)));if(!snapshot.tableData.length)addRow();if(typeof currentPage!=='undefined')currentPage=1;if(typeof renderCurrentPage==='function')renderCurrentPage();if(typeof updateAllStats==='function')updateAllStats();}if(snapshot.companyInfo){const map={companyName:'companyName',companyTIN:'companyTIN',companyAddress:'companyAddress',lineOfBusiness:'lineOfBusiness',telephone:'telephone',reportDate:'reportDate',authorizedEmployee:'authorizedEmployee',email:'email'};for(const[prop,id]of Object.entries(map)){const el=document.getElementById(id);if(el&&snapshot.companyInfo[prop]!==undefined)el.value=snapshot.companyInfo[prop];}if(typeof saveCompanyInfo==='function')saveCompanyInfo();}if(typeof renderSuppliersList==='function')renderSuppliersList();if(typeof updateAllStats==='function')updateAllStats();if(typeof scheduleAutoSave==='function')scheduleAutoSave();setTimeout(()=>{isUndoingOrRedoing=false;},10);}
-  function pushToUndoStack(){if(isUndoingOrRedoing)return;redoStack=[];while(undoStack.length>50)undoStack.shift();undoStack.push(captureSnapshot());updateUndoRedoButtons();}
-  function performUndo(){if(!undoStack.length){showToast('Nothing to undo','info');return;}const current=captureSnapshot();const previous=undoStack.pop();if(previous){redoStack.push(current);while(redoStack.length>50)redoStack.shift();restoreSnapshot(previous);showToast('Undo successful','success');updateUndoRedoButtons();}}
-  function performRedo(){if(!redoStack.length){showToast('Nothing to redo','info');return;}const current=captureSnapshot();const next=redoStack.pop();if(next){undoStack.push(current);while(undoStack.length>50)undoStack.shift();restoreSnapshot(next);showToast('Redo successful','success');updateUndoRedoButtons();}}
+  function restoreSnapshot(snapshot){if(!snapshot)return;isUndoingOrRedoing=true;const pageBeforeRestore=(typeof currentPage!=='undefined')?currentPage:1;const tbody=document.getElementById('tableBody');if(tbody&&snapshot.tableData){tbody.innerHTML='';snapshot.tableData.forEach(rd=>tbody.appendChild(createRow(rd)));if(!snapshot.tableData.length)addRow();if(typeof refreshSeqNumbers==='function')refreshSeqNumbers();if(typeof currentPage!=='undefined'&&typeof getTotalPages==='function')currentPage=Math.min(Math.max(1,pageBeforeRestore),getTotalPages());if(typeof renderCurrentPage==='function')renderCurrentPage();if(typeof updateAllStats==='function')updateAllStats();}if(snapshot.companyInfo){const map={companyName:'companyName',companyTIN:'companyTIN',companyAddress:'companyAddress',lineOfBusiness:'lineOfBusiness',telephone:'telephone',reportDate:'reportDate',authorizedEmployee:'authorizedEmployee',email:'email'};for(const[prop,id]of Object.entries(map)){const el=document.getElementById(id);if(el&&snapshot.companyInfo[prop]!==undefined)el.value=snapshot.companyInfo[prop];}if(typeof saveCompanyInfo==='function')saveCompanyInfo();}if(typeof renderSuppliersList==='function')renderSuppliersList();if(typeof updateAllStats==='function')updateAllStats();if(typeof scheduleAutoSave==='function')scheduleAutoSave();setTimeout(()=>{isUndoingOrRedoing=false;},10);}
+  function pushSnapshot(snapshot,force){if(isUndoingOrRedoing||!snapshot)return;if(!force&&JSON.stringify(snapshot)===JSON.stringify(captureSnapshot()))return;redoStack=[];while(undoStack.length>50)undoStack.shift();undoStack.push(snapshot);updateUndoRedoButtons();}
+  function performUndo(){flushPendingChange();if(!undoStack.length){showToast('Nothing to undo','info');return;}const current=captureSnapshot();const previous=undoStack.pop();if(previous){redoStack.push(current);while(redoStack.length>50)redoStack.shift();restoreSnapshot(previous);showToast('Undo successful','success');updateUndoRedoButtons();}}
+  function performRedo(){flushPendingChange();if(!redoStack.length){showToast('Nothing to redo','info');return;}const current=captureSnapshot();const next=redoStack.pop();if(next){undoStack.push(current);while(undoStack.length>50)undoStack.shift();restoreSnapshot(next);showToast('Redo successful','success');updateUndoRedoButtons();}}
   function updateUndoRedoButtons(){const u=document.getElementById('globalUndoBtn'),r=document.getElementById('globalRedoBtn');if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;}
-  let changeTimer=null;
-  function recordChange(){if(isUndoingOrRedoing)return;if(changeTimer)clearTimeout(changeTimer);changeTimer=setTimeout(()=>{pushToUndoStack();changeTimer=null;},150);}
-  function addUndoRedoButtonsToUI(){const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('globalUndoBtn'))return;const undoBtn=document.createElement('button');undoBtn.id='globalUndoBtn';undoBtn.className='topbar-btn';undoBtn.innerHTML='<i class="fas fa-undo-alt"></i> Undo';undoBtn.title='Undo (Ctrl+Z)';undoBtn.addEventListener('click',performUndo);const redoBtn=document.createElement('button');redoBtn.id='globalRedoBtn';redoBtn.className='topbar-btn';redoBtn.innerHTML='<i class="fas fa-redo-alt"></i> Redo';redoBtn.title='Redo (Ctrl+Y)';redoBtn.addEventListener('click',performRedo);actions.insertBefore(undoBtn,actions.firstChild);actions.insertBefore(redoBtn,actions.firstChild);updateUndoRedoButtons();}
-  function setupListeners(){const tb=document.getElementById('tableBody');if(tb){tb.addEventListener('input',recordChange);tb.addEventListener('change',recordChange);}['companyName','companyTIN','companyAddress','lineOfBusiness','telephone','reportDate','authorizedEmployee','email'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',recordChange);el.addEventListener('change',recordChange);}});document.body.addEventListener('click',e=>{if(e.target.closest('.delete-btn')&&!isUndoingOrRedoing)pushToUndoStack();});['clearBtn','loadDataBtn','loadMultipleFilesBtn','clearInfoBtn','clearAllSuppliersBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',()=>{if(!isUndoingOrRedoing)pushToUndoStack();});});const origAdd=window.addRow,origBatch=window.addBatchRows;if(origAdd)window.addRow=function(data){if(!isUndoingOrRedoing)pushToUndoStack();return origAdd(data);};if(origBatch)window.addBatchRows=function(count){if(!isUndoingOrRedoing)pushToUndoStack();return origBatch(count);};}
-  function init(){addUndoRedoButtonsToUI();setupListeners();window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();performUndo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();performRedo();}});if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>setTimeout(pushToUndoStack,600));}else setTimeout(pushToUndoStack,600);}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  let changeTimer=null,pendingBeforeSnapshot=null,activeEditField=null;
+  // Text inputs fire their 'input' event AFTER the value has already changed,
+  // so capturing a snapshot only inside recordChange would push the POST-change
+  // state, making the first Undo a no-op. Instead we grab the pre-edit snapshot
+  // as soon as a field is focused (before anything has changed) and hold onto it
+  // until the edit burst settles.
+  //
+  // If focus moves to a DIFFERENT field while an edit is still pending (e.g. the
+  // user types in Address, then clicks straight into Amount before the debounce
+  // below has fired), we must commit the Address edit as its own undo step right
+  // then. Otherwise the two fields' edits get merged into a single snapshot, and
+  // Undo/Redo end up jumping between partial, overlapping states in both fields
+  // instead of cleanly reverting one field at a time.
+  function captureBeforeIfNeeded(){
+    if(isUndoingOrRedoing)return;
+    const target=document.activeElement;
+    if(pendingBeforeSnapshot!==null){
+      if(target&&activeEditField&&target!==activeEditField){
+        flushPendingChange();
+      } else {
+        return;
+      }
+    }
+    pendingBeforeSnapshot=captureSnapshot();
+    activeEditField=target;
+  }
+  function flushPendingChange(){if(changeTimer){clearTimeout(changeTimer);changeTimer=null;}if(pendingBeforeSnapshot!==null){pushSnapshot(pendingBeforeSnapshot);pendingBeforeSnapshot=null;}}
+  function recordChange(){if(isUndoingOrRedoing)return;captureBeforeIfNeeded();if(changeTimer)clearTimeout(changeTimer);changeTimer=setTimeout(()=>{pushSnapshot(pendingBeforeSnapshot);pendingBeforeSnapshot=null;changeTimer=null;},400);}
+  function addUndoRedoButtonsToUI(){const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('globalUndoBtn'))return;const undoBtn=document.createElement('button');undoBtn.id='globalUndoBtn';undoBtn.className='topbar-btn';undoBtn.innerHTML='<i class="fas fa-undo-alt"></i> Undo';undoBtn.title='Undo (Ctrl+Z)';undoBtn.addEventListener('click',performUndo);const redoBtn=document.createElement('button');redoBtn.id='globalRedoBtn';redoBtn.className='topbar-btn';redoBtn.innerHTML='<i class="fas fa-redo-alt"></i> Redo';redoBtn.title='Redo (Ctrl+Y)';redoBtn.addEventListener('click',performRedo);actions.insertBefore(redoBtn,actions.firstChild);actions.insertBefore(undoBtn,actions.firstChild);updateUndoRedoButtons();}
+  // Suppresses the addRow/addBatchRows auto-push below while a tracked button
+  // action (Clear Table, Load Data, etc.) is already recording its own "before"
+  // snapshot, so rows that action adds internally don't get counted as a second,
+  // separate undo step.
+  let suppressAutoPush=false;
+  // Coalesces a rapid, synchronous run of addRow() calls (restoring a saved
+  // session or loading a file both add many rows back-to-back) into a single
+  // undo step instead of one step per row.
+  let addRowBurstActive=false,addRowBurstTimer=null;
+  function setupListeners(){const tb=document.getElementById('tableBody');if(tb){tb.addEventListener('focusin',captureBeforeIfNeeded);tb.addEventListener('input',recordChange);tb.addEventListener('change',recordChange);}['companyName','companyTIN','companyAddress','lineOfBusiness','telephone','reportDate','authorizedEmployee','email'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('focusin',captureBeforeIfNeeded);el.addEventListener('input',recordChange);el.addEventListener('change',recordChange);}});document.addEventListener('click',e=>{if(isUndoingOrRedoing)return;const isDelete=e.target.closest('.delete-btn');const isTrackedBtn=e.target.closest('#clearBtn,#loadDataBtn,#loadMultipleFilesBtn,#clearInfoBtn,#clearAllSuppliersBtn');if(isDelete||isTrackedBtn){flushPendingChange();pushSnapshot(captureSnapshot(),true);suppressAutoPush=true;setTimeout(()=>{suppressAutoPush=false;},300);}},true);const origAdd=window.addRow,origBatch=window.addBatchRows;function beforeAutoAdd(){if(isUndoingOrRedoing||suppressAutoPush)return;if(!addRowBurstActive){addRowBurstActive=true;flushPendingChange();pushSnapshot(captureSnapshot(),true);}if(addRowBurstTimer)clearTimeout(addRowBurstTimer);addRowBurstTimer=setTimeout(()=>{addRowBurstActive=false;addRowBurstTimer=null;},50);}if(origAdd)window.addRow=function(data){beforeAutoAdd();return origAdd(data);};if(origBatch)window.addBatchRows=function(count){beforeAutoAdd();return origBatch(count);};}
+  function init(){addUndoRedoButtonsToUI();setupListeners();window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();performUndo();}if((e.ctrlKey||e.metaKey)&&(e.key==='y'||e.key==='Y')){e.preventDefault();performRedo();}});
+    // The main app's own startup (restoring a saved session, or seeding rows from
+    // a portal/default file) runs asynchronously and calls addRow() internally,
+    // which the wrapper above would otherwise record as real undo steps. Once the
+    // app confirms it's actually done loading, wipe out any such startup noise so
+    // Undo/Redo only ever reflect real user edits.
+    document.addEventListener('vatapp:ready',()=>{undoStack=[];redoStack=[];updateUndoRedoButtons();});
+  }
+  init();
 })();
 </script>
 </body>

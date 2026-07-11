@@ -1,1334 +1,1763 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Encoding Page - Vatable Sales Data Entry</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link rel="stylesheet" href="styles.css">
-        <style>
-            /* Full screen encoding page styles - Card Layout */
-            * {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-                font-family: 'Segoe UI', 'Arial', sans-serif;
-            }
-            
-            body {
-                background: #0a0f1a;
-                color: #e0f7e9;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-            }
-            
-            .encoding-container {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                background: rgba(10, 25, 20, 0.95);
-                max-width: 100%;
-                margin: 0;
-                border: 1px solid rgba(0, 255, 157, 0.3);
-                box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
-                height: 100vh;
-                width: 100vw;
-                overflow: hidden;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                z-index: 9999;
-                backdrop-filter: blur(10px);
-            }
-            
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encoding Page - Vatable Sales Data Entry</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ============================================================
+           Professional design system — matches vatable_sales.html
+        ============================================================ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+          --blue-50:#EFF6FF;--blue-100:#DBEAFE;--blue-200:#BFDBFE;--blue-300:#93C5FD;
+          --blue-400:#60A5FA;--blue-500:#3B82F6;--blue-600:#2563EB;--blue-700:#1D4ED8;
+          --blue-800:#1E40AF;--blue-900:#1E3A8A;--blue-950:#172554;
+          --gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;
+          --gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151;
+          --gray-800:#1F2937;--gray-900:#111827;
+          --red-50:#FEF2F2;--red-100:#FEE2E2;--red-200:#FECACA;--red-500:#EF4444;--red-700:#B91C1C;
+          --green-50:#F0FDF4;--green-100:#DCFCE7;--green-500:#22C55E;--green-600:#16A34A;--green-700:#15803D;
+          --amber-50:#FFFBEB;--amber-200:#FDE68A;--amber-500:#F59E0B;--amber-700:#B45309;
+          --shadow-sm:0 1px 2px rgba(0,0,0,.06);
+          --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+          --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+          --shadow-lg:0 10px 15px rgba(0,0,0,.08),0 4px 6px rgba(0,0,0,.05);
+          --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+          --font-mono:'Consolas','Courier New',monospace;
+          --transition:0.2s cubic-bezier(.4,0,.2,1);
+        }
+
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: var(--font);
+            background: var(--gray-100);
+            color: var(--gray-800);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--gray-100); }
+        ::-webkit-scrollbar-thumb { background: var(--blue-300); border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--blue-500); }
+
+        .encoding-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 9999;
+            background: var(--gray-100);
+        }
+
+        /* ── Header / Topbar ── */
+        .encoding-header {
+            height: 64px;
+            flex-shrink: 0;
+            background: var(--blue-900);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+        }
+
+        .encoding-header h1 {
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: .2px;
+        }
+
+        .encoding-header h1 i {
+            font-size: 18px;
+            color: var(--blue-300);
+            background: rgba(255,255,255,.08);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .encoding-header h1 span {
+            font-size: 12px;
+            color: var(--blue-300);
+            margin-left: 4px;
+            font-weight: 400;
+        }
+
+        .encoding-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .encoding-controls .btn {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            font-family: var(--font);
+            white-space: nowrap;
+        }
+
+        .encoding-controls .btn i { font-size: 12px; }
+
+        .btn-back {
+            background: rgba(255,255,255,.08);
+            color: white;
+            border: 1px solid rgba(255,255,255,.18);
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,.16);
+            border-color: rgba(255,255,255,.3);
+        }
+
+        .btn-save {
+            background: var(--green-500);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: var(--green-600);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-clear {
+            background: rgba(239,68,68,.12);
+            color: #fca5a5;
+            border: 1px solid rgba(239,68,68,.3);
+        }
+
+        .btn-clear:hover {
+            background: rgba(239,68,68,.22);
+            color: #fecaca;
+        }
+
+        .btn-inquiry {
+            background: rgba(255,255,255,.08);
+            color: var(--blue-200);
+            border: 1px solid rgba(255,255,255,.18);
+        }
+
+        .btn-inquiry:hover {
+            background: rgba(255,255,255,.16);
+            border-color: rgba(255,255,255,.3);
+            color: white;
+        }
+
+        /* ── Cards Container (single-card view with navigator) ── */
+        .cards-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 24px;
+            background: var(--gray-100);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--blue-300) var(--gray-100);
+        }
+
+        /* ── Card Navigator (sequence + prev/next arrows) ── */
+        .card-navigator {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .nav-arrow-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--gray-200);
+            background: white;
+            color: var(--blue-700);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            font-family: var(--font);
+        }
+
+        .nav-arrow-btn:hover:not(:disabled) {
+            background: var(--blue-600);
+            color: white;
+            border-color: var(--blue-600);
+            box-shadow: var(--shadow);
+            transform: translateY(-1px);
+        }
+
+        .nav-arrow-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .card-sequence {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--blue-900);
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 20px;
+            padding: 9px 22px;
+            min-width: 140px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .card-sequence .seq-label {
+            color: var(--gray-500);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: .4px;
+            margin-right: 4px;
+        }
+
+        .card-sequence .seq-current {
+            color: var(--blue-600);
+            font-size: 15px;
+        }
+
+        .card-sequence .seq-sep {
+            color: var(--gray-300);
+        }
+
+        /* ── Card Stage (holds all card DOM nodes; only the active one shows) ── */
+        .card-stage {
+            width: 100%;
+            max-width: 640px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .encoding-card { display: none; }
+        .encoding-card.active-card { display: block; width: 100%; }
+
+        /* ── Individual Card ── */
+        .encoding-card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-top: 3px solid var(--blue-600);
+            border-radius: 10px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow .2s ease;
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--blue-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title i {
+            font-size: 13px;
+            color: var(--blue-500);
+        }
+
+        .card-number {
+            background: var(--blue-50);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--blue-700);
+            border: 1px solid var(--blue-100);
+            white-space: nowrap;
+        }
+
+        .card-body {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .field-group.full-width {
+            grid-column: span 2;
+        }
+
+        .field-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .field-label i {
+            font-size: 10.5px;
+            color: var(--blue-400);
+            width: 12px;
+            text-align: center;
+        }
+
+        .field-input {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 6px;
+            padding: 8px 10px;
+            color: var(--gray-800);
+            font-size: 13px;
+            font-family: var(--font);
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: var(--blue-500);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .field-input:hover {
+            border-color: var(--gray-300);
+        }
+
+        .field-input::placeholder {
+            color: var(--gray-400);
+        }
+
+        select.field-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233B82F6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 34px;
+        }
+
+        select.field-input option {
+            background: white;
+            color: var(--gray-800);
+        }
+
+        .tin-input {
+            font-family: var(--font-mono);
+            letter-spacing: .5px;
+        }
+
+        .validation-message {
+            font-size: 10.5px;
+            color: var(--red-500);
+            margin-top: 2px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+            padding-top: 12px;
+            border-top: 1px solid var(--gray-100);
+        }
+
+        .delete-card-btn {
+            background: var(--red-50);
+            color: var(--red-700);
+            border: 1px solid var(--red-200);
+            border-radius: 6px;
+            padding: 7px 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: var(--font);
+        }
+
+        .delete-card-btn:hover {
+            background: var(--red-100);
+        }
+
+        .duplicate-card-btn {
+            background: var(--blue-50);
+            color: var(--blue-700);
+            border: 1px solid var(--blue-100);
+            border-radius: 6px;
+            padding: 7px 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: var(--font);
+        }
+
+        .duplicate-card-btn:hover {
+            background: var(--blue-100);
+        }
+
+        /* ── Add Card Footer ── */
+        .add-card-container {
+            padding: 14px 24px;
+            background: white;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 -2px 8px rgba(0,0,0,.03);
+        }
+
+        .btn-add-card {
+            background: var(--blue-600);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 11px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            font-family: var(--font);
+        }
+
+        .btn-add-card:hover {
+            background: var(--blue-700);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-add-card i { font-size: 15px; }
+
+        .stats-badge {
+            background: var(--blue-50);
+            border: 1px solid var(--blue-100);
+            border-radius: 30px;
+            padding: 9px 20px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .stats-badge-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--blue-700);
+            font-size: 12.5px;
+            font-weight: 500;
+        }
+
+        .stats-badge-item i {
+            color: var(--blue-500);
+        }
+
+        .stats-badge-item span {
+            font-weight: 700;
+            color: var(--blue-900);
+            margin-left: 3px;
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            display: none;
+            width: 100%;
+            max-width: 640px;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 70px 20px;
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed var(--gray-300);
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: var(--gray-300);
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            color: var(--gray-600);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: var(--gray-400);
+            font-size: 14px;
+        }
+
+        /* ── Success message toast ── */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--green-500);
+            color: white;
+            padding: 13px 22px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            box-shadow: var(--shadow-lg);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ── Inquiry Modal ── */
+        .inquiry-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(17, 24, 39, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            padding: 30px;
+        }
+
+        .inquiry-modal-overlay.hidden { display: none; }
+
+        .inquiry-modal {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 1280px;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .inquiry-modal-header {
+            background: var(--blue-900);
+            color: white;
+            padding: 16px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .inquiry-modal-header h2 {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .inquiry-modal-header h2 i { color: var(--blue-300); font-size: 15px; }
+
+        .inquiry-close-btn {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.18);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: var(--transition);
+        }
+
+        .inquiry-close-btn:hover { background: rgba(255,255,255,.2); }
+
+        .inquiry-modal-body {
+            flex: 1;
+            overflow: auto;
+            background: var(--gray-100);
+        }
+
+        table#inquiryTable {
+            width: 100%;
+            min-width: 1180px;
+            border-collapse: collapse;
+            font-size: 12px;
+            background: white;
+        }
+
+        table#inquiryTable thead { position: sticky; top: 0; z-index: 5; }
+
+        table#inquiryTable thead th {
+            background: var(--blue-800);
+            color: var(--blue-100);
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            padding: 10px 12px;
+            text-align: left;
+            white-space: nowrap;
+            border-right: 1px solid var(--blue-900);
+        }
+
+        table#inquiryTable thead th:last-child { border-right: none; }
+        table#inquiryTable thead th.num-col { text-align: right; }
+
+        table#inquiryTable tbody tr {
+            border-bottom: 1px solid var(--gray-100);
+            transition: background .12s;
+        }
+
+        table#inquiryTable tbody tr:nth-child(even) { background: var(--gray-50); }
+        table#inquiryTable tbody tr:hover { background: var(--blue-50); }
+
+        table#inquiryTable tbody td {
+            padding: 9px 12px;
+            color: var(--gray-700);
+            white-space: nowrap;
+        }
+
+        table#inquiryTable tbody td.wrap-col { white-space: normal; min-width: 160px; }
+        table#inquiryTable tbody td.num-col { text-align: right; font-variant-numeric: tabular-nums; color: var(--gray-800); font-weight: 600; }
+        table#inquiryTable tbody td.row-index { color: var(--gray-400); font-weight: 600; }
+        table#inquiryTable tbody td.mono-col { font-family: var(--font-mono); }
+
+        .inquiry-empty-row td {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-400);
+        }
+
+        .inquiry-empty-row i { font-size: 40px; color: var(--gray-300); display: block; margin-bottom: 12px; }
+
+        .inquiry-modal-footer {
+            background: white;
+            border-top: 1px solid var(--gray-200);
+            padding: 12px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .inquiry-summary {
+            font-size: 12.5px;
+            color: var(--gray-600);
+            display: flex;
+            gap: 18px;
+        }
+
+        .inquiry-summary strong { color: var(--blue-900); font-weight: 700; }
+
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+            border-radius: 7px;
+            padding: 8px 16px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font);
+        }
+
+        .btn-secondary:hover { background: var(--gray-50); border-color: var(--gray-300); }
+
+        /* Focus highlight for keyboard navigation */
+        .field-input.keyboard-focused {
+            border-color: var(--blue-500);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .cards-container { padding: 18px; }
+        }
+
+        @media (max-width: 768px) {
             .encoding-header {
-                background: linear-gradient(135deg, #001e14 0%, #002819 100%);
-                padding: 20px 30px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                border-bottom: 2px solid #00ff9d;
-                box-shadow: 0 5px 20px rgba(0, 255, 157, 0.2);
-                flex-shrink: 0;
-            }
-            
-            .encoding-header h1 {
-                color: #00ff9d;
-                font-size: 28px;
-                font-weight: 700;
-                text-shadow: 0 0 15px rgba(0, 255, 157, 0.7);
-                display: flex;
-                align-items: center;
-                gap: 15px;
-            }
-            
-            .encoding-header h1 i {
-                font-size: 32px;
-            }
-            
-            .encoding-header h1 span {
-                font-size: 16px;
-                color: #80ffd4;
-                margin-left: 15px;
-                font-weight: 400;
-                text-shadow: none;
-            }
-            
-            .encoding-controls {
-                display: flex;
-                gap: 15px;
-                align-items: center;
-            }
-            
-            .encoding-controls .btn {
-                padding: 12px 24px;
-                font-size: 16px;
-                border-radius: 8px;
-                border: none;
-                cursor: pointer;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                transition: all 0.3s ease;
-            }
-            
-            .btn-back {
-                background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-                color: white;
-            }
-            
-            .btn-back:hover {
-                background: linear-gradient(135deg, #7c858d 0%, #5a6268 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 5px 20px rgba(108, 117, 125, 0.4);
-            }
-            
-            .btn-save {
-                background: linear-gradient(135deg, #00ff9d 0%, #00cc7a 100%);
-                color: #002614;
-            }
-            
-            .btn-save:hover {
-                background: linear-gradient(135deg, #00ffaa 0%, #00e68a 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 5px 20px rgba(0, 255, 157, 0.4);
-            }
-            
-            .btn-clear {
-                background: linear-gradient(135deg, #ff9900 0%, #cc7a00 100%);
-                color: white;
-            }
-            
-            .btn-clear:hover {
-                background: linear-gradient(135deg, #ffaa00 0%, #e68a00 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 5px 20px rgba(255, 153, 0, 0.4);
-            }
-            
-            /* Cards Container - Scrollable Area with Vertical Scrollbar */
-            .cards-container {
-                flex: 1;
-                overflow-y: auto;
-                overflow-x: hidden;
-                padding: 30px;
-                background: radial-gradient(circle at 10% 20%, rgba(0, 40, 30, 0.4), rgba(0, 15, 10, 0.9));
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-                gap: 25px;
-                align-content: start;
-                /* Ensure scrollbar is always visible when needed */
-                scrollbar-width: thin;
-                scrollbar-color: #00ff9d #001e14;
-            }
-            
-            /* Webkit scrollbar styles (Chrome, Safari, Edge) */
-            .cards-container::-webkit-scrollbar {
-                width: 14px;
-                height: 14px;
-            }
-            
-            .cards-container::-webkit-scrollbar-track {
-                background: #001e14;
-                border-radius: 10px;
-                border: 1px solid rgba(0, 255, 157, 0.2);
-            }
-            
-            .cards-container::-webkit-scrollbar-thumb {
-                background: linear-gradient(135deg, #00b36b, #00ff9d);
-                border-radius: 10px;
-                border: 2px solid #001e14;
-                box-shadow: inset 0 0 6px rgba(0, 255, 157, 0.5);
-            }
-            
-            .cards-container::-webkit-scrollbar-thumb:hover {
-                background: linear-gradient(135deg, #00cc7a, #00ffaa);
-                box-shadow: inset 0 0 10px rgba(0, 255, 157, 0.8);
-            }
-            
-            .cards-container::-webkit-scrollbar-corner {
-                background: #001e14;
-            }
-            
-            /* Firefox scrollbar */
-            .cards-container {
-                scrollbar-width: thin;
-                scrollbar-color: #00ff9d #001e14;
-            }
-            
-            /* Individual Card */
-            .encoding-card {
-                background: rgba(5, 25, 20, 0.9);
-                border: 1px solid rgba(0, 255, 157, 0.3);
-                border-radius: 16px;
-                padding: 20px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 255, 157, 0.1);
-                transition: all 0.3s ease;
-                position: relative;
-                overflow: hidden;
-                backdrop-filter: blur(5px);
-            }
-            
-            .encoding-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 15px 40px rgba(0, 255, 157, 0.2), 0 0 0 2px rgba(0, 255, 157, 0.3);
-                border-color: rgba(0, 255, 157, 0.6);
-            }
-            
-            .encoding-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 5px;
-                background: linear-gradient(90deg, #00ff9d, #00b36b, #00ff9d);
-                background-size: 200% 100%;
-                animation: gradientMove 3s ease infinite;
-            }
-            
-            @keyframes gradientMove {
-                0% { background-position: 0% 0%; }
-                50% { background-position: 100% 0%; }
-                100% { background-position: 0% 0%; }
-            }
-            
-            .card-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-bottom: 1px solid rgba(0, 255, 157, 0.2);
-            }
-            
-            .card-title {
-                font-size: 18px;
-                font-weight: 700;
-                color: #00ff9d;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                text-shadow: 0 0 8px rgba(0, 255, 157, 0.5);
-            }
-            
-            .card-title i {
-                font-size: 20px;
-            }
-            
-            .card-number {
-                background: rgba(0, 255, 157, 0.15);
-                padding: 5px 12px;
-                border-radius: 20px;
-                font-size: 14px;
-                font-weight: 600;
-                color: #00ff9d;
-                border: 1px solid rgba(0, 255, 157, 0.3);
-            }
-            
-            .card-body {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                margin-bottom: 20px;
-            }
-            
-            .field-group {
-                display: flex;
                 flex-direction: column;
-                gap: 5px;
-            }
-            
-            .field-group.full-width {
-                grid-column: span 2;
-            }
-            
-            .field-label {
-                font-size: 12px;
-                font-weight: 600;
-                color: #80ffd4;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-            }
-            
-            .field-label i {
-                font-size: 12px;
-                color: #00ff9d;
-            }
-            
-            .field-input {
-                background: rgba(0, 30, 20, 0.8);
-                border: 1px solid rgba(0, 255, 157, 0.3);
-                border-radius: 8px;
-                padding: 10px 12px;
-                color: #e0f7e9;
-                font-size: 14px;
-                transition: all 0.3s ease;
-                width: 100%;
-            }
-            
-            .field-input:focus {
-                outline: none;
-                border-color: #00ff9d;
-                box-shadow: 0 0 0 3px rgba(0, 255, 157, 0.2), inset 0 0 10px rgba(0, 255, 157, 0.1);
-            }
-            
-            .field-input:hover {
-                border-color: rgba(0, 255, 157, 0.5);
-            }
-            
-            .field-input::placeholder {
-                color: rgba(128, 255, 212, 0.3);
-                font-style: italic;
-            }
-            
-            select.field-input {
-                cursor: pointer;
-                appearance: none;
-                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300ff9d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-                background-repeat: no-repeat;
-                background-position: right 12px center;
-                padding-right: 40px;
-            }
-            
-            select.field-input option {
-                background: #001e14;
-                color: #e0f7e9;
-            }
-            
-            .tin-input {
-                font-family: 'Courier New', monospace;
-                letter-spacing: 1px;
-            }
-            
-            .validation-message {
-                font-size: 11px;
-                color: #ff6666;
-                margin-top: 3px;
-                display: none;
-                text-shadow: 0 0 5px rgba(255, 102, 102, 0.3);
-            }
-            
-            .card-footer {
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                margin-top: 10px;
-                padding-top: 15px;
-                border-top: 1px solid rgba(0, 255, 157, 0.2);
-            }
-            
-            .delete-card-btn {
-                background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%);
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                cursor: pointer;
-                font-size: 13px;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            
-            .delete-card-btn:hover {
-                background: linear-gradient(135deg, #ff4444 0%, #dd0000 100%);
-                transform: scale(1.05);
-                box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
-            }
-            
-            .duplicate-card-btn {
-                background: linear-gradient(135deg, #00b36b 0%, #00804d 100%);
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                cursor: pointer;
-                font-size: 13px;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            
-            .duplicate-card-btn:hover {
-                background: linear-gradient(135deg, #00cc7a 0%, #00995c 100%);
-                transform: scale(1.05);
-                box-shadow: 0 5px 15px rgba(0, 179, 107, 0.4);
-            }
-            
-            /* Add Card Button */
-            .add-card-container {
-                padding: 20px 30px;
-                background: rgba(0, 25, 20, 0.8);
-                border-top: 1px solid rgba(0, 255, 157, 0.2);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-shrink: 0;
-            }
-            
-            .btn-add-card {
-                background: linear-gradient(135deg, #00b36b 0%, #00804d 100%);
-                color: white;
-                border: none;
-                border-radius: 12px;
-                padding: 15px 35px;
-                font-size: 18px;
-                font-weight: 700;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
+                height: auto;
                 gap: 12px;
-                transition: all 0.3s ease;
-                box-shadow: 0 5px 20px rgba(0, 179, 107, 0.3);
+                padding: 14px;
             }
-            
-            .btn-add-card:hover {
-                background: linear-gradient(135deg, #00cc7a 0%, #00995c 100%);
-                transform: translateY(-3px) scale(1.02);
-                box-shadow: 0 10px 30px rgba(0, 255, 157, 0.5);
+
+            .encoding-header h1 { font-size: 15px; }
+            .encoding-header h1 span { display: none; }
+
+            .encoding-controls {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
             }
-            
-            .btn-add-card i {
-                font-size: 22px;
+
+            .cards-container { padding: 14px; gap: 14px; }
+            .card-stage { max-width: 100%; }
+
+            .add-card-container {
+                flex-direction: column;
+                gap: 12px;
+                padding: 14px;
             }
-            
-            .stats-badge {
-                background: rgba(0, 255, 157, 0.1);
-                border: 1px solid rgba(0, 255, 157, 0.3);
-                border-radius: 30px;
-                padding: 12px 25px;
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            }
-            
-            .stats-badge-item {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                color: #80ffd4;
-                font-size: 15px;
-            }
-            
-            .stats-badge-item i {
-                color: #00ff9d;
-            }
-            
-            .stats-badge-item span {
-                font-weight: 700;
-                color: #00ff9d;
-                margin-left: 5px;
-            }
-            
-            /* Empty State */
-            .empty-state {
-                grid-column: 1 / -1;
-                text-align: center;
-                padding: 80px 20px;
-                background: rgba(0, 25, 20, 0.5);
-                border-radius: 20px;
-                border: 2px dashed rgba(0, 255, 157, 0.3);
-            }
-            
-            .empty-state i {
-                font-size: 80px;
-                color: rgba(0, 255, 157, 0.3);
-                margin-bottom: 20px;
-            }
-            
-            .empty-state h3 {
-                font-size: 28px;
-                color: #80ffd4;
-                margin-bottom: 15px;
-            }
-            
-            .empty-state p {
-                color: rgba(128, 255, 212, 0.6);
-                font-size: 18px;
-            }
-            
-            /* Success message */
-            .success-message {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: linear-gradient(135deg, #00b36b, #00ff9d);
-                color: #002614;
-                padding: 15px 25px;
-                border-radius: 8px;
-                font-weight: 600;
-                box-shadow: 0 5px 20px rgba(0, 255, 157, 0.5);
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-            }
-            
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            /* Focus highlight for keyboard navigation */
-            .field-input.keyboard-focused {
-                border-color: #00ff9d;
-                box-shadow: 0 0 0 3px rgba(0, 255, 157, 0.4), inset 0 0 15px rgba(0, 255, 157, 0.2);
-                transform: scale(1.02);
-            }
-            
-            /* Responsive adjustments */
-            @media (max-width: 1200px) {
-                .cards-container {
-                    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-                    padding: 20px;
-                }
-            }
-            
-            @media (max-width: 768px) {
-                .encoding-header {
-                    flex-direction: column;
-                    gap: 15px;
-                    padding: 15px;
-                }
-                
-                .encoding-header h1 {
-                    font-size: 24px;
-                }
-                
-                .encoding-header h1 span {
-                    display: none;
-                }
-                
-                .encoding-controls {
-                    width: 100%;
-                    justify-content: center;
-                    flex-wrap: wrap;
-                }
-                
-                .cards-container {
-                    grid-template-columns: 1fr;
-                    padding: 15px;
-                }
-                
-                .add-card-container {
-                    flex-direction: column;
-                    gap: 15px;
-                    padding: 15px;
-                }
-                
-                .stats-badge {
-                    width: 100%;
-                    justify-content: center;
-                }
-            }
-            
-            @media (max-width: 480px) {
-                .card-body {
-                    grid-template-columns: 1fr;
-                }
-                
-                .field-group.full-width {
-                    grid-column: span 1;
-                }
-                
-                .encoding-controls .btn {
-                    padding: 10px 15px;
-                    font-size: 14px;
-                }
-                
-                .encoding-controls .btn span {
-                    display: none;
-                }
-                
-                .encoding-controls .btn i {
-                    margin: 0;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="encoding-container">
-            <div class="encoding-header">
-                <h1>
-                    <i class="fas fa-pencil-alt"></i> 
-                    Data Encoding
-                    <span>Card Entry Mode</span>
-                </h1>
-                <div class="encoding-controls">
-                    <button class="btn btn-save" id="saveToMainBtn">
-                        <i class="fas fa-save"></i> <span>Save to Main</span>
-                    </button>
-                    <button class="btn btn-clear" id="clearEncodingBtn">
-                        <i class="fas fa-trash-alt"></i> <span>Clear All</span>
-                    </button>
-                    <button class="btn btn-back" id="backToMainBtn">
-                        <i class="fas fa-arrow-left"></i> <span>Back to Main</span>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Cards Container -->
-            <div class="cards-container" id="cardsContainer">
-                <!-- Cards will be dynamically added here -->
-            </div>
-            
-            <!-- Add Card Footer -->
-            <div class="add-card-container">
-                <button class="btn-add-card" id="addEncodingCardBtn">
-                    <i class="fas fa-plus-circle"></i> Add New Transaction Card
+
+            .stats-badge { width: 100%; justify-content: center; }
+        }
+
+        @media (max-width: 480px) {
+            .card-body { grid-template-columns: 1fr; }
+            .field-group.full-width { grid-column: span 1; }
+            .encoding-controls .btn { padding: 8px 12px; font-size: 12px; }
+            .encoding-controls .btn span { display: none; }
+            .encoding-controls .btn i { margin: 0; }
+            .card-navigator { gap: 10px; }
+            .card-sequence { min-width: 110px; padding: 8px 14px; }
+            .nav-arrow-btn { width: 36px; height: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="encoding-container">
+        <div class="encoding-header">
+            <h1>
+                <i class="fas fa-pencil-alt"></i>
+                Data Encoding
+                <span>Card Entry Mode</span>
+            </h1>
+            <div class="encoding-controls">
+                <button class="btn btn-inquiry" id="inquiryBtn">
+                    <i class="fas fa-table"></i> <span>Inquiry</span>
                 </button>
-                <div class="stats-badge">
-                    <div class="stats-badge-item">
-                        <i class="fas fa-layer-group"></i> Cards: <span id="encodingCardCount">0</span>
-                    </div>
-                    <div class="stats-badge-item">
-                        <i class="fas fa-coins"></i> Total Gross: ₱<span id="totalGrossDisplay">0.00</span>
-                    </div>
-                </div>
+                <button class="btn btn-save" id="saveToMainBtn">
+                    <i class="fas fa-save"></i> <span>Save to Main</span>
+                </button>
+                <button class="btn btn-clear" id="clearEncodingBtn">
+                    <i class="fas fa-trash-alt"></i> <span>Clear All</span>
+                </button>
+                <button class="btn btn-back" id="backToMainBtn">
+                    <i class="fas fa-arrow-left"></i> <span>Back to Main</span>
+                </button>
             </div>
         </div>
 
-        <script>
-            // Initialize encoding page
-            document.addEventListener('DOMContentLoaded', function() {
-                // Add initial card
+        <!-- Cards Container: single-card view with sequence navigator -->
+        <div class="cards-container" id="cardsContainer">
+            <div class="card-navigator">
+                <button class="nav-arrow-btn" id="prevCardBtn" title="Previous Card">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="card-sequence">
+                    <span class="seq-label">Card</span>
+                    <span class="seq-current" id="currentCardNum">0</span>
+                    <span class="seq-sep">/</span>
+                    <span id="totalCardNum">0</span>
+                </div>
+                <button class="nav-arrow-btn" id="nextCardBtn" title="Next Card">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="card-stage" id="cardsStage">
+                <!-- Cards will be dynamically added here; only the active one is visible -->
+            </div>
+            <div class="empty-state" id="cardsEmptyState">
+                <i class="fas fa-inbox"></i>
+                <h3>No Transaction Cards</h3>
+                <p>Click "Add New Transaction Card" below to get started.</p>
+            </div>
+        </div>
+
+        <!-- Add Card Footer -->
+        <div class="add-card-container">
+            <button class="btn-add-card" id="addEncodingCardBtn">
+                <i class="fas fa-plus-circle"></i> Add New Transaction Card
+            </button>
+            <div class="stats-badge">
+                <div class="stats-badge-item">
+                    <i class="fas fa-layer-group"></i> Cards: <span id="encodingCardCount">0</span>
+                </div>
+                <div class="stats-badge-item">
+                    <i class="fas fa-coins"></i> Total Gross: ₱<span id="totalGrossDisplay">0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inquiry Modal -->
+    <div class="inquiry-modal-overlay hidden" id="inquiryModalOverlay">
+        <div class="inquiry-modal">
+            <div class="inquiry-modal-header">
+                <h2><i class="fas fa-table"></i> Transaction Inquiry</h2>
+                <button class="inquiry-close-btn" id="inquiryCloseBtnTop" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="inquiry-modal-body">
+                <table id="inquiryTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Invoice #</th>
+                            <th>Invoice Type</th>
+                            <th>Payment Mode</th>
+                            <th>TIN Number</th>
+                            <th>Customer Name</th>
+                            <th>Address</th>
+                            <th class="num-col">Gross Sales</th>
+                            <th class="num-col">Exempt Sales</th>
+                            <th>Sales Type</th>
+                            <th>Withholding Rate</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inquiryTableBody">
+                        <!-- Rows populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="inquiry-modal-footer">
+                <div class="inquiry-summary">
+                    <span>Records: <strong id="inquiryRecordCount">0</strong></span>
+                    <span>Total Gross: <strong>₱<span id="inquiryTotalGross">0.00</span></strong></span>
+                    <span>Total Exempt: <strong>₱<span id="inquiryTotalExempt">0.00</span></strong></span>
+                </div>
+                <button class="btn-secondary" id="inquiryCloseBtnBottom">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Index of the currently visible card within #cardsStage
+        let currentCardIndex = 0;
+
+        // Initialize encoding page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add initial card
+            addEncodingCard();
+            updateCardCount();
+            updateTotalGross();
+
+            // Add card button
+            document.getElementById('addEncodingCardBtn').addEventListener('click', function() {
                 addEncodingCard();
                 updateCardCount();
                 updateTotalGross();
-                
-                // Add card button
-                document.getElementById('addEncodingCardBtn').addEventListener('click', function() {
-                    addEncodingCard();
-                    updateCardCount();
-                    updateTotalGross();
-                });
-                
-                // Clear all button
-                document.getElementById('clearEncodingBtn').addEventListener('click', function() {
-                    if (confirm('Are you sure you want to clear all encoding cards?')) {
-                        clearAllEncodingCards();
-                    }
-                });
-                
-                // Back to main button
-                document.getElementById('backToMainBtn').addEventListener('click', function() {
-                    if (confirm('Return to main page? Any unsaved data will be lost.')) {
-                        window.location.href = 'vatable_sales.html';
-                    }
-                });
-                
-                // Save to main button
-                document.getElementById('saveToMainBtn').addEventListener('click', function() {
-                    saveEncodingToMain();
-                });
-                
-                // Load any existing data from localStorage
-                loadEncodingFromStorage();
-                
-                // Initialize keyboard navigation
-                setupKeyboardNavigation();
             });
-            
-            // Setup keyboard navigation
-            function setupKeyboardNavigation() {
-                document.addEventListener('keydown', function(e) {
-                    // Only handle if we're not in a textarea and not pressing modifier keys
-                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
-                        
-                        // Get all focusable elements in all cards
-                        const focusableElements = getAllFocusableElements();
-                        
-                        if (focusableElements.length === 0) return;
-                        
-                        const currentIndex = focusableElements.indexOf(document.activeElement);
-                        
-                        // Arrow Up: Move to previous field
-                        if (e.key === 'ArrowUp' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
-                            e.preventDefault();
-                            if (currentIndex > 0) {
-                                focusableElements[currentIndex - 1].focus();
-                                addFocusHighlight(focusableElements[currentIndex - 1]);
-                            }
+
+            // Clear all button
+            document.getElementById('clearEncodingBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all encoding cards?')) {
+                    clearAllEncodingCards();
+                }
+            });
+
+            // Back to main button
+            document.getElementById('backToMainBtn').addEventListener('click', function() {
+                if (confirm('Return to main page? Any unsaved data will be lost.')) {
+                    window.location.href = 'vatable_sales.html';
+                }
+            });
+
+            // Save to main button
+            document.getElementById('saveToMainBtn').addEventListener('click', function() {
+                saveEncodingToMain();
+            });
+
+            // Card navigator: previous / next arrows
+            document.getElementById('prevCardBtn').addEventListener('click', function() {
+                navigateCard(-1);
+            });
+            document.getElementById('nextCardBtn').addEventListener('click', function() {
+                navigateCard(1);
+            });
+
+            // Inquiry button
+            document.getElementById('inquiryBtn').addEventListener('click', function() {
+                openInquiryModal();
+            });
+            document.getElementById('inquiryCloseBtnTop').addEventListener('click', closeInquiryModal);
+            document.getElementById('inquiryCloseBtnBottom').addEventListener('click', closeInquiryModal);
+            document.getElementById('inquiryModalOverlay').addEventListener('click', function(e) {
+                if (e.target === this) closeInquiryModal();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeInquiryModal();
+            });
+
+            // Load any existing data from localStorage
+            loadEncodingFromStorage();
+
+            // Initialize keyboard navigation
+            setupKeyboardNavigation();
+        });
+
+        // Return all card elements in the stage, in DOM order
+        function getCardElements() {
+            return Array.from(document.querySelectorAll('#cardsStage .encoding-card'));
+        }
+
+        // Show only the card at `index`; hides all others and updates the navigator
+        function showCard(index) {
+            const cards = getCardElements();
+            const emptyState = document.getElementById('cardsEmptyState');
+
+            if (cards.length === 0) {
+                currentCardIndex = 0;
+                if (emptyState) emptyState.style.display = 'flex';
+                updateCardNavigator();
+                return;
+            }
+
+            if (emptyState) emptyState.style.display = 'none';
+
+            currentCardIndex = Math.max(0, Math.min(index, cards.length - 1));
+            cards.forEach((card, i) => {
+                card.classList.toggle('active-card', i === currentCardIndex);
+            });
+
+            updateCardNavigator();
+        }
+
+        // Move the active card left (-1) or right (+1)
+        function navigateCard(delta) {
+            const cards = getCardElements();
+            if (cards.length === 0) return;
+            showCard(currentCardIndex + delta);
+        }
+
+        // Sync the "Card X of Y" label and enable/disable the arrow buttons
+        function updateCardNavigator() {
+            const total = getCardElements().length;
+            document.getElementById('currentCardNum').textContent = total === 0 ? 0 : currentCardIndex + 1;
+            document.getElementById('totalCardNum').textContent = total;
+            document.getElementById('prevCardBtn').disabled = (total === 0 || currentCardIndex <= 0);
+            document.getElementById('nextCardBtn').disabled = (total === 0 || currentCardIndex >= total - 1);
+        }
+
+        // Gather current card data (mirrors saveEncodingToStorage's shape)
+        function getEncodingCardsData() {
+            const cards = [];
+            document.querySelectorAll('.encoding-card').forEach(card => {
+                cards.push({
+                    date: card.querySelector('.card-date')?.value || '',
+                    invoice: card.querySelector('.card-invoice')?.value || '',
+                    invoiceType: card.querySelector('.card-invoice-type')?.value || '',
+                    paymentMode: card.querySelector('.card-payment-mode')?.value || '',
+                    tin: card.querySelector('.card-tin')?.value || '',
+                    customer: card.querySelector('.card-customer')?.value || '',
+                    address: card.querySelector('.card-address')?.value || '',
+                    grossSales: card.querySelector('.card-gross-sales')?.value || '0',
+                    exemptSales: card.querySelector('.card-exempt-sales')?.value || '0',
+                    salesType: card.querySelector('.card-sales-type')?.value || '',
+                    withholdingRate: card.querySelector('.card-withholding-rate')?.value || '0',
+                    remarks: card.querySelector('.card-remarks')?.value || ''
+                });
+            });
+            return cards;
+        }
+
+        // Format a withholding rate decimal (e.g. "0.02") as a percent string
+        function formatWithholdingRate(rate) {
+            const n = parseFloat(rate);
+            if (isNaN(n)) return '—';
+            return (n * 100).toFixed(0) + '%';
+        }
+
+        // Build and show the inquiry table from current encoding card data
+        function openInquiryModal() {
+            const cards = getEncodingCardsData();
+            const tbody = document.getElementById('inquiryTableBody');
+            tbody.innerHTML = '';
+
+            let totalGross = 0;
+            let totalExempt = 0;
+
+            if (cards.length === 0) {
+                tbody.innerHTML = `
+                    <tr class="inquiry-empty-row">
+                        <td colspan="13">
+                            <i class="fas fa-inbox"></i>
+                            No transaction cards to display yet.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                cards.forEach((c, i) => {
+                    const gross = parseFloat(c.grossSales) || 0;
+                    const exempt = parseFloat(c.exemptSales) || 0;
+                    totalGross += gross;
+                    totalExempt += exempt;
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="row-index">${i + 1}</td>
+                        <td>${escapeHtml(c.date || '—')}</td>
+                        <td>${escapeHtml(c.invoice || '—')}</td>
+                        <td>${escapeHtml(c.invoiceType || '—')}</td>
+                        <td>${escapeHtml(c.paymentMode || '—')}</td>
+                        <td class="mono-col">${escapeHtml(c.tin || '—')}</td>
+                        <td>${escapeHtml(c.customer || '—')}</td>
+                        <td class="wrap-col">${escapeHtml(c.address || '—')}</td>
+                        <td class="num-col">₱${gross.toFixed(2)}</td>
+                        <td class="num-col">₱${exempt.toFixed(2)}</td>
+                        <td>${escapeHtml(c.salesType || '—')}</td>
+                        <td>${formatWithholdingRate(c.withholdingRate)}</td>
+                        <td class="wrap-col">${escapeHtml(c.remarks || '—')}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            document.getElementById('inquiryRecordCount').textContent = cards.length;
+            document.getElementById('inquiryTotalGross').textContent = totalGross.toFixed(2);
+            document.getElementById('inquiryTotalExempt').textContent = totalExempt.toFixed(2);
+
+            document.getElementById('inquiryModalOverlay').classList.remove('hidden');
+        }
+
+        function closeInquiryModal() {
+            document.getElementById('inquiryModalOverlay').classList.add('hidden');
+        }
+
+        // Setup keyboard navigation
+        function setupKeyboardNavigation() {
+            document.addEventListener('keydown', function(e) {
+                // Only handle if we're not in a textarea and not pressing modifier keys
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+
+                    // Get all focusable elements in all cards
+                    const focusableElements = getAllFocusableElements();
+
+                    if (focusableElements.length === 0) return;
+
+                    const currentIndex = focusableElements.indexOf(document.activeElement);
+
+                    // Arrow Up: Move to previous field
+                    if (e.key === 'ArrowUp' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        if (currentIndex > 0) {
+                            focusableElements[currentIndex - 1].focus();
+                            addFocusHighlight(focusableElements[currentIndex - 1]);
                         }
-                        
-                        // Arrow Down: Move to next field
-                        else if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+                    }
+
+                    // Arrow Down: Move to next field
+                    else if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        if (currentIndex < focusableElements.length - 1) {
+                            focusableElements[currentIndex + 1].focus();
+                            addFocusHighlight(focusableElements[currentIndex + 1]);
+                        }
+                    }
+
+                    // Enter: Move to next field (like Tab)
+                    else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        // Don't prevent default for textareas, but for inputs and selects, move to next
+                        if (e.target.tagName !== 'TEXTAREA') {
                             e.preventDefault();
                             if (currentIndex < focusableElements.length - 1) {
                                 focusableElements[currentIndex + 1].focus();
                                 addFocusHighlight(focusableElements[currentIndex + 1]);
                             }
                         }
-                        
-                        // Enter: Move to next field (like Tab)
-                        else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
-                            // Don't prevent default for textareas, but for inputs and selects, move to next
-                            if (e.target.tagName !== 'TEXTAREA') {
-                                e.preventDefault();
-                                if (currentIndex < focusableElements.length - 1) {
-                                    focusableElements[currentIndex + 1].focus();
-                                    addFocusHighlight(focusableElements[currentIndex + 1]);
-                                }
-                            }
-                        }
-                        
-                        // Shift+Enter: Move to previous field
-                        else if (e.key === 'Enter' && e.shiftKey && !e.ctrlKey && !e.altKey) {
-                            e.preventDefault();
-                            if (currentIndex > 0) {
-                                focusableElements[currentIndex - 1].focus();
-                                addFocusHighlight(focusableElements[currentIndex - 1]);
-                            }
+                    }
+
+                    // Shift+Enter: Move to previous field
+                    else if (e.key === 'Enter' && e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        if (currentIndex > 0) {
+                            focusableElements[currentIndex - 1].focus();
+                            addFocusHighlight(focusableElements[currentIndex - 1]);
                         }
                     }
-                });
-                
-                // Remove highlight on blur
-                document.addEventListener('blur', function(e) {
-                    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) {
-                        e.target.classList.remove('keyboard-focused');
-                    }
-                }, true);
-            }
-            
-            // Get all focusable elements in all cards
-            function getAllFocusableElements() {
-                const cards = document.querySelectorAll('.encoding-card');
-                const focusable = [];
-                
-                cards.forEach(card => {
-                    const inputs = card.querySelectorAll('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])');
-                    inputs.forEach(input => {
-                        focusable.push(input);
-                    });
-                });
-                
-                return focusable;
-            }
-            
-            // Add focus highlight
-            function addFocusHighlight(element) {
-                // Remove highlight from all elements
-                document.querySelectorAll('.keyboard-focused').forEach(el => {
-                    el.classList.remove('keyboard-focused');
-                });
-                
-                // Add highlight to current element
-                if (element) {
-                    element.classList.add('keyboard-focused');
-                    
-                    // Scroll into view if needed
-                    element.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest',
-                        inline: 'nearest'
-                    });
                 }
-            }
-            
-            // Function to add a new encoding card
-            function addEncodingCard() {
-                const container = document.getElementById('cardsContainer');
-                const cardCount = container.children.length + 1;
-                const cardId = 'card_' + Date.now() + '_' + cardCount;
-                
-                const card = document.createElement('div');
-                card.className = 'encoding-card';
-                card.id = cardId;
-                
-                const today = new Date().toISOString().split('T')[0];
-                
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div class="card-title">
-                            <i class="fas fa-receipt"></i> Transaction #${cardCount}
-                        </div>
-                        <div class="card-number">
-                            <i class="far fa-calendar-alt"></i> New Entry
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="field-group">
-                            <div class="field-label"><i class="far fa-calendar"></i> Date</div>
-                            <input type="date" value="${today}" class="field-input card-date">
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-hashtag"></i> Invoice #</div>
-                            <input type="text" class="field-input card-invoice" placeholder="INV-001">
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-tag"></i> Invoice Type</div>
-                            <select class="field-input card-invoice-type">
-                                <option value="">Select Type</option>
-                                <option value="Cash">Cash Invoice</option>
-                                <option value="Charge">Charge Invoice</option>
-                                <option value="Billing">Billing Statement</option>
-                                <option value="Service">Service Invoice</option>
-                            </select>
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-credit-card"></i> Payment Mode</div>
-                            <select class="field-input card-payment-mode">
-                                <option value="">Select Payment</option>
-                                <option value="Cash">Cash</option>
-                                <option value="Charge">Charge</option>
-                            </select>
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-id-card"></i> TIN Number</div>
-                            <input type="text" class="field-input card-tin tin-input" maxlength="15" placeholder="000-000-000-000">
-                            <div class="validation-message">TIN must be 12 digits</div>
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-user"></i> Customer Name</div>
-                            <input type="text" class="field-input card-customer" placeholder="Full name">
-                        </div>
-                        
-                        <div class="field-group full-width">
-                            <div class="field-label"><i class="fas fa-map-marker-alt"></i> Address</div>
-                            <input type="text" class="field-input card-address" placeholder="Street, City, Province">
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-dollar-sign"></i> Gross Sales</div>
-                            <input type="number" step="0.01" min="0" class="field-input card-gross-sales" placeholder="0.00" value="0">
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-exclamation-circle"></i> Exempt Sales</div>
-                            <input type="number" step="0.01" min="0" class="field-input card-exempt-sales" placeholder="0.00" value="0">
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-building"></i> Sales Type</div>
-                            <select class="field-input card-sales-type">
-                                <option value="">Select Type</option>
-                                <option value="Private">Private Sector</option>
-                                <option value="Government">Government Sector</option>
-                            </select>
-                        </div>
-                        
-                        <div class="field-group">
-                            <div class="field-label"><i class="fas fa-percent"></i> Withholding Rate</div>
-                            <select class="field-input card-withholding-rate">
-                                <option value="0">0%</option>
-                                <option value="0.01">1%</option>
-                                <option value="0.02">2%</option>
-                                <option value="0.05">5%</option>
-                            </select>
-                        </div>
-                        
-                        <div class="field-group full-width">
-                            <div class="field-label"><i class="fas fa-comment"></i> Remarks</div>
-                            <input type="text" class="field-input card-remarks" placeholder="Additional notes">
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="duplicate-card-btn" onclick="duplicateCard('${cardId}')" title="Duplicate Card">
-                            <i class="fas fa-copy"></i> Duplicate
-                        </button>
-                        <button class="delete-card-btn" onclick="deleteEncodingCard('${cardId}')" title="Delete Card">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                `;
-                
-                container.appendChild(card);
-                
-                // Add event listeners for TIN formatting
-                const tinInput = card.querySelector('.card-tin');
-                tinInput.addEventListener('input', function(e) {
-                    formatTIN(e.target);
-                    saveEncodingToStorage();
-                });
-                
-                tinInput.addEventListener('blur', function(e) {
-                    validateTIN(e.target);
-                });
-                
-                // Auto-save to localStorage on any input change
-                const inputs = card.querySelectorAll('input, select');
+            });
+
+            // Remove highlight on blur
+            document.addEventListener('blur', function(e) {
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) {
+                    e.target.classList.remove('keyboard-focused');
+                }
+            }, true);
+        }
+
+        // Get all focusable elements in all cards
+        function getAllFocusableElements() {
+            const cards = document.querySelectorAll('.encoding-card');
+            const focusable = [];
+
+            cards.forEach(card => {
+                const inputs = card.querySelectorAll('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])');
                 inputs.forEach(input => {
-                    input.addEventListener('input', function() {
-                        saveEncodingToStorage();
-                        updateTotalGross();
-                    });
-                    input.addEventListener('change', function() {
-                        saveEncodingToStorage();
-                        updateTotalGross();
-                    });
-                    
-                    // Add focus event for keyboard navigation highlight
-                    input.addEventListener('focus', function() {
-                        addFocusHighlight(this);
-                    });
+                    focusable.push(input);
                 });
-                
-                // Animate new card
+            });
+
+            return focusable;
+        }
+
+        // Add focus highlight
+        function addFocusHighlight(element) {
+            // Remove highlight from all elements
+            document.querySelectorAll('.keyboard-focused').forEach(el => {
+                el.classList.remove('keyboard-focused');
+            });
+
+            // Add highlight to current element
+            if (element) {
+                element.classList.add('keyboard-focused');
+
+                // Scroll into view if needed
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'nearest'
+                });
+            }
+        }
+
+        // Function to add a new encoding card
+        function addEncodingCard() {
+            const stage = document.getElementById('cardsStage');
+            const cardCount = stage.querySelectorAll('.encoding-card').length + 1;
+            const cardId = 'card_' + Date.now() + '_' + cardCount;
+
+            const card = document.createElement('div');
+            card.className = 'encoding-card';
+            card.id = cardId;
+
+            const today = new Date().toISOString().split('T')[0];
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-receipt"></i> Transaction #${cardCount}
+                    </div>
+                    <div class="card-number">
+                        <i class="far fa-calendar-alt"></i> New Entry
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="field-group">
+                        <div class="field-label"><i class="far fa-calendar"></i> Date</div>
+                        <input type="date" value="${today}" class="field-input card-date">
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-hashtag"></i> Invoice #</div>
+                        <input type="text" class="field-input card-invoice" placeholder="INV-001">
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-tag"></i> Invoice Type</div>
+                        <select class="field-input card-invoice-type">
+                            <option value="">Select Type</option>
+                            <option value="Cash">Cash Invoice</option>
+                            <option value="Charge">Charge Invoice</option>
+                            <option value="Billing">Billing Statement</option>
+                            <option value="Service">Service Invoice</option>
+                        </select>
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-credit-card"></i> Payment Mode</div>
+                        <select class="field-input card-payment-mode">
+                            <option value="">Select Payment</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Charge">Charge</option>
+                        </select>
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-id-card"></i> TIN Number</div>
+                        <input type="text" class="field-input card-tin tin-input" maxlength="15" placeholder="000-000-000-000">
+                        <div class="validation-message">TIN must be 12 digits</div>
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-user"></i> Customer Name</div>
+                        <input type="text" class="field-input card-customer" placeholder="Full name">
+                    </div>
+                    
+                    <div class="field-group full-width">
+                        <div class="field-label"><i class="fas fa-map-marker-alt"></i> Address</div>
+                        <input type="text" class="field-input card-address" placeholder="Street, City, Province">
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-dollar-sign"></i> Gross Sales</div>
+                        <input type="number" step="0.01" min="0" class="field-input card-gross-sales" placeholder="0.00" value="0">
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-exclamation-circle"></i> Exempt Sales</div>
+                        <input type="number" step="0.01" min="0" class="field-input card-exempt-sales" placeholder="0.00" value="0">
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-building"></i> Sales Type</div>
+                        <select class="field-input card-sales-type">
+                            <option value="">Select Type</option>
+                            <option value="Private">Private Sector</option>
+                            <option value="Government">Government Sector</option>
+                        </select>
+                    </div>
+                    
+                    <div class="field-group">
+                        <div class="field-label"><i class="fas fa-percent"></i> Withholding Rate</div>
+                        <select class="field-input card-withholding-rate">
+                            <option value="0">0%</option>
+                            <option value="0.01">1%</option>
+                            <option value="0.02">2%</option>
+                            <option value="0.05">5%</option>
+                        </select>
+                    </div>
+                    
+                    <div class="field-group full-width">
+                        <div class="field-label"><i class="fas fa-comment"></i> Remarks</div>
+                        <input type="text" class="field-input card-remarks" placeholder="Additional notes">
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="duplicate-card-btn" onclick="duplicateCard('${cardId}')" title="Duplicate Card">
+                        <i class="fas fa-copy"></i> Duplicate
+                    </button>
+                    <button class="delete-card-btn" onclick="deleteEncodingCard('${cardId}')" title="Delete Card">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            `;
+
+            stage.appendChild(card);
+
+            // Add event listeners for TIN formatting
+            const tinInput = card.querySelector('.card-tin');
+            tinInput.addEventListener('input', function(e) {
+                formatTIN(e.target);
+                saveEncodingToStorage();
+            });
+
+            tinInput.addEventListener('blur', function(e) {
+                validateTIN(e.target);
+            });
+
+            // Auto-save to localStorage on any input change
+            const inputs = card.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    saveEncodingToStorage();
+                    updateTotalGross();
+                });
+                input.addEventListener('change', function() {
+                    saveEncodingToStorage();
+                    updateTotalGross();
+                });
+
+                // Add focus event for keyboard navigation highlight
+                input.addEventListener('focus', function() {
+                    addFocusHighlight(this);
+                });
+            });
+
+            // Animate new card
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+
+            // Make the new card the active/visible one
+            showCard(getCardElements().length - 1);
+
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 10);
+
+            updateCardCount();
+            saveEncodingToStorage();
+
+            // Focus on first input of new card
+            setTimeout(() => {
+                const firstInput = card.querySelector('input, select');
+                if (firstInput) {
+                    firstInput.focus();
+                    addFocusHighlight(firstInput);
+                }
+            }, 100);
+        }
+
+        // Function to duplicate a card
+        function duplicateCard(cardId) {
+            const originalCard = document.getElementById(cardId);
+            if (!originalCard) return;
+
+            // Clone the card
+            const newCard = originalCard.cloneNode(true);
+            const newId = 'card_' + Date.now() + '_' + Math.random();
+            newCard.id = newId;
+
+            // Update duplicate buttons
+            const duplicateBtn = newCard.querySelector('.duplicate-card-btn');
+            duplicateBtn.setAttribute('onclick', `duplicateCard('${newId}')`);
+
+            const deleteBtn = newCard.querySelector('.delete-card-btn');
+            deleteBtn.setAttribute('onclick', `deleteEncodingCard('${newId}')`);
+
+            // Add to stage
+            document.getElementById('cardsStage').appendChild(newCard);
+
+            // Re-attach event listeners
+            const tinInput = newCard.querySelector('.card-tin');
+            tinInput.addEventListener('input', function(e) {
+                formatTIN(e.target);
+                saveEncodingToStorage();
+            });
+            tinInput.addEventListener('blur', function(e) {
+                validateTIN(e.target);
+            });
+
+            const inputs = newCard.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    saveEncodingToStorage();
+                    updateTotalGross();
+                });
+                input.addEventListener('change', function() {
+                    saveEncodingToStorage();
+                    updateTotalGross();
+                });
+
+                // Add focus event for keyboard navigation highlight
+                input.addEventListener('focus', function() {
+                    addFocusHighlight(this);
+                });
+            });
+
+            // Animate new card
+            newCard.style.opacity = '0';
+            newCard.style.transform = 'translateY(20px)';
+
+            // Renumber titles and jump straight to the duplicate
+            updateCardNumbers();
+            showCard(getCardElements().length - 1);
+
+            setTimeout(() => {
+                newCard.style.transition = 'all 0.5s ease';
+                newCard.style.opacity = '1';
+                newCard.style.transform = 'translateY(0)';
+            }, 10);
+
+            updateCardCount();
+            updateTotalGross();
+            saveEncodingToStorage();
+
+            // Focus on first input of new card
+            setTimeout(() => {
+                const firstInput = newCard.querySelector('input, select');
+                if (firstInput) {
+                    firstInput.focus();
+                    addFocusHighlight(firstInput);
+                }
+            }, 100);
+        }
+
+        // Function to delete an encoding card
+        function deleteEncodingCard(cardId) {
+            const card = document.getElementById(cardId);
+            if (card && confirm('Delete this transaction card?')) {
+                card.style.transition = 'all 0.3s ease';
                 card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
+                card.style.transform = 'scale(0.8) translateY(-20px)';
+
                 setTimeout(() => {
-                    card.style.transition = 'all 0.5s ease';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, 10);
-                
-                updateCardCount();
-                saveEncodingToStorage();
-                
-                // Focus on first input of new card
-                setTimeout(() => {
-                    const firstInput = card.querySelector('input, select');
-                    if (firstInput) {
-                        firstInput.focus();
-                        addFocusHighlight(firstInput);
-                    }
-                }, 100);
-            }
-            
-            // Function to duplicate a card
-            function duplicateCard(cardId) {
-                const originalCard = document.getElementById(cardId);
-                if (!originalCard) return;
-                
-                // Clone the card
-                const newCard = originalCard.cloneNode(true);
-                const newId = 'card_' + Date.now() + '_' + Math.random();
-                newCard.id = newId;
-                
-                // Update duplicate buttons
-                const duplicateBtn = newCard.querySelector('.duplicate-card-btn');
-                duplicateBtn.setAttribute('onclick', `duplicateCard('${newId}')`);
-                
-                const deleteBtn = newCard.querySelector('.delete-card-btn');
-                deleteBtn.setAttribute('onclick', `deleteEncodingCard('${newId}')`);
-                
-                // Add to container
-                document.getElementById('cardsContainer').appendChild(newCard);
-                
-                // Re-attach event listeners
-                const tinInput = newCard.querySelector('.card-tin');
-                tinInput.addEventListener('input', function(e) {
-                    formatTIN(e.target);
-                    saveEncodingToStorage();
-                });
-                tinInput.addEventListener('blur', function(e) {
-                    validateTIN(e.target);
-                });
-                
-                const inputs = newCard.querySelectorAll('input, select');
-                inputs.forEach(input => {
-                    input.addEventListener('input', function() {
-                        saveEncodingToStorage();
-                        updateTotalGross();
-                    });
-                    input.addEventListener('change', function() {
-                        saveEncodingToStorage();
-                        updateTotalGross();
-                    });
-                    
-                    // Add focus event for keyboard navigation highlight
-                    input.addEventListener('focus', function() {
-                        addFocusHighlight(this);
-                    });
-                });
-                
-                // Animate new card
-                newCard.style.opacity = '0';
-                newCard.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    newCard.style.transition = 'all 0.5s ease';
-                    newCard.style.opacity = '1';
-                    newCard.style.transform = 'translateY(0)';
-                }, 10);
-                
-                updateCardCount();
-                updateTotalGross();
-                saveEncodingToStorage();
-                
-                // Focus on first input of new card
-                setTimeout(() => {
-                    const firstInput = newCard.querySelector('input, select');
-                    if (firstInput) {
-                        firstInput.focus();
-                        addFocusHighlight(firstInput);
-                    }
-                }, 100);
-            }
-            
-            // Function to delete an encoding card
-            function deleteEncodingCard(cardId) {
-                const card = document.getElementById(cardId);
-                if (card && confirm('Delete this transaction card?')) {
-                    card.style.transition = 'all 0.3s ease';
-                    card.style.opacity = '0';
-                    card.style.transform = 'scale(0.8) translateY(-20px)';
-                    
-                    setTimeout(() => {
-                        card.remove();
-                        updateCardCount();
-                        updateTotalGross();
-                        saveEncodingToStorage();
-                        
-                        // Update card numbers
-                        updateCardNumbers();
-                    }, 300);
-                }
-            }
-            
-            // Update card numbers after deletion
-            function updateCardNumbers() {
-                const cards = document.querySelectorAll('.encoding-card');
-                cards.forEach((card, index) => {
-                    const titleDiv = card.querySelector('.card-title');
-                    if (titleDiv) {
-                        titleDiv.innerHTML = `<i class="fas fa-receipt"></i> Transaction #${index + 1}`;
-                    }
-                });
-            }
-            
-            // Function to clear all encoding cards
-            function clearAllEncodingCards() {
-                const container = document.getElementById('cardsContainer');
-                
-                // Animate all cards out
-                const cards = container.children;
-                Array.from(cards).forEach((card, i) => {
-                    setTimeout(() => {
-                        card.style.transition = 'all 0.3s ease';
-                        card.style.opacity = '0';
-                        card.style.transform = 'scale(0.8) translateY(-20px)';
-                    }, i * 50);
-                });
-                
-                setTimeout(() => {
-                    container.innerHTML = '';
-                    addEncodingCard(); // Add one empty card
+                    const deletedIndex = getCardElements().indexOf(card);
+                    card.remove();
                     updateCardCount();
                     updateTotalGross();
                     saveEncodingToStorage();
+
+                    // Update card numbers
+                    updateCardNumbers();
+
+                    // Show the card that now occupies the same slot (or the last one)
+                    const remaining = getCardElements().length;
+                    const nextIndex = deletedIndex >= remaining ? remaining - 1 : deletedIndex;
+                    showCard(nextIndex);
                 }, 300);
             }
-            
-            // Function to update card count
-            function updateCardCount() {
-                const cardCount = document.querySelectorAll('.encoding-card').length;
-                document.getElementById('encodingCardCount').textContent = cardCount;
-            }
-            
-            // Function to update total gross sales display
-            function updateTotalGross() {
-                let total = 0;
-                document.querySelectorAll('.card-gross-sales').forEach(input => {
-                    total += parseFloat(input.value) || 0;
-                });
-                document.getElementById('totalGrossDisplay').textContent = total.toFixed(2);
-            }
-            
-            // Function to save encoding data to localStorage
-            function saveEncodingToStorage() {
-                const cards = [];
-                document.querySelectorAll('.encoding-card').forEach(card => {
-                    const cardData = {
-                        date: card.querySelector('.card-date')?.value || '',
-                        invoice: card.querySelector('.card-invoice')?.value || '',
-                        invoiceType: card.querySelector('.card-invoice-type')?.value || '',
-                        paymentMode: card.querySelector('.card-payment-mode')?.value || '',
-                        tin: card.querySelector('.card-tin')?.value || '',
-                        customer: card.querySelector('.card-customer')?.value || '',
-                        address: card.querySelector('.card-address')?.value || '',
-                        grossSales: card.querySelector('.card-gross-sales')?.value || '0',
-                        exemptSales: card.querySelector('.card-exempt-sales')?.value || '0',
-                        salesType: card.querySelector('.card-sales-type')?.value || '',
-                        withholdingRate: card.querySelector('.card-withholding-rate')?.value || '0',
-                        remarks: card.querySelector('.card-remarks')?.value || ''
-                    };
-                    cards.push(cardData);
-                });
-                
-                localStorage.setItem('encodingData', JSON.stringify(cards));
-            }
-            
-            // Function to load encoding data from localStorage
-            function loadEncodingFromStorage() {
-                const savedData = localStorage.getItem('encodingData');
-                if (savedData) {
-                    try {
-                        const cards = JSON.parse(savedData);
-                        if (cards.length > 0) {
-                            const container = document.getElementById('cardsContainer');
-                            container.innerHTML = ''; // Clear existing cards
-                            
-                            cards.forEach((cardData, index) => {
-                                const cardId = 'card_' + Date.now() + '_' + index + '_' + Math.random();
-                                const card = document.createElement('div');
-                                card.className = 'encoding-card';
-                                card.id = cardId;
-                                
-                                card.innerHTML = `
-                                    <div class="card-header">
-                                        <div class="card-title">
-                                            <i class="fas fa-receipt"></i> Transaction #${index + 1}
-                                        </div>
-                                        <div class="card-number">
-                                            <i class="far fa-calendar-alt"></i> ${cardData.date || 'No Date'}
-                                        </div>
+        }
+
+        // Update card numbers after deletion
+        function updateCardNumbers() {
+            const cards = document.querySelectorAll('.encoding-card');
+            cards.forEach((card, index) => {
+                const titleDiv = card.querySelector('.card-title');
+                if (titleDiv) {
+                    titleDiv.innerHTML = `<i class="fas fa-receipt"></i> Transaction #${index + 1}`;
+                }
+            });
+        }
+
+        // Function to clear all encoding cards
+        function clearAllEncodingCards() {
+            const stage = document.getElementById('cardsStage');
+
+            // Animate all cards out
+            const cards = stage.children;
+            Array.from(cards).forEach((card, i) => {
+                setTimeout(() => {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.8) translateY(-20px)';
+                }, i * 50);
+            });
+
+            setTimeout(() => {
+                stage.innerHTML = '';
+                addEncodingCard(); // Add one empty card
+                updateCardCount();
+                updateTotalGross();
+                saveEncodingToStorage();
+            }, 300);
+        }
+
+        // Function to update card count
+        function updateCardCount() {
+            const cardCount = document.querySelectorAll('.encoding-card').length;
+            document.getElementById('encodingCardCount').textContent = cardCount;
+        }
+
+        // Function to update total gross sales display
+        function updateTotalGross() {
+            let total = 0;
+            document.querySelectorAll('.card-gross-sales').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.getElementById('totalGrossDisplay').textContent = total.toFixed(2);
+        }
+
+        // Function to save encoding data to localStorage
+        function saveEncodingToStorage() {
+            const cards = [];
+            document.querySelectorAll('.encoding-card').forEach(card => {
+                const cardData = {
+                    date: card.querySelector('.card-date')?.value || '',
+                    invoice: card.querySelector('.card-invoice')?.value || '',
+                    invoiceType: card.querySelector('.card-invoice-type')?.value || '',
+                    paymentMode: card.querySelector('.card-payment-mode')?.value || '',
+                    tin: card.querySelector('.card-tin')?.value || '',
+                    customer: card.querySelector('.card-customer')?.value || '',
+                    address: card.querySelector('.card-address')?.value || '',
+                    grossSales: card.querySelector('.card-gross-sales')?.value || '0',
+                    exemptSales: card.querySelector('.card-exempt-sales')?.value || '0',
+                    salesType: card.querySelector('.card-sales-type')?.value || '',
+                    withholdingRate: card.querySelector('.card-withholding-rate')?.value || '0',
+                    remarks: card.querySelector('.card-remarks')?.value || ''
+                };
+                cards.push(cardData);
+            });
+
+            localStorage.setItem('encodingData', JSON.stringify(cards));
+        }
+
+        // Function to load encoding data from localStorage
+        function loadEncodingFromStorage() {
+            const savedData = localStorage.getItem('encodingData');
+            if (savedData) {
+                try {
+                    const cards = JSON.parse(savedData);
+                    if (cards.length > 0) {
+                        const stage = document.getElementById('cardsStage');
+                        stage.innerHTML = ''; // Clear existing cards
+
+                        cards.forEach((cardData, index) => {
+                            const cardId = 'card_' + Date.now() + '_' + index + '_' + Math.random();
+                            const card = document.createElement('div');
+                            card.className = 'encoding-card';
+                            card.id = cardId;
+
+                            card.innerHTML = `
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-receipt"></i> Transaction #${index + 1}
                                     </div>
-                                    <div class="card-body">
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="far fa-calendar"></i> Date</div>
-                                            <input type="date" value="${escapeHtml(cardData.date || '')}" class="field-input card-date">
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-hashtag"></i> Invoice #</div>
-                                            <input type="text" value="${escapeHtml(cardData.invoice || '')}" class="field-input card-invoice" placeholder="INV-001">
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-tag"></i> Invoice Type</div>
-                                            <select class="field-input card-invoice-type">
-                                                <option value="">Select Type</option>
-                                                <option value="Cash" ${cardData.invoiceType === 'Cash' ? 'selected' : ''}>Cash Invoice</option>
-                                                <option value="Charge" ${cardData.invoiceType === 'Charge' ? 'selected' : ''}>Charge Invoice</option>
-                                                <option value="Billing" ${cardData.invoiceType === 'Billing' ? 'selected' : ''}>Billing Statement</option>
-                                                <option value="Service" ${cardData.invoiceType === 'Service' ? 'selected' : ''}>Service Invoice</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-credit-card"></i> Payment Mode</div>
-                                            <select class="field-input card-payment-mode">
-                                                <option value="">Select Payment</option>
-                                                <option value="Cash" ${cardData.paymentMode === 'Cash' ? 'selected' : ''}>Cash</option>
-                                                <option value="Charge" ${cardData.paymentMode === 'Charge' ? 'selected' : ''}>Charge</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-id-card"></i> TIN Number</div>
-                                            <input type="text" value="${escapeHtml(cardData.tin || '')}" class="field-input card-tin tin-input" maxlength="15" placeholder="000-000-000-000">
-                                            <div class="validation-message">TIN must be 12 digits</div>
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-user"></i> Customer Name</div>
-                                            <input type="text" value="${escapeHtml(cardData.customer || '')}" class="field-input card-customer" placeholder="Full name">
-                                        </div>
-                                        
-                                        <div class="field-group full-width">
-                                            <div class="field-label"><i class="fas fa-map-marker-alt"></i> Address</div>
-                                            <input type="text" value="${escapeHtml(cardData.address || '')}" class="field-input card-address" placeholder="Street, City, Province">
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-dollar-sign"></i> Gross Sales</div>
-                                            <input type="number" step="0.01" min="0" value="${cardData.grossSales || '0'}" class="field-input card-gross-sales" placeholder="0.00">
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-exclamation-circle"></i> Exempt Sales</div>
-                                            <input type="number" step="0.01" min="0" value="${cardData.exemptSales || '0'}" class="field-input card-exempt-sales" placeholder="0.00">
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-building"></i> Sales Type</div>
-                                            <select class="field-input card-sales-type">
-                                                <option value="">Select Type</option>
-                                                <option value="Private" ${cardData.salesType === 'Private' ? 'selected' : ''}>Private Sector</option>
-                                                <option value="Government" ${cardData.salesType === 'Government' ? 'selected' : ''}>Government Sector</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="field-group">
-                                            <div class="field-label"><i class="fas fa-percent"></i> Withholding Rate</div>
-                                            <select class="field-input card-withholding-rate">
-                                                <option value="0" ${cardData.withholdingRate === '0' ? 'selected' : ''}>0%</option>
-                                                <option value="0.01" ${cardData.withholdingRate === '0.01' ? 'selected' : ''}>1%</option>
-                                                <option value="0.02" ${cardData.withholdingRate === '0.02' ? 'selected' : ''}>2%</option>
-                                                <option value="0.05" ${cardData.withholdingRate === '0.05' ? 'selected' : ''}>5%</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="field-group full-width">
-                                            <div class="field-label"><i class="fas fa-comment"></i> Remarks</div>
-                                            <input type="text" value="${escapeHtml(cardData.remarks || '')}" class="field-input card-remarks" placeholder="Additional notes">
-                                        </div>
+                                    <div class="card-number">
+                                        <i class="far fa-calendar-alt"></i> ${cardData.date || 'No Date'}
                                     </div>
-                                    <div class="card-footer">
-                                        <button class="duplicate-card-btn" onclick="duplicateCard('${cardId}')" title="Duplicate Card">
-                                            <i class="fas fa-copy"></i> Duplicate
-                                        </button>
-                                        <button class="delete-card-btn" onclick="deleteEncodingCard('${cardId}')" title="Delete Card">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="far fa-calendar"></i> Date</div>
+                                        <input type="date" value="${escapeHtml(cardData.date || '')}" class="field-input card-date">
                                     </div>
-                                `;
-                                
-                                container.appendChild(card);
-                                
-                                // Re-attach event listeners
-                                const tinInput = card.querySelector('.card-tin');
-                                tinInput.addEventListener('input', function(e) {
-                                    formatTIN(e.target);
-                                    saveEncodingToStorage();
-                                });
-                                tinInput.addEventListener('blur', function(e) {
-                                    validateTIN(e.target);
-                                });
-                                
-                                const inputs = card.querySelectorAll('input, select');
-                                inputs.forEach(input => {
-                                    input.addEventListener('input', function() {
-                                        saveEncodingToStorage();
-                                        updateTotalGross();
-                                    });
-                                    input.addEventListener('change', function() {
-                                        saveEncodingToStorage();
-                                        updateTotalGross();
-                                    });
                                     
-                                    // Add focus event for keyboard navigation highlight
-                                    input.addEventListener('focus', function() {
-                                        addFocusHighlight(this);
-                                    });
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-hashtag"></i> Invoice #</div>
+                                        <input type="text" value="${escapeHtml(cardData.invoice || '')}" class="field-input card-invoice" placeholder="INV-001">
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-tag"></i> Invoice Type</div>
+                                        <select class="field-input card-invoice-type">
+                                            <option value="">Select Type</option>
+                                            <option value="Cash" ${cardData.invoiceType === 'Cash' ? 'selected' : ''}>Cash Invoice</option>
+                                            <option value="Charge" ${cardData.invoiceType === 'Charge' ? 'selected' : ''}>Charge Invoice</option>
+                                            <option value="Billing" ${cardData.invoiceType === 'Billing' ? 'selected' : ''}>Billing Statement</option>
+                                            <option value="Service" ${cardData.invoiceType === 'Service' ? 'selected' : ''}>Service Invoice</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-credit-card"></i> Payment Mode</div>
+                                        <select class="field-input card-payment-mode">
+                                            <option value="">Select Payment</option>
+                                            <option value="Cash" ${cardData.paymentMode === 'Cash' ? 'selected' : ''}>Cash</option>
+                                            <option value="Charge" ${cardData.paymentMode === 'Charge' ? 'selected' : ''}>Charge</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-id-card"></i> TIN Number</div>
+                                        <input type="text" value="${escapeHtml(cardData.tin || '')}" class="field-input card-tin tin-input" maxlength="15" placeholder="000-000-000-000">
+                                        <div class="validation-message">TIN must be 12 digits</div>
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-user"></i> Customer Name</div>
+                                        <input type="text" value="${escapeHtml(cardData.customer || '')}" class="field-input card-customer" placeholder="Full name">
+                                    </div>
+                                    
+                                    <div class="field-group full-width">
+                                        <div class="field-label"><i class="fas fa-map-marker-alt"></i> Address</div>
+                                        <input type="text" value="${escapeHtml(cardData.address || '')}" class="field-input card-address" placeholder="Street, City, Province">
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-dollar-sign"></i> Gross Sales</div>
+                                        <input type="number" step="0.01" min="0" value="${cardData.grossSales || '0'}" class="field-input card-gross-sales" placeholder="0.00">
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-exclamation-circle"></i> Exempt Sales</div>
+                                        <input type="number" step="0.01" min="0" value="${cardData.exemptSales || '0'}" class="field-input card-exempt-sales" placeholder="0.00">
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-building"></i> Sales Type</div>
+                                        <select class="field-input card-sales-type">
+                                            <option value="">Select Type</option>
+                                            <option value="Private" ${cardData.salesType === 'Private' ? 'selected' : ''}>Private Sector</option>
+                                            <option value="Government" ${cardData.salesType === 'Government' ? 'selected' : ''}>Government Sector</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="field-group">
+                                        <div class="field-label"><i class="fas fa-percent"></i> Withholding Rate</div>
+                                        <select class="field-input card-withholding-rate">
+                                            <option value="0" ${cardData.withholdingRate === '0' ? 'selected' : ''}>0%</option>
+                                            <option value="0.01" ${cardData.withholdingRate === '0.01' ? 'selected' : ''}>1%</option>
+                                            <option value="0.02" ${cardData.withholdingRate === '0.02' ? 'selected' : ''}>2%</option>
+                                            <option value="0.05" ${cardData.withholdingRate === '0.05' ? 'selected' : ''}>5%</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="field-group full-width">
+                                        <div class="field-label"><i class="fas fa-comment"></i> Remarks</div>
+                                        <input type="text" value="${escapeHtml(cardData.remarks || '')}" class="field-input card-remarks" placeholder="Additional notes">
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="duplicate-card-btn" onclick="duplicateCard('${cardId}')" title="Duplicate Card">
+                                        <i class="fas fa-copy"></i> Duplicate
+                                    </button>
+                                    <button class="delete-card-btn" onclick="deleteEncodingCard('${cardId}')" title="Delete Card">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            `;
+
+                            stage.appendChild(card);
+
+                            // Re-attach event listeners
+                            const tinInput = card.querySelector('.card-tin');
+                            tinInput.addEventListener('input', function(e) {
+                                formatTIN(e.target);
+                                saveEncodingToStorage();
+                            });
+                            tinInput.addEventListener('blur', function(e) {
+                                validateTIN(e.target);
+                            });
+
+                            const inputs = card.querySelectorAll('input, select');
+                            inputs.forEach(input => {
+                                input.addEventListener('input', function() {
+                                    saveEncodingToStorage();
+                                    updateTotalGross();
+                                });
+                                input.addEventListener('change', function() {
+                                    saveEncodingToStorage();
+                                    updateTotalGross();
+                                });
+
+                                // Add focus event for keyboard navigation highlight
+                                input.addEventListener('focus', function() {
+                                    addFocusHighlight(this);
                                 });
                             });
-                            
-                            updateCardCount();
-                            updateTotalGross();
-                        }
-                    } catch (e) {
-                        console.error('Error loading encoding data:', e);
+                        });
+
+                        updateCardCount();
+                        updateTotalGross();
+                        showCard(0);
                     }
+                } catch (e) {
+                    console.error('Error loading encoding data:', e);
                 }
             }
-            
-            // Helper function to escape HTML
-            function escapeHtml(unsafe) {
-                return unsafe
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Function to save encoding data to main table
+        function saveEncodingToMain() {
+            const encodingCards = document.querySelectorAll('.encoding-card');
+
+            if (encodingCards.length === 0) {
+                alert('No data to save. Please add some transaction cards first.');
+                return;
             }
-            
-            // Function to save encoding data to main table
-            function saveEncodingToMain() {
-                const encodingCards = document.querySelectorAll('.encoding-card');
-                
-                if (encodingCards.length === 0) {
-                    alert('No data to save. Please add some transaction cards first.');
-                    return;
-                }
-                
-                // Save to localStorage for the main page to read
-                saveEncodingToStorage();
-                
-                // Set a flag that we want to load this data in the main page
-                localStorage.setItem('loadEncodingData', 'true');
-                
-                // Show success message
-                showSuccessMessage(`✅ ${encodingCards.length} transaction(s) ready to be added to main table!`);
-                
-                // Ask if user wants to go to main page
-                if (confirm(`${encodingCards.length} transaction(s) ready. Go to main page to add them?`)) {
-                    window.location.href = 'vatable_sales.html?loadEncoding=true';
-                }
+
+            // Save to localStorage for the main page to read
+            saveEncodingToStorage();
+
+            // Set a flag that we want to load this data in the main page
+            localStorage.setItem('loadEncodingData', 'true');
+
+            // Show success message
+            showSuccessMessage(`✅ ${encodingCards.length} transaction(s) ready to be added to main table!`);
+
+            // Ask if user wants to go to main page
+            if (confirm(`${encodingCards.length} transaction(s) ready. Go to main page to add them?`)) {
+                window.location.href = 'vatable_sales.html?loadEncoding=true';
             }
-            
-            // Function to show success message
-            function showSuccessMessage(message) {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'success-message';
-                msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-                document.body.appendChild(msgDiv);
-                
-                setTimeout(() => {
-                    msgDiv.style.transition = 'opacity 0.3s ease';
-                    msgDiv.style.opacity = '0';
-                    setTimeout(() => msgDiv.remove(), 300);
-                }, 3000);
+        }
+
+        // Function to show success message
+        function showSuccessMessage(message) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'success-message';
+            msgDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.body.appendChild(msgDiv);
+
+            setTimeout(() => {
+                msgDiv.style.transition = 'opacity 0.3s ease';
+                msgDiv.style.opacity = '0';
+                setTimeout(() => msgDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // TIN formatting and validation functions
+        function formatTIN(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 12) value = value.substring(0, 12);
+
+            if (value.length > 9) {
+                value = value.substring(0, 9) + '-' + value.substring(9);
             }
-            
-            // TIN formatting and validation functions
-            function formatTIN(input) {
-                let value = input.value.replace(/\D/g, '');
-                if (value.length > 12) value = value.substring(0, 12);
-                
-                if (value.length > 9) {
-                    value = value.substring(0, 9) + '-' + value.substring(9);
-                }
-                if (value.length > 6) {
-                    value = value.substring(0, 6) + '-' + value.substring(6);
-                }
-                if (value.length > 3) {
-                    value = value.substring(0, 3) + '-' + value.substring(3);
-                }
-                
-                input.value = value;
+            if (value.length > 6) {
+                value = value.substring(0, 6) + '-' + value.substring(6);
             }
-            
-            function validateTIN(input) {
-                const value = input.value.replace(/\D/g, '');
-                const validationMessage = input.nextElementSibling;
-                
-                if (value.length === 12) {
-                    validationMessage.style.display = 'none';
-                    input.style.borderColor = '#00ff9d';
-                    input.style.boxShadow = '0 0 0 3px rgba(0, 255, 157, 0.2)';
-                } else if (value.length > 0) {
-                    validationMessage.style.display = 'block';
-                    input.style.borderColor = '#ff6666';
-                    input.style.boxShadow = '0 0 0 3px rgba(255, 102, 102, 0.2)';
-                } else {
-                    validationMessage.style.display = 'none';
-                    input.style.borderColor = 'rgba(0, 255, 157, 0.3)';
-                    input.style.boxShadow = 'none';
-                }
+            if (value.length > 3) {
+                value = value.substring(0, 3) + '-' + value.substring(3);
             }
-        </script>
-    </body>
-    </html>
+
+            input.value = value;
+        }
+
+        function validateTIN(input) {
+            const value = input.value.replace(/\D/g, '');
+            const validationMessage = input.nextElementSibling;
+
+            if (value.length === 12) {
+                validationMessage.style.display = 'none';
+                input.style.borderColor = '#22C55E';
+                input.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.15)';
+            } else if (value.length > 0) {
+                validationMessage.style.display = 'block';
+                input.style.borderColor = '#EF4444';
+                input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.15)';
+            } else {
+                validationMessage.style.display = 'none';
+                input.style.borderColor = '#E5E7EB';
+                input.style.boxShadow = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
